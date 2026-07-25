@@ -227,12 +227,12 @@ data class PlayerStats(
     )
 }
 
-sealed class PlayerError(val message: String) {
-    class NetworkError(message: String) : PlayerError(message)
-    class SourceError(message: String) : PlayerError(message)
-    class DecoderError(message: String) : PlayerError(message)
-    class DrmError(message: String, val scheme: DrmScheme? = null) : PlayerError(message)
-    class UnknownError(message: String) : PlayerError(message)
+sealed class PlayerError(val message: String, val cause: Throwable? = null) {
+    class NetworkError(message: String, cause: Throwable? = null) : PlayerError(message, cause)
+    class SourceError(message: String, cause: Throwable? = null) : PlayerError(message, cause)
+    class DecoderError(message: String, cause: Throwable? = null) : PlayerError(message, cause)
+    class DrmError(message: String, val scheme: DrmScheme? = null, cause: Throwable? = null) : PlayerError(message, cause)
+    class UnknownError(message: String, cause: Throwable? = null) : PlayerError(message, cause)
 
     companion object {
         fun fromException(e: Throwable): PlayerError {
@@ -265,18 +265,18 @@ sealed class PlayerError(val message: String) {
                 PlaybackErrorCategory.HTTP_SERVER,
                 PlaybackErrorCategory.HTTP_AUTH,
                 PlaybackErrorCategory.CLEAR_TEXT_BLOCKED,
-                PlaybackErrorCategory.SSL -> NetworkError(msg)
+                PlaybackErrorCategory.SSL -> NetworkError(msg, e)
 
                 PlaybackErrorCategory.PROVIDER_LIMIT,
                 PlaybackErrorCategory.EMPTY_RESPONSE,
                 PlaybackErrorCategory.SOURCE_MALFORMED,
-                PlaybackErrorCategory.LIVE_WINDOW -> SourceError(msg)
+                PlaybackErrorCategory.LIVE_WINDOW -> SourceError(msg, e)
 
                 PlaybackErrorCategory.DECODER,
-                PlaybackErrorCategory.FORMAT_UNSUPPORTED -> DecoderError(msg)
+                PlaybackErrorCategory.FORMAT_UNSUPPORTED -> DecoderError(msg, e)
 
-                PlaybackErrorCategory.DRM -> DrmError(msg)
-                PlaybackErrorCategory.UNKNOWN -> UnknownError(msg)
+                PlaybackErrorCategory.DRM -> DrmError(msg, cause = e)
+                PlaybackErrorCategory.UNKNOWN -> UnknownError(msg, e)
             }
         }
 

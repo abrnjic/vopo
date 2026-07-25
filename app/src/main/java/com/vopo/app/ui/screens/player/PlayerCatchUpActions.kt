@@ -7,6 +7,7 @@ import com.vopo.domain.model.ContentType
 import com.vopo.domain.model.Program
 import com.vopo.domain.model.StreamInfo
 import kotlinx.coroutines.launch
+import android.util.Log
 
 internal suspend fun resolveCatchUpStreamInfo(
     candidateUrl: String,
@@ -47,6 +48,14 @@ internal suspend fun PlayerViewModel.startCatchUpPlayback(
         currentProviderId = currentProviderId,
         resolveStreamInfo = ::resolvePlaybackStreamInfo
     ) ?: return
+    
+    val redactedUrl = catchupStream.url
+        .replace(Regex("password=[^&]*", RegexOption.IGNORE_CASE), "password=***")
+        .replace(Regex("username=[^&]*", RegexOption.IGNORE_CASE), "username=***")
+        .replace(Regex("/([^/]+)/([^/]+)/(\\d+)\\.ts"), "/username/***/$3.ts")
+
+    Log.i("CatchUpDebug", "Generated CatchUp URL (redacted): $redactedUrl")
+    
     if (!preparePlayer(catchupStream, requestVersion)) return
     playerEngine.play()
 }
@@ -71,6 +80,30 @@ fun PlayerViewModel.playCatchUp(program: Program) {
                 actions = buildRecoveryActions(PlayerRecoveryType.CATCH_UP)
             )
             return@launch
+        }
+
+        if (com.vopo.app.BuildConfig.DEBUG) {
+            try {
+                val durationSeconds = end - start
+                val durationMinutes = durationSeconds / 60
+                val utcStart = java.time.Instant.ofEpochSecond(start).atZone(java.time.ZoneId.of("UTC"))
+                val localStart = java.time.Instant.ofEpochSecond(start).atZone(java.time.ZoneId.systemDefault())
+                Log.i("CatchUpDebug", "--- CATCH-UP DIAGNOSTICS START ---")
+                Log.i("CatchUpDebug", "Stream ID: $streamId")
+                Log.i("CatchUpDebug", "Channel Name: ${channel.name}")
+                Log.i("CatchUpDebug", "CatchUpSupported (channel): ${channel.catchUpSupported}")
+                Log.i("CatchUpDebug", "CatchUpDays: ${channel.catchUpDays}")
+                Log.i("CatchUpDebug", "hasArchive (program): ${program.hasArchive}")
+                Log.i("CatchUpDebug", "Program Start (ms): ${program.startTime}")
+                Log.i("CatchUpDebug", "Program End (ms): ${program.endTime}")
+                Log.i("CatchUpDebug", "Duration (sec): $durationSeconds")
+                Log.i("CatchUpDebug", "Duration (min): $durationMinutes")
+                Log.i("CatchUpDebug", "Start UTC: ${utcStart.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)}")
+                Log.i("CatchUpDebug", "Start Local: ${localStart.format(java.time.format.DateTimeFormatter.ISO_OFFSET_DATE_TIME)}")
+                Log.i("CatchUpDebug", "M3U Source Template (if any): ${channel.catchUpSource}")
+            } catch (e: Exception) {
+                Log.e("CatchUpDebug", "Failed to print diagnostics", e)
+            }
         }
 
         val catchUpUrls = try {

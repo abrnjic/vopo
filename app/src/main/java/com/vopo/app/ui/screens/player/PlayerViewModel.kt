@@ -772,10 +772,41 @@ class PlayerViewModel @Inject constructor(
         )
         android.util.Log.i(
             "PlayerVM",
-            "handle-playback-error type=${error::class.java.simpleName} contentType=$currentContentType " +
+            "handle-playback-error type=${error::class.java.simpleName} msg='${error.message}' contentType=$currentContentType " +
                 "hasChannel=${currentChannelFlow.value != null} requestVersion=$requestVersion " +
                 "active=${isActivePlaybackSession(requestVersion, playbackUrl)}"
         )
+        
+        if (com.vopo.app.BuildConfig.DEBUG) {
+            try {
+                val baseCause = error.cause
+                val chain = generateSequence(baseCause) { it.cause }.toList()
+                val invalidResponseCodeException = chain.filterIsInstance<androidx.media3.datasource.HttpDataSource.InvalidResponseCodeException>().firstOrNull()
+                
+                if (invalidResponseCodeException != null) {
+                    val responseCode = invalidResponseCodeException.responseCode
+                    val contentType = invalidResponseCodeException.headerFields["Content-Type"]?.joinToString() ?: "N/A"
+                    val redactedUri = invalidResponseCodeException.dataSpec.uri.toString()
+                        .replace(Regex("password=[^&]*", RegexOption.IGNORE_CASE), "password=***")
+                        .replace(Regex("username=[^&]*", RegexOption.IGNORE_CASE), "username=***")
+                        .replace(Regex("/([^/]+)/([^/]+)/(\\d+)\\.ts"), "/username/***/$3.ts")
+                    
+                    val exoErrorCode = (baseCause as? androidx.media3.common.PlaybackException)?.errorCodeName ?: "unknown"
+                    
+                    android.util.Log.e("CatchUpDebug", "--- CATCH-UP HTTP ERROR ---")
+                    android.util.Log.e("CatchUpDebug", "Response Code: $responseCode")
+                    android.util.Log.e("CatchUpDebug", "Content-Type: $contentType")
+                    android.util.Log.e("CatchUpDebug", "Redacted URI: $redactedUri")
+                    android.util.Log.e("CatchUpDebug", "ExoPlayer errorCode: $exoErrorCode")
+                    android.util.Log.e("CatchUpDebug", "Exception Class: ${invalidResponseCodeException::class.java.simpleName}")
+                } else if (baseCause != null) {
+                    android.util.Log.e("CatchUpDebug", "Network Error Root Cause: ${baseCause::class.java.simpleName}: ${baseCause.message}")
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+        
         recoveryJob?.cancel()
         if (error is PlayerError.DecoderError && !hasRetriedWithSoftwareDecoder) {
             if (!isActivePlaybackSession(requestVersion, playbackUrl)) return

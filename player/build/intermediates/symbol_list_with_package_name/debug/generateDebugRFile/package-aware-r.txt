@@ -1,0 +1,3 @@
+com.vopo.player
+layout player_surface_view
+layout player_texture_view

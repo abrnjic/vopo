@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1000759434828",
+    "project_id": "vopoapp-86a75",
+    "storage_bucket": "vopoapp-86a75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1000759434828:android:bc673a3df3d3779fcd1ee9",
+        "android_client_info": {
+          "package_name": "com.vopo.app.debug"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABPTxMiG0iQLLfne0FZChxlgJ8eE3SNxM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

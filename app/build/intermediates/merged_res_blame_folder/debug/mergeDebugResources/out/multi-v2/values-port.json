@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.vopo.app-mergeDebugResources-79:/values-port/values-port.xml",
+            "map": [
+                {
+                    "source": "/Users/abrnjic1/.gradle/caches/8.12/transforms/901cc0b4423327a2d70717f584a81124/transformed/appcompat-1.7.1/res/values-port/values-port.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "55",
+                        "endOffsets": "106"
+                    }
+                }
+            ]
+        }
+    ]
+}

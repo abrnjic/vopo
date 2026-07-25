@@ -1,0 +1,118 @@
+[
+    {
+        "merged": "com.vopo.app-debug-81:/drawable_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-anydpi-v26_ic_launcher_vopo.xml.flat",
+        "source": "com.vopo.app-main-83:/mipmap-anydpi-v26/ic_launcher_vopo.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/font_inter_bold.ttf.flat",
+        "source": "com.vopo.app-main-83:/font/inter_bold.ttf"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/xml_searchable.xml.flat",
+        "source": "com.vopo.app-main-83:/xml/searchable.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/xml_tv_input_service.xml.flat",
+        "source": "com.vopo.app-main-83:/xml/tv_input_service.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-hdpi_ic_launcher_vopo.png.flat",
+        "source": "com.vopo.app-main-83:/mipmap-hdpi/ic_launcher_vopo.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-hdpi_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-hdpi/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable_empty_icon.xml.flat",
+        "source": "com.vopo.app-main-83:/drawable/empty_icon.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-xxxhdpi_ic_launcher_vopo.png.flat",
+        "source": "com.vopo.app-main-83:/mipmap-xxxhdpi/ic_launcher_vopo.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-xxhdpi_ic_launcher_vopo.png.flat",
+        "source": "com.vopo.app-main-83:/mipmap-xxhdpi/ic_launcher_vopo.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xxxhdpi_ic_launcher_vopo_art.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xxxhdpi/ic_launcher_vopo_art.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xxxhdpi_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xxxhdpi/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xhdpi_ic_launcher_vopo_art.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xhdpi/ic_launcher_vopo_art.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xhdpi_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xhdpi/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-xhdpi_ic_launcher_vopo.png.flat",
+        "source": "com.vopo.app-main-83:/mipmap-xhdpi/ic_launcher_vopo.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xxhdpi_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xxhdpi/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-hdpi_ic_launcher_vopo_art.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-hdpi/ic_launcher_vopo_art.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/mipmap-mdpi_ic_launcher_vopo.png.flat",
+        "source": "com.vopo.app-main-83:/mipmap-mdpi/ic_launcher_vopo.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-mdpi_app_banner.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-mdpi/app_banner.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-mdpi_ic_launcher_vopo_art.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-mdpi/ic_launcher_vopo_art.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/xml_file_paths.xml.flat",
+        "source": "com.vopo.app-main-83:/xml/file_paths.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable-xxhdpi_ic_launcher_vopo_art.png.flat",
+        "source": "com.vopo.app-main-83:/drawable-xxhdpi/ic_launcher_vopo_art.png"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/font_inter_regular.ttf.flat",
+        "source": "com.vopo.app-main-83:/font/inter_regular.ttf"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.vopo.app-main-83:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/font_inter_medium.ttf.flat",
+        "source": "com.vopo.app-main-83:/font/inter_medium.ttf"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/xml_locales_config.xml.flat",
+        "source": "com.vopo.app-main-83:/xml/locales_config.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/font_inter_semibold.ttf.flat",
+        "source": "com.vopo.app-main-83:/font/inter_semibold.ttf"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/xml_network_security_config.xml.flat",
+        "source": "com.vopo.app-main-83:/xml/network_security_config.xml"
+    },
+    {
+        "merged": "com.vopo.app-debug-81:/drawable_welcome_bg.png.flat",
+        "source": "com.vopo.app-main-83:/drawable/welcome_bg.png"
+    }
+]

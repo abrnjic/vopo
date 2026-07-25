@@ -1,0 +1,2 @@
+int layout player_surface_view 0x0
+int layout player_texture_view 0x0

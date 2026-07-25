@@ -1,0 +1,15 @@
+package com.vopo.app.ui.screens.downloads
+
+import com.vopo.domain.model.DownloadItem
+import com.vopo.domain.model.DownloadStorageConfig
+
+/**
+ * UI state for the Downloads screen.
+ */
+data class DownloadsUiState(
+    val downloads: List<DownloadItem> = emptyList(),
+    val isLoading: Boolean = true,
+    val storageConfig: DownloadStorageConfig = DownloadStorageConfig(),
+    val userMessage: String? = null,
+    val deleteConfirmItem: DownloadItem? = null
+)

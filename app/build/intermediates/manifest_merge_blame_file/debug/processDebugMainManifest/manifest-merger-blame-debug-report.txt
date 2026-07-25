@@ -1,0 +1,948 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.vopo.app.debug"
+4    android:versionCode="16"
+5    android:versionName="1.0.15-debug" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="25"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:5:5-67
+11-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:5:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:6:5-79
+12-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:6:22-76
+13    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+13-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:7:5-76
+13-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:7:22-73
+14    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+14-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:8:5-77
+14-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:8:22-74
+15    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+15-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:9:5-83
+15-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:9:22-80
+16    <uses-permission android:name="com.android.providers.tv.permission.READ_EPG_DATA" />
+16-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:10:5-89
+16-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:10:22-86
+17    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
+17-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:11:5-90
+17-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:11:22-87
+18    <uses-permission android:name="android.permission.BIND_TV_INPUT" />
+18-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:12:5-72
+18-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:12:22-69
+19    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+19-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:13:5-81
+19-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:13:22-78
+20    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+20-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:14:5-77
+20-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:14:22-74
+21    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+21-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:15:5-87
+21-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:15:22-84
+22    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+22-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:16:5-79
+22-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:16:22-76
+23
+24    <uses-feature
+24-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:18:5-20:36
+25        android:name="android.software.leanback"
+25-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:19:9-49
+26        android:required="false" />
+26-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:20:9-33
+27    <uses-feature
+27-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:22:5-24:36
+28        android:name="android.hardware.touchscreen"
+28-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:23:9-52
+29        android:required="false" />
+29-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:24:9-33
+30
+31    <queries>
+31-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:26:5-42:15
+32        <intent>
+32-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:27:9-29:18
+33            <action android:name="com.vopo.plugin.API" />
+33-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:28:13-58
+33-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:28:21-55
+34        </intent>
+35        <intent>
+35-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:30:9-33:18
+36            <action android:name="android.intent.action.VIEW" />
+36-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+36-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+37
+38            <data android:mimeType="video/*" />
+38-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+38-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+39        </intent>
+40        <intent>
+40-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:34:9-37:18
+41            <action android:name="android.intent.action.VIEW" />
+41-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+41-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+42
+43            <data android:mimeType="application/x-mpegURL" />
+43-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+43-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+44        </intent>
+45        <intent>
+45-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:38:9-41:18
+46            <action android:name="android.intent.action.VIEW" />
+46-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+46-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+47
+48            <data android:mimeType="application/vnd.apple.mpegurl" />
+48-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+48-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+49        </intent>
+50
+51        <package android:name="com.google.android.gms.policy_cast_dynamite" />
+51-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:15:9-79
+51-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:15:18-76
+52    </queries>
+53
+54    <uses-permission android:name="android.permission.WAKE_LOCK" />
+54-->[androidx.media3:media3-exoplayer:1.9.2] /Users/abrnjic1/.gradle/caches/8.12/transforms/6f448fb74969f6e87a6fde3ec72ef8e7/transformed/media3-exoplayer-1.9.2/AndroidManifest.xml:23:5-68
+54-->[androidx.media3:media3-exoplayer:1.9.2] /Users/abrnjic1/.gradle/caches/8.12/transforms/6f448fb74969f6e87a6fde3ec72ef8e7/transformed/media3-exoplayer-1.9.2/AndroidManifest.xml:23:22-65
+55
+56    <permission
+56-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:22:5-24:47
+57        android:name="com.vopo.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+57-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:23:9-81
+58        android:protectionLevel="signature" />
+58-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:24:9-44
+59
+60    <uses-permission android:name="com.vopo.app.debug.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" /> <!-- To store the heap dumps and leak analysis results. -->
+60-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:26:5-97
+60-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:26:22-94
+61    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+61-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:25:5-80
+61-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:25:22-77
+62    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+62-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:26:5-81
+62-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:26:22-78
+63
+64    <application
+64-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:44:5-178:19
+65        android:name="com.vopo.app.VopoApp"
+65-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:45:9-32
+66        android:allowBackup="false"
+66-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:46:9-36
+67        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+67-->[androidx.core:core:1.18.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/d06f221ee0d9b9f52cb22397c30e28c5/transformed/core-1.18.0/AndroidManifest.xml:28:18-86
+68        android:banner="@drawable/app_banner"
+68-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:47:9-46
+69        android:debuggable="true"
+70        android:extractNativeLibs="false"
+71        android:icon="@mipmap/ic_launcher_vopo"
+71-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:48:9-48
+72        android:label="@string/app_name"
+72-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:50:9-41
+73        android:localeConfig="@xml/locales_config"
+73-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:51:9-51
+74        android:networkSecurityConfig="@xml/network_security_config"
+74-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:52:9-69
+75        android:roundIcon="@mipmap/ic_launcher_vopo"
+75-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:49:9-53
+76        android:supportsRtl="true"
+76-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:54:9-35
+77        android:theme="@style/Theme.Vopo"
+77-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:55:9-42
+78        android:usesCleartextTraffic="true" >
+78-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:53:9-44
+79        <activity
+79-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:57:9-121:20
+80            android:name="com.vopo.app.MainActivity"
+80-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:58:13-41
+81            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|smallestScreenSize"
+81-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:60:13-126
+82            android:exported="true"
+82-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:59:13-36
+83            android:launchMode="singleTask"
+83-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:61:13-44
+84            android:screenOrientation="landscape"
+84-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:63:13-50
+85            android:supportsPictureInPicture="true"
+85-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:62:13-52
+86            android:windowSoftInputMode="adjustResize" >
+86-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:64:13-55
+87            <intent-filter>
+87-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:66:13-69:29
+88                <action android:name="android.intent.action.SEARCH" />
+88-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:67:17-71
+88-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:67:25-68
+89
+90                <category android:name="android.intent.category.DEFAULT" />
+90-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+90-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+91            </intent-filter>
+92            <intent-filter>
+92-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:71:13-74:29
+93                <action android:name="android.intent.action.ASSIST" />
+93-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:72:17-71
+93-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:72:25-68
+94
+95                <category android:name="android.intent.category.DEFAULT" />
+95-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+95-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+96            </intent-filter>
+97            <intent-filter>
+97-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:76:13-89:29
+98                <action android:name="android.intent.action.VIEW" />
+98-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+98-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+99
+100                <category android:name="android.intent.category.DEFAULT" />
+100-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+100-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+101                <category android:name="android.intent.category.BROWSABLE" />
+101-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:17-78
+101-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:27-75
+102
+103                <data android:mimeType="audio/x-mpegurl" />
+103-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+103-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+104                <data android:mimeType="audio/mpegurl" />
+104-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+104-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+105                <data android:mimeType="application/x-mpegurl" />
+105-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+105-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+106                <data android:mimeType="application/vnd.apple.mpegurl" />
+106-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+106-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+107                <data android:mimeType="application/mpegurl" />
+107-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+107-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+108                <data
+108-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+109                    android:pathPattern=".*\\.m3u"
+109-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+110                    android:scheme="content" />
+110-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+111                <data
+111-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+112                    android:pathPattern=".*\\.m3u8"
+112-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+113                    android:scheme="content" />
+113-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+114                <data
+114-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+115                    android:pathPattern=".*\\.m3u"
+115-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+116                    android:scheme="file" />
+116-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+117                <data
+117-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+118                    android:pathPattern=".*\\.m3u8"
+118-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+119                    android:scheme="file" />
+119-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+120            </intent-filter>
+121            <intent-filter>
+121-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:91:13-100:29
+122                <action android:name="android.intent.action.VIEW" />
+122-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+122-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+123
+124                <category android:name="android.intent.category.DEFAULT" />
+124-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+124-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+125                <category android:name="android.intent.category.BROWSABLE" />
+125-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:17-78
+125-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:27-75
+126
+127                <data android:mimeType="application/json" />
+127-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+127-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+128                <data android:mimeType="text/json" />
+128-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+128-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+129                <data android:mimeType="application/x-json" />
+129-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+129-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+130                <data
+130-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+131                    android:pathPattern=".*\\.json"
+131-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+132                    android:scheme="content" />
+132-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+133                <data
+133-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+134                    android:pathPattern=".*\\.json"
+134-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+135                    android:scheme="file" />
+135-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+136            </intent-filter>
+137            <intent-filter>
+137-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:102:13-109:29
+138                <action android:name="android.intent.action.SEND" />
+138-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:103:17-69
+138-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:103:25-66
+139
+140                <category android:name="android.intent.category.DEFAULT" />
+140-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+140-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+141
+142                <data android:mimeType="application/json" />
+142-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+142-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+143                <data android:mimeType="text/json" />
+143-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+143-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+144                <data android:mimeType="application/x-json" />
+144-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+144-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+145                <data android:mimeType="application/octet-stream" />
+145-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+145-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+146            </intent-filter>
+147
+148            <meta-data
+148-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:111:13-113:54
+149                android:name="android.app.searchable"
+149-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:112:17-54
+150                android:resource="@xml/searchable" />
+150-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:113:17-51
+151
+152            <!-- TV Launcher entry point -->
+153            <intent-filter>
+153-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:116:13-120:29
+154                <action android:name="android.intent.action.MAIN" />
+154-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:117:17-69
+154-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:117:25-66
+155
+156                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+156-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:118:17-86
+156-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:118:27-83
+157                <category android:name="android.intent.category.LAUNCHER" />
+157-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:119:17-77
+157-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:119:27-74
+158            </intent-filter>
+159        </activity>
+160        <activity
+160-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:123:9-128:61
+161            android:name="com.vopo.app.cast.CastRouteChooserActivity"
+161-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:124:13-58
+162            android:excludeFromRecents="true"
+162-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:126:13-46
+163            android:exported="false"
+163-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:125:13-37
+164            android:launchMode="singleTop"
+164-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:127:13-43
+165            android:theme="@style/Theme.Vopo.CastChooser" />
+165-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:128:13-58
+166        <activity
+166-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:130:9-135:49
+167            android:name="com.vopo.app.tvinput.TvInputSetupActivity"
+167-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:131:13-57
+168            android:excludeFromRecents="true"
+168-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:133:13-46
+169            android:exported="true"
+169-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:132:13-36
+170            android:launchMode="singleTask"
+170-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:134:13-44
+171            android:theme="@style/Theme.Vopo" />
+171-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:135:13-46
+172        <activity
+172-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:137:9-141:49
+173            android:name="com.vopo.app.diagnostics.ExternalPlayerProbeActivity"
+173-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:138:13-68
+174            android:excludeFromRecents="true"
+174-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:140:13-46
+175            android:exported="false"
+175-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:139:13-37
+176            android:theme="@style/Theme.Vopo" />
+176-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:141:13-46
+177
+178        <service
+178-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:143:9-156:19
+179            android:name="com.vopo.app.tvinput.VopoTvInputService"
+179-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:144:13-55
+180            android:exported="true"
+180-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:145:13-36
+181            android:label="Vopo Live Channels"
+181-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:146:13-47
+182            android:permission="android.permission.BIND_TV_INPUT" >
+182-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:147:13-66
+183            <intent-filter>
+183-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:149:13-151:29
+184                <action android:name="android.media.tv.TvInputService" />
+184-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:150:17-74
+184-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:150:25-71
+185            </intent-filter>
+186
+187            <meta-data
+187-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:153:13-155:60
+188                android:name="android.media.tv.input"
+188-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:154:17-54
+189                android:resource="@xml/tv_input_service" />
+189-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:155:17-57
+190        </service>
+191        <service
+191-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:158:9-161:56
+192            android:name="com.vopo.app.service.DownloadForegroundService"
+192-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:159:13-62
+193            android:exported="false"
+193-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:160:13-37
+194            android:foregroundServiceType="dataSync" />
+194-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:161:13-53
+195
+196        <meta-data
+196-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:163:9-165:73
+197            android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
+197-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:164:13-93
+198            android:value="com.vopo.app.cast.VopoCastOptionsProvider" />
+198-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:165:13-70
+199
+200        <provider
+201            android:name="androidx.core.content.FileProvider"
+201-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:168:13-62
+202            android:authorities="com.vopo.app.debug.fileprovider"
+202-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:169:13-64
+203            android:exported="false"
+203-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:170:13-37
+204            android:grantUriPermissions="true" >
+204-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:171:13-47
+205            <meta-data
+205-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:172:13-174:54
+206                android:name="android.support.FILE_PROVIDER_PATHS"
+206-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:173:17-67
+207                android:resource="@xml/file_paths" />
+207-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:174:17-51
+208        </provider>
+209
+210        <service
+210-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:8:9-11:56
+211            android:name="com.vopo.data.manager.recording.RecordingForegroundService"
+211-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:9:13-86
+212            android:exported="false"
+212-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:10:13-37
+213            android:foregroundServiceType="dataSync" />
+213-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:11:13-53
+214
+215        <receiver
+215-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:13:9-15:40
+216            android:name="com.vopo.data.manager.recording.RecordingAlarmReceiver"
+216-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:14:13-82
+217            android:exported="false" />
+217-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:15:13-37
+218        <receiver
+218-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:16:9-18:40
+219            android:name="com.vopo.data.manager.reminder.ProgramReminderAlarmReceiver"
+219-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:17:13-87
+220            android:exported="false" />
+220-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:18:13-37
+221        <receiver
+221-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:19:9-27:20
+222            android:name="com.vopo.data.manager.recording.RecordingRestoreReceiver"
+222-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:20:13-84
+223            android:enabled="true"
+223-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:21:13-35
+224            android:exported="true" >
+224-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:22:13-36
+225            <intent-filter>
+225-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:23:13-26:29
+226                <action android:name="android.intent.action.BOOT_COMPLETED" />
+226-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:17-79
+226-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:25-76
+227                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+227-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:25:17-84
+227-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:25:25-81
+228            </intent-filter>
+229        </receiver>
+230        <receiver
+230-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:28:9-36:20
+231            android:name="com.vopo.data.manager.reminder.ProgramReminderRestoreReceiver"
+231-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:29:13-89
+232            android:enabled="true"
+232-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:30:13-35
+233            android:exported="true" >
+233-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:31:13-36
+234            <intent-filter>
+234-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:23:13-26:29
+235                <action android:name="android.intent.action.BOOT_COMPLETED" />
+235-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:17-79
+235-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:25-76
+236                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+236-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:25:17-84
+236-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:25:25-81
+237            </intent-filter>
+238        </receiver>
+239
+240        <provider
+240-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:29:9-37:20
+241            android:name="androidx.startup.InitializationProvider"
+241-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:30:13-67
+242            android:authorities="com.vopo.app.debug.androidx-startup"
+242-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:31:13-68
+243            android:exported="false" >
+243-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:32:13-37
+244            <meta-data
+244-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:34:13-36:52
+245                android:name="androidx.work.WorkManagerInitializer"
+245-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:35:17-68
+246                android:value="androidx.startup" />
+246-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:36:17-49
+247            <meta-data
+247-->[androidx.emoji2:emoji2:1.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/84124421e4479509f9a4fd25ac3957c1/transformed/emoji2-1.4.0/AndroidManifest.xml:29:13-31:52
+248                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+248-->[androidx.emoji2:emoji2:1.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/84124421e4479509f9a4fd25ac3957c1/transformed/emoji2-1.4.0/AndroidManifest.xml:30:17-75
+249                android:value="androidx.startup" />
+249-->[androidx.emoji2:emoji2:1.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/84124421e4479509f9a4fd25ac3957c1/transformed/emoji2-1.4.0/AndroidManifest.xml:31:17-49
+250            <meta-data
+250-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/48c283246b42c09bc6c78fce6a1c5734/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:29:13-31:52
+251                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+251-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/48c283246b42c09bc6c78fce6a1c5734/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:30:17-78
+252                android:value="androidx.startup" />
+252-->[androidx.lifecycle:lifecycle-process:2.10.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/48c283246b42c09bc6c78fce6a1c5734/transformed/lifecycle-process-2.10.0/AndroidManifest.xml:31:17-49
+253            <meta-data
+253-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:29:13-31:52
+254                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+254-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:30:17-85
+255                android:value="androidx.startup" />
+255-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:31:17-49
+256        </provider>
+257
+258        <service
+258-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:39:9-45:35
+259            android:name="androidx.work.impl.background.systemjob.SystemJobService"
+259-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:40:13-84
+260            android:directBootAware="false"
+260-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:41:13-44
+261            android:enabled="@bool/enable_system_job_service_default"
+261-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:42:13-70
+262            android:exported="true"
+262-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:43:13-36
+263            android:permission="android.permission.BIND_JOB_SERVICE" />
+263-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:44:13-69
+264        <service
+264-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:46:9-52:35
+265            android:name="androidx.work.impl.foreground.SystemForegroundService"
+265-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:47:13-81
+266            android:directBootAware="false"
+266-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:48:13-44
+267            android:enabled="@bool/enable_system_foreground_service_default"
+267-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:49:13-77
+268            android:exported="false" />
+268-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:50:13-37
+269
+270        <receiver
+270-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:54:9-59:35
+271            android:name="androidx.work.impl.utils.ForceStopRunnable$BroadcastReceiver"
+271-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:55:13-88
+272            android:directBootAware="false"
+272-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:56:13-44
+273            android:enabled="true"
+273-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:57:13-35
+274            android:exported="false" />
+274-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:58:13-37
+275        <receiver
+275-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:60:9-69:20
+276            android:name="androidx.work.impl.background.systemalarm.RescheduleReceiver"
+276-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:61:13-88
+277            android:directBootAware="false"
+277-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:62:13-44
+278            android:enabled="false"
+278-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:63:13-36
+279            android:exported="false" >
+279-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:64:13-37
+280            <intent-filter>
+280-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:66:13-68:29
+281                <action android:name="android.intent.action.BOOT_COMPLETED" />
+281-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:17-79
+281-->[:data] /Users/abrnjic1/Documents/vopoapp.com/data/build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml:24:25-76
+282            </intent-filter>
+283        </receiver>
+284        <receiver
+284-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:70:9-80:20
+285            android:name="androidx.work.impl.diagnostics.DiagnosticsReceiver"
+285-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:71:13-78
+286            android:directBootAware="false"
+286-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:72:13-44
+287            android:enabled="true"
+287-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:73:13-35
+288            android:exported="true"
+288-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:74:13-36
+289            android:permission="android.permission.DUMP" >
+289-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:75:13-57
+290            <intent-filter>
+290-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:77:13-79:29
+291                <action android:name="androidx.work.diagnostics.REQUEST_DIAGNOSTICS" />
+291-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:78:17-88
+291-->[androidx.work:work-runtime:2.11.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/39d288825e4e5a32be909b5260a72825/transformed/work-runtime-2.11.1/AndroidManifest.xml:78:25-85
+292            </intent-filter>
+293        </receiver>
+294
+295        <service
+295-->[androidx.room:room-runtime-android:2.8.4] /Users/abrnjic1/.gradle/caches/8.12/transforms/263e4f129d42fd3d19521aee7ffd3136/transformed/room-runtime/AndroidManifest.xml:24:9-28:63
+296            android:name="androidx.room.MultiInstanceInvalidationService"
+296-->[androidx.room:room-runtime-android:2.8.4] /Users/abrnjic1/.gradle/caches/8.12/transforms/263e4f129d42fd3d19521aee7ffd3136/transformed/room-runtime/AndroidManifest.xml:25:13-74
+297            android:directBootAware="true"
+297-->[androidx.room:room-runtime-android:2.8.4] /Users/abrnjic1/.gradle/caches/8.12/transforms/263e4f129d42fd3d19521aee7ffd3136/transformed/room-runtime/AndroidManifest.xml:26:13-43
+298            android:exported="false" />
+298-->[androidx.room:room-runtime-android:2.8.4] /Users/abrnjic1/.gradle/caches/8.12/transforms/263e4f129d42fd3d19521aee7ffd3136/transformed/room-runtime/AndroidManifest.xml:27:13-37
+299
+300        <receiver
+300-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:19:9-21:40
+301            android:name="com.google.android.gms.cast.framework.media.MediaIntentReceiver"
+301-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:20:13-91
+302            android:exported="false" />
+302-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:21:13-37
+303
+304        <service
+304-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:23:9-25:40
+305            android:name="com.google.android.gms.cast.framework.ReconnectionService"
+305-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:24:13-85
+306            android:exported="false" />
+306-->[com.google.android.gms:play-services-cast-framework:22.1.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/43a10648b03fce79eace0156613f963f/transformed/play-services-cast-framework-22.1.0/AndroidManifest.xml:25:13-37
+307
+308        <activity
+308-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:23:9-27:75
+309            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+309-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:24:13-93
+310            android:excludeFromRecents="true"
+310-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:25:13-46
+311            android:exported="false"
+311-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:26:13-37
+312            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+312-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:27:13-72
+313        <!--
+314            Service handling Google Sign-In user revocation. For apps that do not integrate with
+315            Google Sign-In, this service will never be started.
+316        -->
+317        <service
+317-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:33:9-37:51
+318            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+318-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:34:13-89
+319            android:exported="true"
+319-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:35:13-36
+320            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+320-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:36:13-107
+321            android:visibleToInstantApps="true" />
+321-->[com.google.android.gms:play-services-auth:21.4.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/0165df90f41bd7a392cb755ef479947c/transformed/play-services-auth-21.4.0/AndroidManifest.xml:37:13-48
+322        <service
+322-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:14:9-23:19
+323            android:name="com.google.firebase.components.ComponentDiscoveryService"
+323-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:15:13-84
+324            android:directBootAware="true"
+324-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:32:13-43
+325            android:exported="false" >
+325-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:16:13-37
+326            <meta-data
+326-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:17:13-19:85
+327                android:name="com.google.firebase.components:com.google.firebase.firestore.FirebaseFirestoreKtxRegistrar"
+327-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:18:17-122
+328                android:value="com.google.firebase.components.ComponentRegistrar" />
+328-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:19:17-82
+329            <meta-data
+329-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:20:13-22:85
+330                android:name="com.google.firebase.components:com.google.firebase.firestore.FirestoreRegistrar"
+330-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:21:17-111
+331                android:value="com.google.firebase.components.ComponentRegistrar" />
+331-->[com.google.firebase:firebase-firestore:25.1.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/0d9463e103791bfda5bf48e4a8369b04/transformed/firebase-firestore-25.1.1/AndroidManifest.xml:22:17-82
+332            <meta-data
+332-->[com.google.firebase:firebase-common-ktx:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/97d67b113fb00ebcff88517e9bb88a27/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:12:13-14:85
+333                android:name="com.google.firebase.components:com.google.firebase.ktx.FirebaseCommonLegacyRegistrar"
+333-->[com.google.firebase:firebase-common-ktx:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/97d67b113fb00ebcff88517e9bb88a27/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:13:17-116
+334                android:value="com.google.firebase.components.ComponentRegistrar" />
+334-->[com.google.firebase:firebase-common-ktx:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/97d67b113fb00ebcff88517e9bb88a27/transformed/firebase-common-ktx-21.0.0/AndroidManifest.xml:14:17-82
+335            <meta-data
+335-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:35:13-37:85
+336                android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar"
+336-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:36:17-109
+337                android:value="com.google.firebase.components.ComponentRegistrar" />
+337-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:37:17-82
+338        </service>
+339
+340        <activity
+340-->[com.google.android.gms:play-services-base:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/1860a007bc8ad41e2d579087bd0d3b6d/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:9-173
+341            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+341-->[com.google.android.gms:play-services-base:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/1860a007bc8ad41e2d579087bd0d3b6d/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:19-85
+342            android:exported="false"
+342-->[com.google.android.gms:play-services-base:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/1860a007bc8ad41e2d579087bd0d3b6d/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:146-170
+343            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+343-->[com.google.android.gms:play-services-base:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/1860a007bc8ad41e2d579087bd0d3b6d/transformed/play-services-base-18.5.0/AndroidManifest.xml:5:86-145
+344
+345        <provider
+345-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:23:9-28:39
+346            android:name="com.google.firebase.provider.FirebaseInitProvider"
+346-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:24:13-77
+347            android:authorities="com.vopo.app.debug.firebaseinitprovider"
+347-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:25:13-72
+348            android:directBootAware="true"
+348-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:26:13-43
+349            android:exported="false"
+349-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:27:13-37
+350            android:initOrder="100" />
+350-->[com.google.firebase:firebase-common:21.0.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/99db315078aa6fd567fcf6961089586e/transformed/firebase-common-21.0.0/AndroidManifest.xml:28:13-36
+351
+352        <activity
+352-->[androidx.compose.ui:ui-test-manifest:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/39a650819d8caae9eae3967f2221a9a4/transformed/ui-test-manifest-1.10.3/AndroidManifest.xml:23:9-26:79
+353            android:name="androidx.activity.ComponentActivity"
+353-->[androidx.compose.ui:ui-test-manifest:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/39a650819d8caae9eae3967f2221a9a4/transformed/ui-test-manifest-1.10.3/AndroidManifest.xml:24:13-63
+354            android:exported="true"
+354-->[androidx.compose.ui:ui-test-manifest:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/39a650819d8caae9eae3967f2221a9a4/transformed/ui-test-manifest-1.10.3/AndroidManifest.xml:25:13-36
+355            android:theme="@android:style/Theme.Material.Light.NoActionBar" />
+355-->[androidx.compose.ui:ui-test-manifest:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/39a650819d8caae9eae3967f2221a9a4/transformed/ui-test-manifest-1.10.3/AndroidManifest.xml:26:13-76
+356        <activity
+356-->[androidx.compose.ui:ui-tooling-android:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/5f6a919d5ddabbc8eca45c0120edff71/transformed/ui-tooling/AndroidManifest.xml:23:9-25:39
+357            android:name="androidx.compose.ui.tooling.PreviewActivity"
+357-->[androidx.compose.ui:ui-tooling-android:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/5f6a919d5ddabbc8eca45c0120edff71/transformed/ui-tooling/AndroidManifest.xml:24:13-71
+358            android:exported="true" />
+358-->[androidx.compose.ui:ui-tooling-android:1.10.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/5f6a919d5ddabbc8eca45c0120edff71/transformed/ui-tooling/AndroidManifest.xml:25:13-36
+359
+360        <uses-library
+360-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:23:9-25:40
+361            android:name="androidx.window.extensions"
+361-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:24:13-54
+362            android:required="false" />
+362-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:25:13-37
+363        <uses-library
+363-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:26:9-28:40
+364            android:name="androidx.window.sidecar"
+364-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:27:13-51
+365            android:required="false" />
+365-->[androidx.window:window:1.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/5528d63b85e3a948590fe9fb2a46aff3/transformed/window-1.5.0/AndroidManifest.xml:28:13-37
+366
+367        <meta-data
+367-->[com.google.android.gms:play-services-basement:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/6dbc0c7a6f757ff120a2335ac55f8660/transformed/play-services-basement-18.5.0/AndroidManifest.xml:21:9-23:69
+368            android:name="com.google.android.gms.version"
+368-->[com.google.android.gms:play-services-basement:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/6dbc0c7a6f757ff120a2335ac55f8660/transformed/play-services-basement-18.5.0/AndroidManifest.xml:22:13-58
+369            android:value="@integer/google_play_services_version" />
+369-->[com.google.android.gms:play-services-basement:18.5.0] /Users/abrnjic1/.gradle/caches/8.12/transforms/6dbc0c7a6f757ff120a2335ac55f8660/transformed/play-services-basement-18.5.0/AndroidManifest.xml:23:13-66
+370
+371        <provider
+371-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:32:9-40:20
+372            android:name="leakcanary.internal.LeakCanaryFileProvider"
+372-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:33:13-70
+373            android:authorities="com.squareup.leakcanary.fileprovider.com.vopo.app.debug"
+373-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:34:13-88
+374            android:exported="false"
+374-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:35:13-37
+375            android:grantUriPermissions="true" >
+375-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:36:13-47
+376            <meta-data
+376-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:172:13-174:54
+377                android:name="android.support.FILE_PROVIDER_PATHS"
+377-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:173:17-67
+378                android:resource="@xml/leak_canary_file_paths" />
+378-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:174:17-51
+379        </provider>
+380
+381        <activity
+381-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:42:9-73:20
+382            android:name="leakcanary.internal.activity.LeakActivity"
+382-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:43:13-69
+383            android:exported="true"
+383-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:44:13-36
+384            android:icon="@mipmap/leak_canary_icon"
+384-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:45:13-52
+385            android:label="@string/leak_canary_display_activity_label"
+385-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:46:13-71
+386            android:taskAffinity="com.squareup.leakcanary.com.vopo.app.debug"
+386-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:47:13-76
+387            android:theme="@style/leak_canary_LeakCanary.Base" >
+387-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:48:13-63
+388            <intent-filter android:label="@string/leak_canary_import_hprof_file" >
+388-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:49:13-72:29
+388-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:49:28-81
+389                <action android:name="android.intent.action.VIEW" />
+389-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:13-65
+389-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:31:21-62
+390
+391                <category android:name="android.intent.category.DEFAULT" />
+391-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:17-76
+391-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:68:27-73
+392                <category android:name="android.intent.category.BROWSABLE" />
+392-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:17-78
+392-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:79:27-75
+393
+394                <data android:scheme="file" />
+394-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+394-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+395                <data android:scheme="content" />
+395-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+395-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:23-47
+396                <data android:mimeType="*/*" />
+396-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+396-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:19-45
+397                <data android:host="*" />
+397-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+398                <data android:pathPattern=".*\\.hprof" />
+398-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+398-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+399                <data android:pathPattern=".*\\..*\\.hprof" />
+399-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+399-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+400                <data android:pathPattern=".*\\..*\\..*\\.hprof" />
+400-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+400-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+401                <data android:pathPattern=".*\\..*\\..*\\..*\\.hprof" />
+401-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+401-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+402                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\.hprof" />
+402-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+402-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+403                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\.hprof" />
+403-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+403-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+404                <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\.hprof" />
+404-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:32:13-48
+404-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:85:48-78
+405                <!--
+406            Since hprof isn't a standard MIME type, we have to declare such patterns.
+407            Most file providers will generate URIs including their own package name,
+408            which contains `.` characters that must be explicitly escaped in pathPattern.
+409            @see https://stackoverflow.com/a/31028507/703646
+410                -->
+411            </intent-filter>
+412        </activity>
+413
+414        <activity-alias
+414-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:75:9-92:26
+415            android:name="leakcanary.internal.activity.LeakLauncherActivity"
+415-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:76:13-77
+416            android:banner="@drawable/leak_canary_tv_icon"
+416-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:77:13-59
+417            android:enabled="@bool/leak_canary_add_launcher_icon"
+417-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:78:13-66
+418            android:exported="true"
+418-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:79:13-36
+419            android:icon="@mipmap/leak_canary_icon"
+419-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:80:13-52
+420            android:label="@string/leak_canary_display_activity_label"
+420-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:81:13-71
+421            android:targetActivity="leakcanary.internal.activity.LeakActivity"
+421-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:82:13-79
+422            android:taskAffinity="com.squareup.leakcanary.com.vopo.app.debug"
+422-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:83:13-76
+423            android:theme="@style/leak_canary_LeakCanary.Base" >
+423-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:84:13-63
+424            <intent-filter>
+424-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:116:13-120:29
+425                <action android:name="android.intent.action.MAIN" />
+425-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:117:17-69
+425-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:117:25-66
+426
+427                <category android:name="android.intent.category.LAUNCHER" />
+427-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:119:17-77
+427-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:119:27-74
+428                <!-- Android TV launcher intent -->
+429                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+429-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:118:17-86
+429-->/Users/abrnjic1/Documents/vopoapp.com/app/src/main/AndroidManifest.xml:118:27-83
+430            </intent-filter>
+431        </activity-alias>
+432
+433        <activity
+433-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:94:9-100:68
+434            android:name="leakcanary.internal.RequestPermissionActivity"
+434-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:95:13-73
+435            android:excludeFromRecents="true"
+435-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:96:13-46
+436            android:icon="@mipmap/leak_canary_icon"
+436-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:97:13-52
+437            android:label="@string/leak_canary_storage_permission_activity_label"
+437-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:98:13-82
+438            android:taskAffinity="com.squareup.leakcanary.com.vopo.app.debug"
+438-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:99:13-76
+439            android:theme="@style/leak_canary_Theme.Transparent" />
+439-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:100:13-65
+440
+441        <receiver android:name="leakcanary.internal.NotificationReceiver" />
+441-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:102:9-77
+441-->[com.squareup.leakcanary:leakcanary-android-core:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/0a617829e0c26b2d19975c7f61ff758d/transformed/leakcanary-android-core-2.14/AndroidManifest.xml:102:19-74
+442
+443        <provider
+443-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/70a9ad817b2c49d0dbdd8eb5612ea741/transformed/leakcanary-object-watcher-android-2.14/AndroidManifest.xml:8:9-12:40
+444            android:name="leakcanary.internal.MainProcessAppWatcherInstaller"
+444-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/70a9ad817b2c49d0dbdd8eb5612ea741/transformed/leakcanary-object-watcher-android-2.14/AndroidManifest.xml:9:13-78
+445            android:authorities="com.vopo.app.debug.leakcanary-installer"
+445-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/70a9ad817b2c49d0dbdd8eb5612ea741/transformed/leakcanary-object-watcher-android-2.14/AndroidManifest.xml:10:13-72
+446            android:enabled="@bool/leak_canary_watcher_auto_install"
+446-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/70a9ad817b2c49d0dbdd8eb5612ea741/transformed/leakcanary-object-watcher-android-2.14/AndroidManifest.xml:11:13-69
+447            android:exported="false" />
+447-->[com.squareup.leakcanary:leakcanary-object-watcher-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/70a9ad817b2c49d0dbdd8eb5612ea741/transformed/leakcanary-object-watcher-android-2.14/AndroidManifest.xml:12:13-37
+448        <provider
+448-->[com.squareup.leakcanary:plumber-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/d65b29560e771775031aa17206c3f7c5/transformed/plumber-android-2.14/AndroidManifest.xml:8:9-12:40
+449            android:name="leakcanary.internal.PlumberInstaller"
+449-->[com.squareup.leakcanary:plumber-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/d65b29560e771775031aa17206c3f7c5/transformed/plumber-android-2.14/AndroidManifest.xml:9:13-64
+450            android:authorities="com.vopo.app.debug.plumber-installer"
+450-->[com.squareup.leakcanary:plumber-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/d65b29560e771775031aa17206c3f7c5/transformed/plumber-android-2.14/AndroidManifest.xml:10:13-69
+451            android:enabled="@bool/leak_canary_plumber_auto_install"
+451-->[com.squareup.leakcanary:plumber-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/d65b29560e771775031aa17206c3f7c5/transformed/plumber-android-2.14/AndroidManifest.xml:11:13-69
+452            android:exported="false" />
+452-->[com.squareup.leakcanary:plumber-android:2.14] /Users/abrnjic1/.gradle/caches/8.12/transforms/d65b29560e771775031aa17206c3f7c5/transformed/plumber-android-2.14/AndroidManifest.xml:12:13-37
+453
+454        <receiver
+454-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:34:9-52:20
+455            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+455-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:35:13-76
+456            android:directBootAware="false"
+456-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:36:13-44
+457            android:enabled="true"
+457-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:37:13-35
+458            android:exported="true"
+458-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:38:13-36
+459            android:permission="android.permission.DUMP" >
+459-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:39:13-57
+460            <intent-filter>
+460-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:40:13-42:29
+461                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+461-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:41:17-91
+461-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:41:25-88
+462            </intent-filter>
+463            <intent-filter>
+463-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:43:13-45:29
+464                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+464-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:44:17-85
+464-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:44:25-82
+465            </intent-filter>
+466            <intent-filter>
+466-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:46:13-48:29
+467                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+467-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:47:17-88
+467-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:47:25-85
+468            </intent-filter>
+469            <intent-filter>
+469-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:49:13-51:29
+470                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+470-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:50:17-95
+470-->[androidx.profileinstaller:profileinstaller:1.4.1] /Users/abrnjic1/.gradle/caches/8.12/transforms/904a8712777ecf9302f029d3193e6891/transformed/profileinstaller-1.4.1/AndroidManifest.xml:50:25-92
+471            </intent-filter>
+472        </receiver>
+473
+474        <service
+474-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:29:9-35:19
+475            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+475-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:30:13-103
+476            android:exported="false" >
+476-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:31:13-37
+477            <meta-data
+477-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:32:13-34:39
+478                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+478-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:33:17-94
+479                android:value="cct" />
+479-->[com.google.android.datatransport:transport-backend-cct:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/255ae946696e9ee5022a7043bd0f6520/transformed/transport-backend-cct-3.1.3/AndroidManifest.xml:34:17-36
+480        </service>
+481        <service
+481-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:26:9-30:19
+482            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+482-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:27:13-117
+483            android:exported="false"
+483-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:28:13-37
+484            android:permission="android.permission.BIND_JOB_SERVICE" >
+484-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:29:13-69
+485        </service>
+486
+487        <receiver
+487-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:32:9-34:40
+488            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+488-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:33:13-132
+489            android:exported="false" />
+489-->[com.google.android.datatransport:transport-runtime:3.1.3] /Users/abrnjic1/.gradle/caches/8.12/transforms/ea4ed18a852d30c227740d21e0a392d2/transformed/transport-runtime-3.1.3/AndroidManifest.xml:34:13-37
+490    </application>
+491
+492</manifest>

@@ -894,7 +894,7 @@ class XtreamProvider(
             categoryName = category.name,
             epgChannelId = sanitizedEpgChannelId,
             number = num,
-            catchUpSupported = tvArchive == 1,
+            catchUpSupported = tvArchive == 1 || (tvArchiveDuration ?: 0) > 0,
             catchUpDays = tvArchiveDuration ?: 0,
             providerId = providerId,
             streamUrl = streamUrl,

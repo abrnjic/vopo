@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -263,8 +265,11 @@ internal fun LazyListScope.settingsAboutSection(
     onRefreshDownloadState: () -> Unit,
     onViewCrashReport: () -> Unit,
     onShareCrashReport: () -> Unit,
-    onDeleteCrashReport: () -> Unit
+    onDeleteCrashReport: () -> Unit,
+    onToggleAdvancedMode: () -> Unit
 ) {
+    var versionClickCount by androidx.compose.runtime.mutableIntStateOf(0)
+
     item {
         val downloadStatus = uiState.appUpdate.downloadStatus
         LaunchedEffect(downloadStatus) {
@@ -279,7 +284,18 @@ internal fun LazyListScope.settingsAboutSection(
             title = stringResource(R.string.settings_updates_title),
             subtitle = stringResource(R.string.settings_updates_subtitle)
         )
-        SettingsRow(label = stringResource(R.string.settings_app_version), value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        val versionName = if (uiState.advancedModeEnabled) BuildConfig.VERSION_NAME else BuildConfig.VERSION_NAME.removeSuffix("-debug")
+        ClickableSettingsRow(
+            label = stringResource(R.string.settings_app_version),
+            value = "$versionName (${BuildConfig.VERSION_CODE})",
+            onClick = {
+                versionClickCount++
+                if (versionClickCount >= 7) {
+                    versionClickCount = 0
+                    onToggleAdvancedMode()
+                }
+            }
+        )
         SwitchSettingsRow(
             label = stringResource(R.string.settings_update_auto_check),
             value = stringResource(
@@ -341,7 +357,7 @@ internal fun LazyListScope.settingsAboutSection(
                 onClick = { onOpenUri(uiState.appUpdate.releaseUrl.orEmpty()) }
             )
         }
-        if (!uiState.appUpdate.errorMessage.isNullOrBlank()) {
+        if (!uiState.appUpdate.errorMessage.isNullOrBlank() && uiState.advancedModeEnabled) {
             SettingsRow(
                 label = stringResource(R.string.settings_update_error),
                 value = uiState.appUpdate.errorMessage.orEmpty()
@@ -349,7 +365,8 @@ internal fun LazyListScope.settingsAboutSection(
         }
     }
 
-    item {
+    if (uiState.advancedModeEnabled) {
+        item {
         SettingsSectionHeader(
             title = stringResource(R.string.settings_crash_reports_title),
             subtitle = stringResource(R.string.settings_crash_reports_subtitle)
@@ -384,21 +401,28 @@ internal fun LazyListScope.settingsAboutSection(
                 value = stringResource(R.string.settings_crash_report_none)
             )
         }
+            SettingsRow(
+                label = stringResource(R.string.settings_crash_report_latest),
+                value = stringResource(R.string.settings_crash_report_none)
+            )
+        }
     }
 
-    item {
-        SettingsRow(label = stringResource(R.string.settings_build), value = stringResource(R.string.settings_build_desc))
-        SettingsRow(label = stringResource(R.string.settings_build_verification), value = buildVerificationLabel)
-        SettingsRow(label = stringResource(R.string.settings_developed_by), value = stringResource(R.string.settings_developer_name))
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_github),
-            value = stringResource(R.string.settings_github_url),
-            onClick = { onOpenUri(context.getString(R.string.settings_github_url)) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_donate),
-            value = stringResource(R.string.settings_donate_url),
-            onClick = { onOpenUri(context.getString(R.string.settings_donate_url)) }
-        )
+    if (uiState.advancedModeEnabled) {
+        item {
+            SettingsRow(label = stringResource(R.string.settings_build), value = stringResource(R.string.settings_build_desc))
+            SettingsRow(label = stringResource(R.string.settings_build_verification), value = buildVerificationLabel)
+            SettingsRow(label = stringResource(R.string.settings_developed_by), value = stringResource(R.string.settings_developer_name))
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_github),
+                value = stringResource(R.string.settings_github_url),
+                onClick = { onOpenUri(context.getString(R.string.settings_github_url)) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_donate),
+                value = stringResource(R.string.settings_donate_url),
+                onClick = { onOpenUri(context.getString(R.string.settings_donate_url)) }
+            )
+        }
     }
 }

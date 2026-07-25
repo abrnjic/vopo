@@ -11,10 +11,10 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/upload" replace />} />
+          <Route path="/" element={<Navigate to="/connect" replace />} />
           
           {/* Public route for end-users to add their IPTV line */}
-          <Route path="/upload" element={<PublicUpload />} />
+          <Route path="/connect" element={<PublicUpload />} />
           
           {/* Auth Route */}
           <Route path="/login" element={<Login />} />
@@ -28,7 +28,7 @@ function App() {
             <Route path="/admin" element={<AdminDashboard />} />
           </Route>
           
-          <Route path="*" element={<Navigate to="/upload" replace />} />
+          <Route path="*" element={<Navigate to="/connect" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

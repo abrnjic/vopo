@@ -33,6 +33,8 @@ import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.res.stringResource
+import com.vopo.app.R
 import com.vopo.app.ui.design.FocusSpec
 import com.vopo.app.ui.interaction.TvClickableSurface
 import com.vopo.app.ui.theme.OnSurfaceDim
@@ -47,13 +49,13 @@ internal fun LazyListScope.epgSourcesSection(
 
     item {
         Text(
-            text = "EPG Sources",
+            text = stringResource(R.string.settings_epg_sources),
             style = MaterialTheme.typography.titleMedium,
             color = Color(0xFF66BB6A),
             modifier = Modifier.padding(bottom = 8.dp)
         )
         Text(
-            text = "Add external XMLTV EPG sources and assign them to providers. External sources are matched to channels by ID or name and override provider-native EPG data.",
+            text = stringResource(R.string.settings_epg_sources_description),
             style = MaterialTheme.typography.bodySmall,
             color = OnSurfaceDim,
             modifier = Modifier.padding(bottom = 16.dp)
@@ -67,7 +69,7 @@ internal fun LazyListScope.epgSourcesSection(
     if (epgSources.isEmpty()) {
         item {
             Text(
-                text = "No external EPG sources configured. Add a source above to get started.",
+                text = stringResource(R.string.settings_epg_sources_empty),
                 style = MaterialTheme.typography.bodyMedium,
                 color = OnSurfaceDim,
                 modifier = Modifier.padding(vertical = 16.dp)
@@ -92,13 +94,13 @@ internal fun LazyListScope.epgSourcesSection(
     if (providers.isNotEmpty() && epgSources.isNotEmpty()) {
         item {
             Text(
-                text = "Provider Assignments",
+                text = stringResource(R.string.settings_epg_assignments),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color(0xFF66BB6A),
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
             )
             Text(
-                text = "Assign EPG sources to providers. Channels will be matched automatically by ID or name.",
+                text = stringResource(R.string.settings_epg_assignments_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = OnSurfaceDim,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -130,13 +132,13 @@ internal fun LazyListScope.epgSourcesSection(
     if (providers.isNotEmpty()) {
         item {
             Text(
-                text = "EPG Time Shift",
+                text = stringResource(R.string.settings_epg_time_shift),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color(0xFF66BB6A),
                 modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
             )
             Text(
-                text = "Adjust EPG times if they're consistently off from broadcast time (e.g., wrong timezone in the provider's data). Negative values shift programs earlier; positive shift them later.",
+                text = stringResource(R.string.settings_epg_time_shift_description),
                 style = MaterialTheme.typography.bodySmall,
                 color = OnSurfaceDim,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -196,7 +198,7 @@ private fun EpgTimeShiftCard(
                 ShiftAdjustButton("−30m", onClick = { onAdjust(-30) })
                 ShiftAdjustButton("−15m", onClick = { onAdjust(-15) })
                 ShiftAdjustButton("−5m", onClick = { onAdjust(-5) })
-                ShiftAdjustButton("Reset", onClick = onReset, enabled = shiftMinutes != 0)
+                ShiftAdjustButton(stringResource(R.string.settings_epg_time_shift_reset), onClick = onReset, enabled = shiftMinutes != 0)
                 ShiftAdjustButton("+5m", onClick = { onAdjust(5) })
                 ShiftAdjustButton("+15m", onClick = { onAdjust(15) })
                 ShiftAdjustButton("+30m", onClick = { onAdjust(30) })
@@ -236,8 +238,9 @@ private fun ShiftAdjustButton(
     }
 }
 
+@Composable
 private fun formatShiftLabel(minutes: Int): String {
-    if (minutes == 0) return "No shift"
+    if (minutes == 0) return stringResource(R.string.settings_epg_time_shift_none)
     val sign = if (minutes < 0) "−" else "+"
     val abs = kotlin.math.abs(minutes)
     val hours = abs / 60

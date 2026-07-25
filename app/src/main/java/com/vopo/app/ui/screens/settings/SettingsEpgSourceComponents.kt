@@ -27,6 +27,8 @@ import androidx.tv.material3.Border
 import androidx.tv.material3.ClickableSurfaceDefaults
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
+import androidx.compose.ui.res.stringResource
+import com.vopo.app.R
 import com.vopo.app.ui.design.FocusSpec
 import com.vopo.app.ui.interaction.TvClickableSurface
 import com.vopo.app.ui.theme.OnSurfaceDim
@@ -172,14 +174,14 @@ internal fun AddEpgSourceCard(viewModel: SettingsViewModel) {
             .background(Color.White.copy(alpha = 0.06f))
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Add EPG Source", style = MaterialTheme.typography.titleSmall, color = Color.White)
-            EpgSourceTextField(value = newName, onValueChange = { newName = it }, placeholder = "Source name")
+            Text(stringResource(R.string.settings_add_epg_source), style = MaterialTheme.typography.titleSmall, color = Color.White)
+            EpgSourceTextField(value = newName, onValueChange = { newName = it }, placeholder = stringResource(R.string.settings_epg_source_name))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(modifier = Modifier.weight(1f)) {
                     EpgSourceTextField(
                         value = newUrl,
                         onValueChange = { newUrl = it },
-                        placeholder = "XMLTV URL (HTTP/HTTPS) or browse file"
+                        placeholder = stringResource(R.string.settings_epg_source_url)
                     )
                 }
                 val addActionShape = RoundedCornerShape(8.dp)
@@ -193,7 +195,7 @@ internal fun AddEpgSourceCard(viewModel: SettingsViewModel) {
                     border = epgActionBorder(addActionShape),
                     scale = ClickableSurfaceDefaults.scale(focusedScale = 1f)
                 ) {
-                    Text("Browse", modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), style = MaterialTheme.typography.labelMedium, color = Primary)
+                    Text(stringResource(R.string.settings_epg_source_browse), modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), style = MaterialTheme.typography.labelMedium, color = Primary)
                 }
             }
             val addSourceShape = RoundedCornerShape(8.dp)
@@ -222,7 +224,7 @@ internal fun AddEpgSourceCard(viewModel: SettingsViewModel) {
                 border = epgActionBorder(addSourceShape),
                 scale = ClickableSurfaceDefaults.scale(focusedScale = 1f)
             ) {
-                Text("Add Source", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = Color(0xFF66BB6A), fontWeight = FontWeight.Medium)
+                Text(stringResource(R.string.settings_epg_source_add), modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), color = Color(0xFF66BB6A), fontWeight = FontWeight.Medium)
             }
         }
     }

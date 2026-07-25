@@ -102,7 +102,7 @@
     <string msgid="1150566100598813236" name="androidx_compose_ui_autofill">"Automatsko popunjavanje"</string>
     <string name="app_name">VOPO</string>
     <string name="badge_beta">Beta</string>
-    <string name="badge_catch_up">NADOKNADITI</string>
+    <string name="badge_catch_up">CATCH UP</string>
     <string name="badge_error">GREŠKA</string>
     <string name="badge_fav">OMILJENO</string>
     <string name="badge_movie">FILM</string>
@@ -110,7 +110,7 @@
     <string name="badge_recording">REC</string>
     <string name="badge_saved">SPAŠENO</string>
     <string name="badge_scheduled">SCHED</string>
-    <string name="badge_series">NIZ</string>
+    <string name="badge_series">SERIJE</string>
     <string msgid="881409763997275156" name="call_notification_answer_action">"Odgovori"</string>
     <string msgid="8793775615905189152" name="call_notification_answer_video_action">"Videozapis"</string>
     <string msgid="3229508546291798546" name="call_notification_decline_action">"Odbij"</string>
@@ -304,8 +304,8 @@
     <string name="downloads_status_paused">Pauzirano</string>
     <string name="downloads_status_pending">Na čekanju</string>
     <string msgid="1890207353314751437" name="dropdown_menu">"Padajući izbornik"</string>
-    <string name="epg_archive_provider_hint">Ovaj pružatelj usluga podržava nadoknadu za kanal, ali ovaj program nije označen kao spreman za arhiviranje u trenutnom prozoru vodiča.</string>
-    <string name="epg_archive_ready_hint">Arhiviranje ili reprodukcija nadoknade trebala bi biti dostupna za ovaj program.</string>
+    <string name="epg_archive_provider_hint">Ovaj pružatelj usluga podržava Catch up za kanal, ali ovaj program nije spreman.</string>
+    <string name="epg_archive_ready_hint">Catch up bi trebao biti dostupan za ovaj program.</string>
     <string name="epg_archive_stale_hint">Podaci vodiča izgledaju ustajalo, pa dostupnost ponovne reprodukcije može biti nepotpuna dok se vodič ne osvježi.</string>
     <string name="epg_archive_unavailable_hint">Arhivska reprodukcija nije dostupna za ovaj kanal.</string>
     <string name="epg_catchup_available">Dostupno nadoknađivanje (%1$d dana)</string>
@@ -351,7 +351,7 @@
     <string name="epg_mode_anchored">U odabrano vrijeme</string>
     <string name="epg_mode_anchored_hint">Samo kanali koji se emitiraju na trenutnom sidru vodiča</string>
     <string name="epg_mode_archive">Arhiva spremna</string>
-    <string name="epg_mode_archive_hint">Kanali s unosima za nadoknadu ili arhivu</string>
+    <string name="epg_mode_archive_hint">Kanali s Catch up podrškom</string>
     <string name="epg_mode_label">Način vodiča</string>
     <string name="epg_mode_subtitle">Prebacivanje između širokog pregledavanja, pregledavanja u sidrenom vremenu i redaka pogodnih za arhiviranje.</string>
     <string name="epg_next_day">Sljedeći dan</string>
@@ -394,13 +394,13 @@
     <string name="epg_program_reminder_loading">Ažuriranje podsjetnika...</string>
     <string name="epg_program_reminder_set">Podsjeti me</string>
     <string name="epg_program_replay_label">Replay</string>
-    <string name="epg_program_replay_partial">Samo nadoknada pružatelja usluga</string>
+    <string name="epg_program_replay_partial">Samo pružateljev Catch up</string>
     <string name="epg_program_replay_ready">Spremno za arhiviranje</string>
     <string name="epg_program_replay_unavailable">Nedostupan</string>
     <string name="epg_program_status_title">Status ponavljanja</string>
     <string name="epg_program_unknown_value">Nepoznato</string>
     <string name="epg_provider_troubleshooting_missing_stream_id">Reprodukcija možda neće uspjeti jer pružatelj nije otkrio identifikator toka reprodukcije.</string>
-    <string name="epg_provider_troubleshooting_missing_template">Reprodukcija možda neće uspjeti jer je pružatelj izložio podršku za nadoknadu bez upotrebljivog predloška za reprizu.</string>
+    <string name="epg_provider_troubleshooting_missing_template">Reprodukcija možda neće uspjeti jer je pružatelj izložio podršku za Catch up bez upotrebljivog predloška za reprizu.</string>
     <string name="epg_provider_troubleshooting_no_archive">Ovaj kanal nije označen kao spreman za arhiviranje od strane pružatelja usluga.</string>
     <string name="epg_provider_troubleshooting_ready">Metapodaci za ponavljanje su prisutni, ali pružatelj može odbiti ovaj određeni prozor programa.</string>
     <string name="epg_provider_troubleshooting_stale">Svježina vodiča je niska, tako da ponovno mapiranje može biti nedovršeno dok se vodič ne osvježi.</string>
@@ -900,7 +900,7 @@
     <string name="player_action_variants">Varijante</string>
     <string name="player_action_view">Pogled</string>
     <string name="player_archive">Arhiva</string>
-    <string name="player_archive_badge">Arhiva</string>
+    <string name="player_archive_badge">Catch up</string>
     <string name="player_archive_title">Arhiva programa</string>
     <string name="player_aspect_ratio_label">Aspekt %1$s</string>
     <string name="player_audio">Audio</string>
@@ -919,7 +919,7 @@
     <string name="player_av_sync_title">A/V sinkronizacija</string>
     <string name="player_av_sync_use_global">Koristite globalno</string>
     <string name="player_av_sync_value">%1$s - %2$s</string>
-    <string name="player_browse_archive">Pregledaj arhivu</string>
+    <string name="player_browse_archive">Otvori Catch up</string>
     <string name="player_browse_guide_catchup">Vodič za pregledavanje</string>
     <string name="player_buffering">Spremanje u međuspremnik...</string>
     <string name="player_cancel_scheduled_recording">Odustani zakazano</string>
@@ -977,7 +977,7 @@
     <string name="player_diagnostics_video_bitrate">Brzina prijenosa videozapisa</string>
     <string name="player_diagnostics_video_codec">Video kodek</string>
     <string name="player_diagnostics_video_stalls">Video štandovi</string>
-    <string name="player_epg_overlay_hint">Ovdje pregledajte detalje vodiča. Odaberite pilulu za nadoknadu da biste otvorili povijest arhive.</string>
+    <string name="player_epg_overlay_hint">Ovdje pregledajte detalje vodiča. Odaberite Catch up za pregled povijesti.</string>
     <string name="player_epg_short">EPG</string>
     <string name="player_episodes">Epizode</string>
     <string name="player_error_back">Ili pritisnite Natrag za povratak</string>
@@ -1181,9 +1181,11 @@
     <string name="series_seasons">Godišnja doba</string>
     <string name="series_shell_subtitle">Uredničke police, spremljene grupe i pregledavanje serija po stranicama podešeno za velike knjižnice pružatelja usluga.</string>
     <string name="series_unwatched_badge">%1$d preostalo do završetka</string>
-    <string name="settings_about">O nama</string>
+    <string name="settings_about">O aplikaciji</string>
     <string name="settings_about_subtitle">Pojedinosti o verziji, izradi i podršci za ovu instalaciju.</string>
     <string name="settings_active">AKTIVAN</string>
+    <string name="settings_active_until">Aktivno do %1$s</string>
+    <string name="settings_add_epg_source">Dodaj EPG izvor</string>
     <string name="settings_add_provider">Dodaj davatelja usluga</string>
     <string name="settings_app_language">Jezik aplikacije</string>
     <string name="settings_app_version">Verzija aplikacije</string>
@@ -1241,7 +1243,7 @@
     <string name="settings_cancel">Otkazati</string>
     <string name="settings_capability_m3u_with_epg">M3U izvor s XMLTV vodičem. Podrška za arhiviranje ovisi o predlošcima streama pružatelja usluga.</string>
     <string name="settings_capability_m3u_without_epg">M3U izvor bez URL-a vodiča. Pokrivenost vodiča i arhive može biti ograničena.</string>
-    <string name="settings_capability_xtream_with_epg">Xtream izvor s podrškom za XMLTV vodič i pomoćnim vodičem na zahtjev. Nadoknada je dostupna kada pružatelj izloži replay streamove.</string>
+    <string name="settings_capability_xtream_with_epg">Xtream izvor s podrškom za XMLTV vodič i pomoćnim vodičem na zahtjev. Catch up je dostupan kada pružatelj izloži replay streamove.</string>
     <string name="settings_capability_xtream_without_epg">Xtream izvor s rezervnim vodičem na zahtjev. Nadoknađivanje ovisi o podršci pružatelja za ponavljanje.</string>
     <string name="settings_catalog_count_failed">neuspješno</string>
     <string name="settings_catalog_count_indexing">Indeksiranje</string>
@@ -1342,10 +1344,26 @@
     <string name="settings_enabled">Omogućeno</string>
     <string name="settings_enter_new_pin">Unesite novi PIN</string>
     <string name="settings_enter_pin">Unesite PIN</string>
+    <string name="settings_epg_assignments">Dodjela pružatelja usluga</string>
+    <string name="settings_epg_assignments_description">Dodijeli EPG izvore pružateljima usluga. Kanali će se automatski podudarati po ID-u ili nazivu.</string>
+    <string name="settings_epg_source_add">Dodaj izvor</string>
+    <string name="settings_epg_source_browse">Odaberi datoteku</string>
+    <string name="settings_epg_source_name">Naziv izvora</string>
+    <string name="settings_epg_source_url">XMLTV poveznica (HTTP/HTTPS) ili odaberite datoteku</string>
+    <string name="settings_epg_sources">EPG izvori</string>
+    <string name="settings_epg_sources_description">Dodaj vanjske XMLTV EPG izvore i dodijeli ih pružateljima usluga. Vanjski izvori podudaraju se s kanalima po ID-u ili nazivu i nadjačavaju izvorne EPG podatke pružatelja.</string>
+    <string name="settings_epg_sources_empty">Nije dodan nijedan vanjski EPG izvor. Dodajte izvor za početak.</string>
+    <string name="settings_epg_time_shift">Pomak vremena EPG-a</string>
+    <string name="settings_epg_time_shift_description">Prilagodite vrijeme EPG-a ako program sustavno kasni ili žuri u odnosu na stvarno vrijeme emitiranja.</string>
+    <string name="settings_epg_time_shift_none">Bez pomaka</string>
+    <string name="settings_epg_time_shift_reset">Poništi</string>
     <string name="settings_ethernet_quality_cap">Preferencija kvalitete Etherneta</string>
     <string name="settings_expiration_never">Rok trajanja: Nikad</string>
     <string name="settings_expiration_unknown">Istek: Nepoznato</string>
     <string name="settings_expires">Ističe: %1$s</string>
+    <string name="settings_expiry_expired">Isteklo</string>
+    <string name="settings_expiry_none">Nema podataka o isteku</string>
+    <string name="settings_expiry_unknown">Istek nepoznat</string>
     <string name="settings_external_playback">Zadana aplikacija za reprodukciju</string>
     <string name="settings_external_playback_mode_external">Vanjski player</string>
     <string name="settings_external_playback_mode_internal">Interni igrač</string>

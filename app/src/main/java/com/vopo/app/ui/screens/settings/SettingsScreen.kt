@@ -272,6 +272,7 @@ fun SettingsScreen(
         ) {
             Row(modifier = Modifier.fillMaxSize()) {
                 SettingsNavigationRail(
+                    advancedModeEnabled = uiState.advancedModeEnabled,
                     selectedCategory = dialogState.selectedCategory,
                     focusRequester = settingsNavFocusRequester,
                     onCategorySelected = { dialogState.selectedCategory = it }

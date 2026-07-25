@@ -1739,4 +1739,22 @@
     <string name="settings_remote_dialog_title">%1$s action</string>
     <string name="settings_remote_dialog_subtitle">Choose what this colored button should do in %1$s.</string>
 
+    <string name="settings_epg_sources">EPG Sources</string>
+    <string name="settings_epg_sources_description">Add external XMLTV EPG sources and assign them to providers. External sources are matched to channels by ID or name and override provider-native EPG data.</string>
+    <string name="settings_epg_sources_empty">No external EPG sources configured. Add a source above to get started.</string>
+    <string name="settings_epg_assignments">Provider Assignments</string>
+    <string name="settings_epg_assignments_description">Assign EPG sources to providers. Channels will be matched automatically by ID or name.</string>
+    <string name="settings_epg_time_shift">EPG Time Shift</string>
+    <string name="settings_epg_time_shift_description">Adjust EPG times if they\'re consistently off from broadcast time (e.g., wrong timezone in the provider\'s data). Negative values shift programs earlier; positive shift them later.</string>
+    <string name="settings_epg_time_shift_none">No shift</string>
+    <string name="settings_epg_time_shift_reset">Reset</string>
+    <string name="settings_add_epg_source">Add EPG Source</string>
+    <string name="settings_epg_source_name">Source name</string>
+    <string name="settings_epg_source_url">XMLTV URL (HTTP/HTTPS) or browse file</string>
+    <string name="settings_epg_source_browse">Browse</string>
+    <string name="settings_epg_source_add">Add Source</string>
+    <string name="settings_active_until">Active until %1$s</string>
+    <string name="settings_expiry_unknown">Expiry unknown</string>
+    <string name="settings_expiry_none">No expiry reported</string>
+    <string name="settings_expiry_expired">Expired</string>
 </resources>

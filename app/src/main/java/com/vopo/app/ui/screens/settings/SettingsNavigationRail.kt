@@ -25,47 +25,56 @@ private data class SettingsNavEntry(
 
 @Composable
 internal fun SettingsNavigationRail(
+    advancedModeEnabled: Boolean,
     selectedCategory: Int,
     focusRequester: FocusRequester,
     onCategorySelected: (Int) -> Unit
 ) {
-    val entries = listOf(
-        SettingsNavEntry(
+    val entries = mutableListOf(
+        0 to SettingsNavEntry(
             label = stringResource(R.string.settings_providers),
             icon = "P",
             accent = Primary
         ),
-        SettingsNavEntry(
+        1 to SettingsNavEntry(
             label = stringResource(R.string.settings_playback),
             icon = ">",
             accent = Color(0xFF9E8FFF)
         ),
-        SettingsNavEntry(
+        2 to SettingsNavEntry(
             label = stringResource(R.string.settings_browsing),
             icon = "#",
             accent = Color(0xFF26A69A)
         ),
-        SettingsNavEntry(
-            label = stringResource(R.string.settings_privacy),
-            icon = "L",
-            accent = Color(0xFFFFB74D)
-        ),
-        SettingsNavEntry(
+        4 to SettingsNavEntry(
             label = stringResource(R.string.settings_recording_title),
             icon = "R",
             accent = Color(0xFFEF5350)
         ),
-        SettingsNavEntry(
+        3 to SettingsNavEntry(
+            label = stringResource(R.string.settings_privacy),
+            icon = "L",
+            accent = Color(0xFFFFB74D)
+        ),
+        5 to SettingsNavEntry(
             label = stringResource(R.string.settings_backup_restore),
             icon = "B",
             accent = Color(0xFF42A5F5)
-        ),
-        SettingsNavEntry(
-            label = "EPG Sources",
-            icon = "E",
-            accent = Color(0xFF66BB6A)
-        ),
-        SettingsNavEntry(
+        )
+    )
+
+    if (advancedModeEnabled) {
+        entries.add(
+            6 to SettingsNavEntry(
+                label = stringResource(R.string.settings_epg_sources),
+                icon = "E",
+                accent = Color(0xFF66BB6A)
+            )
+        )
+    }
+
+    entries.add(
+        7 to SettingsNavEntry(
             label = stringResource(R.string.settings_about),
             icon = "i",
             accent = Color(0xFF78909C)
@@ -80,14 +89,14 @@ internal fun SettingsNavigationRail(
         contentPadding = PaddingValues(top = 76.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        itemsIndexed(entries) { index, entry ->
+        itemsIndexed(entries) { index, (id, entry) ->
             SettingsNavItem(
                 label = entry.label,
                 badgeChar = entry.icon,
                 accentColor = entry.accent,
-                isSelected = selectedCategory == index,
-                modifier = if (selectedCategory == index) Modifier.focusRequester(focusRequester) else Modifier,
-                onClick = { onCategorySelected(index) }
+                isSelected = selectedCategory == id,
+                modifier = if (selectedCategory == id) Modifier.focusRequester(focusRequester) else Modifier,
+                onClick = { onCategorySelected(id) }
             )
         }
     }

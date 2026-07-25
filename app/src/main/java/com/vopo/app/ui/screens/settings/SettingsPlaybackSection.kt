@@ -155,214 +155,218 @@ internal fun LazyListScope.settingsPlaybackSection(
                 Switch(checked = uiState.autoPlayNextEpisode, onCheckedChange = { viewModel.setAutoPlayNextEpisode(it) })
             }
         }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = { viewModel.setPlayerMediaSessionEnabled(!uiState.playerMediaSessionEnabled) },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        if (uiState.advancedModeEnabled) {
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = { viewModel.setPlayerMediaSessionEnabled(!uiState.playerMediaSessionEnabled) },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_media_session), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_media_session_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_media_session), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_media_session_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(checked = uiState.playerMediaSessionEnabled, onCheckedChange = { viewModel.setPlayerMediaSessionEnabled(it) })
                 }
-                Switch(checked = uiState.playerMediaSessionEnabled, onCheckedChange = { viewModel.setPlayerMediaSessionEnabled(it) })
             }
-        }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = {
-                viewModel.setPlayerFastRetryOnTransientFailures(!uiState.playerFastRetryOnTransientFailures)
-            },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = {
+                    viewModel.setPlayerFastRetryOnTransientFailures(!uiState.playerFastRetryOnTransientFailures)
+                },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_fast_retry_on_transient_failures), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_fast_retry_on_transient_failures_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_fast_retry_on_transient_failures), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_fast_retry_on_transient_failures_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(
+                        checked = uiState.playerFastRetryOnTransientFailures,
+                        onCheckedChange = { viewModel.setPlayerFastRetryOnTransientFailures(it) }
+                    )
                 }
-                Switch(
-                    checked = uiState.playerFastRetryOnTransientFailures,
-                    onCheckedChange = { viewModel.setPlayerFastRetryOnTransientFailures(it) }
-                )
             }
-        }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = { viewModel.setPlayerLiveTranslationEnabled(!uiState.playerLiveTranslationEnabled) },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = { viewModel.setPlayerLiveTranslationEnabled(!uiState.playerLiveTranslationEnabled) },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_live_translation_enabled), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_live_translation_enabled_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_live_translation_enabled), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_live_translation_enabled_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(checked = uiState.playerLiveTranslationEnabled, onCheckedChange = { viewModel.setPlayerLiveTranslationEnabled(it) })
                 }
-                Switch(checked = uiState.playerLiveTranslationEnabled, onCheckedChange = { viewModel.setPlayerLiveTranslationEnabled(it) })
             }
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_live_translation_endpoint),
+                value = liveTranslationEndpointLabel,
+                onClick = { onShowLiveTranslationEndpointDialogChange(true) }
+            )
         }
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_live_translation_endpoint),
-            value = liveTranslationEndpointLabel,
-            onClick = { onShowLiveTranslationEndpointDialogChange(true) }
-        )
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = { viewModel.setPlayerTimeshiftEnabled(!uiState.playerTimeshiftEnabled) },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        if (uiState.advancedModeEnabled) {
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = { viewModel.setPlayerTimeshiftEnabled(!uiState.playerTimeshiftEnabled) },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_live_timeshift), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_live_timeshift_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_live_timeshift), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_live_timeshift_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(checked = uiState.playerTimeshiftEnabled, onCheckedChange = { viewModel.setPlayerTimeshiftEnabled(it) })
                 }
-                Switch(checked = uiState.playerTimeshiftEnabled, onCheckedChange = { viewModel.setPlayerTimeshiftEnabled(it) })
             }
-        }
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_live_timeshift_depth),
-            value = timeshiftDepthLabel,
-            onClick = { onShowTimeshiftDepthDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_live_timeshift_backend),
-            value = stringResource(R.string.settings_live_timeshift_backend_value),
-            onClick = {}
-        )
-        Text(
-            text = stringResource(R.string.settings_live_timeshift_backend_subtitle),
-            style = MaterialTheme.typography.bodySmall,
-            color = OnBackground.copy(alpha = 0.6f),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-        ClickableSettingsRow(
-            label = "Live stream format",
-            value = formatLiveStreamFormatModeLabel(liveStreamFormatMode),
-            onClick = { showLiveStreamFormatDialog = true }
-        )
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = { viewModel.setZapAutoRevert(!uiState.zapAutoRevert) },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_live_timeshift_depth),
+                value = timeshiftDepthLabel,
+                onClick = { onShowTimeshiftDepthDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_live_timeshift_backend),
+                value = stringResource(R.string.settings_live_timeshift_backend_value),
+                onClick = {}
+            )
+            Text(
+                text = stringResource(R.string.settings_live_timeshift_backend_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = OnBackground.copy(alpha = 0.6f),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+            ClickableSettingsRow(
+                label = "Live stream format",
+                value = formatLiveStreamFormatModeLabel(liveStreamFormatMode),
+                onClick = { showLiveStreamFormatDialog = true }
+            )
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = { viewModel.setZapAutoRevert(!uiState.zapAutoRevert) },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_zap_auto_revert), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_zap_auto_revert_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_zap_auto_revert), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_zap_auto_revert_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(checked = uiState.zapAutoRevert, onCheckedChange = { viewModel.setZapAutoRevert(it) })
                 }
-                Switch(checked = uiState.zapAutoRevert, onCheckedChange = { viewModel.setZapAutoRevert(it) })
             }
-        }
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_decoder_mode),
-            value = decoderModeLabel,
-            onClick = { onShowDecoderModeDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_live_buffer_size),
-            value = playbackBufferModeLabel,
-            onClick = { onShowPlaybackBufferModeDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_audio_output_mode),
-            value = audioOutputPreferenceLabel,
-            onClick = { onShowAudioOutputPreferenceDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_external_playback),
-            value = externalPlaybackModeLabel,
-            onClick = { onShowExternalPlaybackModeDialogChange(true) }
-        )
-        TvClickableSurface(
-            onClick = {
-                viewModel.setPlayerCompatibilityMemoryEnabled(!uiState.playerCompatibilityMemoryEnabled)
-            },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_decoder_mode),
+                value = decoderModeLabel,
+                onClick = { onShowDecoderModeDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_live_buffer_size),
+                value = playbackBufferModeLabel,
+                onClick = { onShowPlaybackBufferModeDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_audio_output_mode),
+                value = audioOutputPreferenceLabel,
+                onClick = { onShowAudioOutputPreferenceDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_external_playback),
+                value = externalPlaybackModeLabel,
+                onClick = { onShowExternalPlaybackModeDialogChange(true) }
+            )
+            TvClickableSurface(
+                onClick = {
+                    viewModel.setPlayerCompatibilityMemoryEnabled(!uiState.playerCompatibilityMemoryEnabled)
+                },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_ffmpeg_compatibility_memory), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_ffmpeg_compatibility_memory_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_ffmpeg_compatibility_memory), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_ffmpeg_compatibility_memory_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(
+                        checked = uiState.playerCompatibilityMemoryEnabled,
+                        onCheckedChange = { viewModel.setPlayerCompatibilityMemoryEnabled(it) }
+                    )
                 }
-                Switch(
-                    checked = uiState.playerCompatibilityMemoryEnabled,
-                    onCheckedChange = { viewModel.setPlayerCompatibilityMemoryEnabled(it) }
-                )
             }
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_ffmpeg_compatibility_clear),
+                value = stringResource(R.string.settings_ffmpeg_compatibility_clear_value),
+                onClick = viewModel::clearLearnedPlaybackCompatibility
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_surface_mode),
+                value = surfaceModeLabel,
+                onClick = { onShowSurfaceModeDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_vod_http_protocol_mode),
+                value = vodHttpProtocolLabel,
+                onClick = { onShowVodHttpProtocolDialogChange(true) }
+            )
         }
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_ffmpeg_compatibility_clear),
-            value = stringResource(R.string.settings_ffmpeg_compatibility_clear_value),
-            onClick = viewModel::clearLearnedPlaybackCompatibility
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_surface_mode),
-            value = surfaceModeLabel,
-            onClick = { onShowSurfaceModeDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_vod_http_protocol_mode),
-            value = vodHttpProtocolLabel,
-            onClick = { onShowVodHttpProtocolDialogChange(true) }
-        )
         HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
         ClickableSettingsRow(
             label = stringResource(R.string.settings_default_playback_speed),
@@ -379,62 +383,65 @@ internal fun LazyListScope.settingsPlaybackSection(
             value = defaultIdleTimerLabel,
             onClick = { onShowDefaultIdleTimerDialogChange(true) }
         )
-        TvClickableSurface(
-            onClick = { viewModel.setPlayerAudioVideoSyncEnabled(!uiState.playerAudioVideoSyncEnabled) },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        if (uiState.advancedModeEnabled) {
+            TvClickableSurface(
+                onClick = { viewModel.setPlayerAudioVideoSyncEnabled(!uiState.playerAudioVideoSyncEnabled) },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_audio_video_sync_enabled), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_audio_video_sync_enabled_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_audio_video_sync_enabled), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_audio_video_sync_enabled_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(checked = uiState.playerAudioVideoSyncEnabled, onCheckedChange = { viewModel.setPlayerAudioVideoSyncEnabled(it) })
                 }
-                Switch(checked = uiState.playerAudioVideoSyncEnabled, onCheckedChange = { viewModel.setPlayerAudioVideoSyncEnabled(it) })
             }
-        }
-        if (uiState.playerAudioVideoSyncEnabled) {
-            ClickableSettingsRow(
-                label = stringResource(R.string.settings_audio_video_sync_default),
-                value = audioVideoOffsetLabel,
-                onClick = { onShowAudioVideoOffsetDialogChange(true) }
-            )
-        }
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        TvClickableSurface(
-            onClick = {
-                viewModel.setMultiViewRespectProviderConnectionLimit(!uiState.multiViewRespectProviderConnectionLimit)
-            },
-            shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
-            colors = ClickableSurfaceDefaults.colors(
-                containerColor = Color.Transparent,
-                focusedContainerColor = Primary.copy(alpha = 0.15f)
-            ),
-            scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_multiview_respect_provider_connection_limit), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
-                    Text(text = stringResource(R.string.settings_multiview_respect_provider_connection_limit_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
-                }
-                Switch(
-                    checked = uiState.multiViewRespectProviderConnectionLimit,
-                    onCheckedChange = { viewModel.setMultiViewRespectProviderConnectionLimit(it) }
+            if (uiState.playerAudioVideoSyncEnabled) {
+                ClickableSettingsRow(
+                    label = stringResource(R.string.settings_audio_video_sync_default),
+                    value = audioVideoOffsetLabel,
+                    onClick = { onShowAudioVideoOffsetDialogChange(true) }
                 )
             }
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            TvClickableSurface(
+                onClick = {
+                    viewModel.setMultiViewRespectProviderConnectionLimit(!uiState.multiViewRespectProviderConnectionLimit)
+                },
+                shape = ClickableSurfaceDefaults.shape(RoundedCornerShape(8.dp)),
+                colors = ClickableSurfaceDefaults.colors(
+                    containerColor = Color.Transparent,
+                    focusedContainerColor = Primary.copy(alpha = 0.15f)
+                ),
+                scale = ClickableSurfaceDefaults.scale(focusedScale = 1f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = stringResource(R.string.settings_multiview_respect_provider_connection_limit), style = MaterialTheme.typography.bodyMedium, color = OnSurface)
+                        Text(text = stringResource(R.string.settings_multiview_respect_provider_connection_limit_subtitle), style = MaterialTheme.typography.bodySmall, color = OnBackground.copy(alpha = 0.6f))
+                    }
+                    Switch(
+                        checked = uiState.multiViewRespectProviderConnectionLimit,
+                        onCheckedChange = { viewModel.setMultiViewRespectProviderConnectionLimit(it) }
+                    )
+                }
+            }
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
         }
         HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
         TvClickableSurface(
@@ -474,11 +481,13 @@ internal fun LazyListScope.settingsPlaybackSection(
             value = noticeTimeoutLabel,
             onClick = { onShowNoticeTimeoutDialogChange(true) }
         )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_player_diagnostics_timeout),
-            value = diagnosticsTimeoutLabel,
-            onClick = { onShowDiagnosticsTimeoutDialogChange(true) }
-        )
+        if (uiState.advancedModeEnabled) {
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_player_diagnostics_timeout),
+                value = diagnosticsTimeoutLabel,
+                onClick = { onShowDiagnosticsTimeoutDialogChange(true) }
+            )
+        }
         ClickableSettingsRow(
             label = stringResource(R.string.settings_preferred_audio_language),
             value = preferredAudioLanguageLabel,
@@ -499,17 +508,19 @@ internal fun LazyListScope.settingsPlaybackSection(
             value = subtitleBackgroundLabel,
             onClick = { onShowSubtitleBackgroundDialogChange(true) }
         )
-        HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_wifi_quality_cap),
-            value = wifiQualityLabel,
-            onClick = { onShowWifiQualityDialogChange(true) }
-        )
-        ClickableSettingsRow(
-            label = stringResource(R.string.settings_ethernet_quality_cap),
-            value = ethernetQualityLabel,
-            onClick = { onShowEthernetQualityDialogChange(true) }
-        )
+        if (uiState.advancedModeEnabled) {
+            HorizontalDivider(color = Color.White.copy(alpha = 0.07f), modifier = Modifier.padding(vertical = 4.dp))
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_wifi_quality_cap),
+                value = wifiQualityLabel,
+                onClick = { onShowWifiQualityDialogChange(true) }
+            )
+            ClickableSettingsRow(
+                label = stringResource(R.string.settings_ethernet_quality_cap),
+                value = ethernetQualityLabel,
+                onClick = { onShowEthernetQualityDialogChange(true) }
+            )
+        }
     }
 
     item {

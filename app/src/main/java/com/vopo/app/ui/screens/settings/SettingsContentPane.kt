@@ -196,7 +196,8 @@ internal fun SettingsContentPane(
                 onRefreshDownloadState = viewModel::refreshDownloadState,
                 onViewCrashReport = onViewCrashReport,
                 onShareCrashReport = onShareCrashReport,
-                onDeleteCrashReport = onDeleteCrashReport
+                onDeleteCrashReport = onDeleteCrashReport,
+                onToggleAdvancedMode = viewModel::toggleAdvancedMode
             )
         }
     }

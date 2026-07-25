@@ -102,6 +102,7 @@ fun PlayerControlsOverlay(
     contentType: String,
     isCatchUpPlayback: Boolean = false,
     isPlaying: Boolean,
+    currentChannel: com.vopo.domain.model.Channel?,
     currentProgram: Program?,
     currentChannelName: String?,
     displayChannelNumber: Int,
@@ -195,6 +196,7 @@ fun PlayerControlsOverlay(
                 contentType = contentType,
                 isCatchUpPlayback = isCatchUpPlayback,
                 isPlaying = isPlaying,
+                currentChannel = currentChannel,
                 currentProgram = currentProgram,
                 currentChannelName = currentChannelName,
                 displayChannelNumber = displayChannelNumber,
@@ -528,6 +530,7 @@ private fun PlayerBottomBar(
     contentType: String,
     isCatchUpPlayback: Boolean = false,
     isPlaying: Boolean,
+    currentChannel: com.vopo.domain.model.Channel?,
     currentProgram: Program?,
     currentChannelName: String?,
     displayChannelNumber: Int,
@@ -627,6 +630,7 @@ private fun PlayerBottomBar(
             ) {
                 if (contentType == "LIVE") {
                     PlayerLiveInfo(
+                        currentChannel = currentChannel,
                         currentProgram = currentProgram,
                         currentChannelName = currentChannelName,
                         displayChannelNumber = displayChannelNumber,
@@ -724,6 +728,7 @@ private fun PlayerBottomBar(
 
 @Composable
 private fun PlayerLiveInfo(
+    currentChannel: com.vopo.domain.model.Channel?,
     currentProgram: Program?,
     currentChannelName: String?,
     displayChannelNumber: Int,
@@ -811,7 +816,7 @@ private fun PlayerLiveInfo(
         if (showExternalPlayerAction) {
             add(PlayerActionSpec(stringResource(R.string.player_open_in_external_player), onOpenExternalPlayer))
         }
-        if (currentProgram?.hasArchive == true) {
+        if (currentProgram?.hasArchive == true || currentChannel?.catchUpSupported == true) {
             add(PlayerActionSpec(stringResource(R.string.player_restart), onRestartProgram))
             add(PlayerActionSpec(stringResource(R.string.player_archive), onOpenArchive))
         }

@@ -1230,4 +1230,15 @@ class SettingsViewModel @Inject constructor(
         epgActions.moveEpgSourceAssignmentDown(viewModelScope, providerId, epgSourceId)
     }
 
+    fun toggleAdvancedMode() {
+        val current = _uiState.value.advancedModeEnabled
+        val next = !current
+        _uiState.update { it.copy(advancedModeEnabled = next) }
+        android.widget.Toast.makeText(
+            appContext,
+            if (next) "Napredni način rada omogućen" else "Napredni način rada onemogućen",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+
 }

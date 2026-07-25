@@ -329,7 +329,7 @@
     <string name="favorites_content_type_episode_format">Epizoda S%1$d E%2$d</string>
     <string name="favorites_content_type_live">Živjeti</string>
     <string name="favorites_content_type_movie">Film</string>
-    <string name="favorites_content_type_series">Niz</string>
+    <string name="favorites_content_type_series">Serije</string>
     <string name="favorites_continue_short">Nastavi</string>
     <string name="favorites_continue_subtitle">Pokupite nedovršene filmove i serije iz spremljenog čvorišta.</string>
     <string name="favorites_continue_title">Nastavite s gledanjem</string>
@@ -576,7 +576,7 @@
     <string name="nav_live_tv">TV uživo</string>
     <string name="nav_movies">Filmovi</string>
     <string name="nav_plugins">Dodaci</string>
-    <string name="nav_series">Niz</string>
+    <string name="nav_series">Serije</string>
     <string name="nav_settings">postavke</string>
     <string name="notification_permission_recording_alert_required">Omogućite obavijesti za VOPO da prima upozorenja o neuspjehu snimanja.</string>
     <string name="notification_permission_reminder_required">Omogućite obavijesti za VOPO da prima podsjetnike za programe.</string>
@@ -779,7 +779,7 @@
     <string name="player_try_alternate_stream">Pokušajte drugim putem</string>
     <string name="player_type_channel_number">Upišite broj kanala</string>
     <string name="player_type_movie">Film</string>
-    <string name="player_type_series">Niz</string>
+    <string name="player_type_series">Serije</string>
     <string name="player_unmute">Uključi zvuk</string>
     <string name="player_unsafe_stream_url">Ovaj stream nije moguće otvoriti u vanjskom playeru</string>
     <string name="player_up_next">Sljedeće</string>
@@ -846,7 +846,7 @@
     <string name="search_results_count">%1$s %2$d</string>
     <string name="search_results_title">%1$d rezultati</string>
     <string name="search_screen_subtitle">Pronađite kanale, filmove i serije bez napuštanja TV toka.</string>
-    <string name="search_series">Niz</string>
+    <string name="search_series">Serije</string>
     <string name="search_title">Pretraživanje</string>
     <string name="search_type_to_search">Unesite najmanje 2 znaka za pretraživanje</string>
     <string name="series_all_categories">Sve kategorije</string>
@@ -880,7 +880,7 @@
     <string name="series_seasons">Godišnja doba</string>
     <string name="series_shell_subtitle">Uredničke police, spremljene grupe i pregledavanje serija po stranicama podešeno za velike knjižnice pružatelja usluga.</string>
     <string name="series_unwatched_badge">%1$d preostalo do završetka</string>
-    <string name="settings_about">Oko</string>
+    <string name="settings_about">O nama</string>
     <string name="settings_about_subtitle">Pojedinosti o verziji, izradi i podršci za ovu instalaciju.</string>
     <string name="settings_active">AKTIVAN</string>
     <string name="settings_add_provider">Dodaj davatelja usluga</string>
@@ -1020,7 +1020,7 @@
     <string name="settings_diagnostic_live">Živjeti</string>
     <string name="settings_diagnostic_movies">Filmovi</string>
     <string name="settings_diagnostic_never">Nikada</string>
-    <string name="settings_diagnostic_series">Niz</string>
+    <string name="settings_diagnostic_series">Serije</string>
     <string name="settings_diagnostic_status">Zadnji status sinkronizacije: %1$s</string>
     <string name="settings_disabled">Onesposobljeno</string>
     <string name="settings_donate">Podrška na Ko-fi</string>
@@ -1419,7 +1419,7 @@
     <string name="settings_sync_option_fast">Brza sinkronizacija</string>
     <string name="settings_sync_option_movies">Filmovi</string>
     <string name="settings_sync_option_rebuild_index">Ponovno izgradi indeks</string>
-    <string name="settings_sync_option_series">Niz</string>
+    <string name="settings_sync_option_series">Serije</string>
     <string name="settings_sync_option_sync_now">Sinkroniziraj sada</string>
     <string name="settings_sync_option_tv">TV uživo</string>
     <string name="settings_sync_sections_failed">Sinkronizacija nije uspjela: %1$s.</string>
@@ -1626,7 +1626,7 @@
     <string name="stream_url_copy_failed">Nije moguće riješiti URL streama</string>
     <string name="sync_items_indexed_format">%1$d indeksiranih stavki</string>
     <string name="sync_section_live">Živjeti</string>
-    <string name="sync_section_series">Niz</string>
+    <string name="sync_section_series">Serije</string>
     <string name="sync_section_vod">VOD</string>
     <string name="time_range_format">%1$s – %2$s</string>
     <string name="tv_channel_continue_watching_description">Nastavite naslove koje ste nedavno započeli</string>

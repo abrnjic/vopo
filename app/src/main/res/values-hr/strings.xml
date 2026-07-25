@@ -4,7 +4,7 @@
     <string name="nav_home">Dom</string>
     <string name="nav_live_tv">TV uživo</string>
     <string name="nav_movies">Filmovi</string>
-    <string name="nav_series">Niz</string>
+    <string name="nav_series">Serije</string>
     <string name="nav_epg">Vodič</string>
     <string name="nav_settings">postavke</string>
     <string name="nav_plugins">Dodaci</string>
@@ -17,7 +17,7 @@
     <string name="welcome_loading_subtitle">Otvaranje pravog zaslona za ovaj uređaj.</string>
     <string name="sync_section_live">Živjeti</string>
     <string name="sync_section_vod">VOD</string>
-    <string name="sync_section_series">Niz</string>
+    <string name="sync_section_series">Serije</string>
     <string name="sync_items_indexed_format">%1$d indeksiranih stavki</string>
     <string name="welcome_tagline">Premium IPTV za dnevni boravak</string>
     <string name="welcome_subtitle">Naslonite se na kanale uživo, gledajte propušteno, filmove i serije s prvim Android TV iskustvom.</string>
@@ -584,7 +584,7 @@
     <string name="settings_select_decoder_mode">Odaberite način dekodera</string>
     <string name="settings_buffer_duration">Trajanje međuspremnika</string>
     <string name="settings_buffer_5s">5 sekundi</string>
-    <string name="settings_about">Oko</string>
+    <string name="settings_about">O nama</string>
     <string name="settings_about_subtitle">Pojedinosti o verziji, izradi i podršci za ovu instalaciju.</string>
     <string name="settings_app_version">Verzija aplikacije</string>
     <string name="settings_build">Izgraditi</string>
@@ -671,7 +671,7 @@
     <string name="settings_syncing_section">Sinkronizacija %1$s...</string>
     <string name="settings_sync_option_tv">TV uživo</string>
     <string name="settings_sync_option_movies">Filmovi</string>
-    <string name="settings_sync_option_series">Niz</string>
+    <string name="settings_sync_option_series">Serije</string>
     <string name="settings_sync_option_epg">EPG</string>
     <string name="settings_sync_option_custom">Prilagođeni odjeljci</string>
     <string name="settings_sync_custom_title">Prilagođena sinkronizacija za %1$s</string>
@@ -743,7 +743,7 @@
     <string name="settings_provider_diagnostics_title">Dijagnostika pružatelja usluga</string>
     <string name="settings_diagnostic_live">Živjeti</string>
     <string name="settings_diagnostic_movies">Filmovi</string>
-    <string name="settings_diagnostic_series">Niz</string>
+    <string name="settings_diagnostic_series">Serije</string>
     <string name="settings_diagnostic_epg">EPG</string>
     <string name="settings_catalog_count_pending">Na čekanju</string>
     <string name="settings_catalog_count_queued">U redu čekanja</string>
@@ -946,7 +946,7 @@
     <string name="search_live_tv">TV uživo</string>
     <string name="search_all">Sve</string>
     <string name="search_movies">Filmovi</string>
-    <string name="search_series">Niz</string>
+    <string name="search_series">Serije</string>
     <string name="search_hint">Pretraživanje...</string>
     <string name="search_recent_title">Nedavna pretraživanja</string>
     <string name="search_clear_history">Jasan</string>
@@ -1081,7 +1081,7 @@
     <string name="player_channel_list_hint">Odaberite kanal za trenutno podešavanje. Natrag zatvara popis.</string>
     <string name="player_epg_overlay_hint">Ovdje pregledajte detalje vodiča. Odaberite pilulu za nadoknadu da biste otvorili povijest arhive.</string>
     <string name="player_type_movie">Film</string>
-    <string name="player_type_series">Niz</string>
+    <string name="player_type_series">Serije</string>
     <string name="player_close">Zatvoriti</string>
     <string name="player_play">Igrati</string>
     <string name="player_pause">Pauza</string>
@@ -1574,7 +1574,7 @@
     <string name="favorites_all_favorites">Svi favoriti</string>
     <string name="favorites_saved_items_format">%1$d spremljenih stavki</string>
     <string name="favorites_content_type_movie">Film</string>
-    <string name="favorites_content_type_series">Niz</string>
+    <string name="favorites_content_type_series">Serije</string>
     <string name="favorites_content_type_episode_format">Epizoda S%1$d E%2$d</string>
     <string name="favorites_content_type_episode">Epizoda</string>
     <string name="favorites_content_type_live">Živjeti</string>

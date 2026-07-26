@@ -375,12 +375,16 @@ export default function AdminDashboard() {
                         </span>
                     </div>
                     <p className="text-gray-400 text-sm mt-1">{log.details}</p>
-                    <div className="flex justify-between items-center mt-2">
+                      <div className="flex justify-between items-center mt-2">
                         <p className="text-gray-500 text-xs">{log.userEmail}</p>
                         <p className="text-gray-500 text-xs">
-                        {log.timestamp ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm", { locale: hr }) : 'Upravo sada'}
+                        {log.timestamp ? (
+                          typeof log.timestamp?.toDate === 'function' 
+                            ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm", { locale: hr }) 
+                            : format(new Date(log.timestamp), "d. MMMM yyyy. 'u' HH:mm", { locale: hr })
+                        ) : 'Upravo sada'}
                         </p>
-                    </div>
+                      </div>
                   </div>
                 </div>
               ))}

@@ -38,7 +38,7 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error(err);
-      setError('Pogrešan email ili lozinka.');
+      setError(`Greška: ${err.message || 'Nepoznata greška'}`);
     } finally {
       setLoading(false);
     }

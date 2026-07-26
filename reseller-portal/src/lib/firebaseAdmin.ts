@@ -14,10 +14,11 @@ if (process.env.MOCK_FIREBASE === 'true') {
   if (!getApps().length) {
     try {
       if (process.env.FIREBASE_PROJECT_ID) {
+        const stripQuotes = (val?: string) => val?.replace(/^["']|["']$/g, '');
         const serviceAccount = {
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID),
+          clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL),
+          privateKey: stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
         };
         initializeApp({
           credential: cert(serviceAccount),

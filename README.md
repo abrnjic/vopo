@@ -7,7 +7,6 @@
 	<a href="https://discord.gg/eGPBMygcb"><img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the VOPO Discord" /></a>
 	<a href="docs/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-View-2563eb?style=for-the-badge" alt="View changelog" /></a>
 	<a href="https://github.com/Davidona/VOPO-IPTV/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/Davidona/VOPO-IPTV/release.yml?branch=master&style=for-the-badge&label=CI" alt="GitHub Actions status" /></a>
-	<a href="https://ko-fi.com/davidona"><img src="https://img.shields.io/badge/Support-Ko--fi-ff5f5f?style=for-the-badge&logo=kofi" alt="Support on Ko-fi" /></a>
 	<a href="LICENSE"><img src="https://img.shields.io/badge/License-VOPO_OSL-0284c7?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -166,12 +165,6 @@ Built for Android TV first, VOPO focuses on the things generic IPTV apps usually
 - The app can also detect and download newer releases in-app through GitHub Releases.
 - GitHub Actions still runs build and test validation on pushes and pull requests.
 - GitHub Releases are now published only when the workflow is started manually with `workflow_dispatch`, so versioned releases do not get created by mistake on every push.
-
-## Support
-
-If VOPO is useful to you, you can support development here:
-
-- [Support on Ko-fi](https://ko-fi.com/davidona)
 
 ## Project Structure
 

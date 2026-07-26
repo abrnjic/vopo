@@ -599,8 +599,6 @@
     <string name="settings_developer_name">Andy</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_github_url">https://github.com/Andy</string>
-    <string name="settings_donate">Podrška na Ko-fi</string>
-    <string name="settings_donate_url">https://ko-fi.com/andy</string>
     <string name="settings_updates_title">Ažuriranja</string>
     <string name="settings_updates_subtitle">Provjerite GitHub izdanja za novije verzije VOPO bez napuštanja aplikacije.</string>
     <string name="settings_update_auto_check">Automatski provjeri ima li ažuriranja</string>

@@ -425,8 +425,6 @@
     <string name="settings_developer_name">Andy</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_github_url">https://github.com/Andy</string>
-    <string name="settings_donate">Assistance sur Ko-fi</string>
-    <string name="settings_donate_url">https://ko-fi.com/andy</string>
     <string name="settings_updates_title">Mises à jour</string>
     <string name="settings_updates_subtitle">Consultez les versions GitHub pour trouver des versions plus récentes de VOPO sans quitter l’application.</string>
     <string name="settings_update_auto_check">Vérifier automatiquement les mises à jour</string>

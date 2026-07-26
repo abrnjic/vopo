@@ -411,8 +411,6 @@
     <string name="settings_developer_name">Andy</string>
     <string name="settings_github">GitHub</string>
     <string name="settings_github_url">https://github.com/Andy</string>
-    <string name="settings_donate">Ko-fi로 후원</string>
-    <string name="settings_donate_url">https://ko-fi.com/andy</string>
     <string name="settings_updates_title">업데이트</string>
     <string name="settings_updates_subtitle">앱을 종료하지 않고 GitHub 릴리스에서 최신 VOPO 버전을 확인하세요.</string>
     <string name="settings_update_auto_check">업데이트 자동 확인</string>

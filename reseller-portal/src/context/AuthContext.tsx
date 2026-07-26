@@ -13,6 +13,7 @@ interface UserData {
   credits: number;
   assignedDomains: string[];
   customDomains: string[];
+  status?: 'active' | 'suspended' | 'deleted';
 }
 
 interface AuthContextType {
@@ -45,7 +46,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
           if (userDoc.exists()) {
-            setUserData(userDoc.data() as UserData);
+            const data = userDoc.data() as UserData;
+            if (data.status === 'suspended' || data.status === 'deleted') {
+              console.warn("User is suspended or deleted. Signing out.");
+              alert("Pristup odbijen: Vaš račun je suspendiran ili obrisan.");
+              await signOut(auth);
+              setUserData(null);
+              setUser(null);
+            } else {
+              setUserData(data);
+            }
           } else {
             console.error("No user data found in Firestore");
             setUserData(null);

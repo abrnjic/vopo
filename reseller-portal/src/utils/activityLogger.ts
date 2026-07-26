@@ -12,7 +12,11 @@ export type ActivityAction =
   | 'LOGIN'
   | 'UPDATE_PROFILE'
   | 'ADD_DOMAIN'
-  | 'DELETE_DOMAIN';
+  | 'DELETE_DOMAIN'
+  | 'UPDATE_STATUS'
+  | 'DELETE_USER'
+  | 'PASSWORD_RESET'
+  | 'EDIT_RESELLER';
 
 export interface ActivityLog {
   userId: string;

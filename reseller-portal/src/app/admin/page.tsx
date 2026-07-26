@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Coins, RefreshCw, BarChart2, Activity, Settings } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Users, Plus, ShieldCheck, Coins, RefreshCw, BarChart2, Activity, Settings, MoreVertical, Edit, Trash2, Key, Ban, CheckCircle } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, setDoc, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { logActivity } from '../../utils/activityLogger';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
@@ -29,6 +29,7 @@ interface ResellerData {
   email: string;
   credits: number;
   assignedDomains: string[];
+  status?: 'active' | 'suspended' | 'deleted';
 }
 
 export default function AdminDashboard() {
@@ -48,6 +49,24 @@ export default function AdminDashboard() {
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
+  // New states for actions
+  const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<ResellerData | null>(null);
+  const [editCredits, setEditCredits] = useState(0);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Close dropdown on click outside
+  const menuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setActionMenuOpen(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const fetchResellers = async () => {
     setLoading(true);
     try {
@@ -56,7 +75,15 @@ export default function AdminDashboard() {
       const data: ResellerData[] = [];
       querySnapshot.forEach((doc) => {
         const d = doc.data();
-        data.push({ uid: doc.id, email: d.email, credits: d.credits || 0, assignedDomains: d.assignedDomains || [] });
+        if (d.status !== 'deleted') {
+          data.push({ 
+            uid: doc.id, 
+            email: d.email, 
+            credits: d.credits || 0, 
+            assignedDomains: d.assignedDomains || [],
+            status: d.status || 'active'
+          });
+        }
       });
       setResellers(data);
     } catch (error) {
@@ -122,7 +149,8 @@ export default function AdminDashboard() {
         role: 'reseller',
         credits: newCredits,
         assignedDomains: [],
-        customDomains: []
+        customDomains: [],
+        status: 'active'
       });
 
       if (user) {
@@ -159,253 +187,536 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleSuspend = async (uid: string, currentStatus: string | undefined, email: string) => {
+    const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+    if (confirm(`Jeste li sigurni da želite ${newStatus === 'suspended' ? 'suspendirati' : 'aktivirati'} račun ${email}?`)) {
+      await updateDoc(doc(db, 'users', uid), { status: newStatus });
+      if (user) {
+        await logActivity(user.uid, user.email || '', 'admin', 'UPDATE_STATUS', `Postavljen status '${newStatus}' za ${email}`);
+      }
+      fetchResellers();
+    }
+    setActionMenuOpen(null);
+  };
+
+  const handleDelete = async (uid: string, email: string) => {
+    if (confirm(`UPOZORENJE! Jeste li sigurni da želite obrisati račun ${email}? Ovo će mu onemogućiti pristup aplikaciji.`)) {
+      await updateDoc(doc(db, 'users', uid), { status: 'deleted' });
+      if (user) {
+        await logActivity(user.uid, user.email || '', 'admin', 'DELETE_USER', `Obrisan korisnik ${email}`);
+      }
+      fetchResellers();
+    }
+    setActionMenuOpen(null);
+  };
+
+  const handlePasswordReset = async (email: string) => {
+    if (confirm(`Poslati link za resetiranje lozinke na ${email}?`)) {
+      try {
+        await sendPasswordResetEmail(secondaryAuth, email);
+        alert(`Link za resetiranje lozinke uspješno poslan na ${email}`);
+        if (user) {
+          await logActivity(user.uid, user.email || '', 'admin', 'PASSWORD_RESET', `Poslan link za reset lozinke za ${email}`);
+        }
+      } catch (e: any) {
+        alert(`Greška: ${e.message}`);
+      }
+    }
+    setActionMenuOpen(null);
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setIsSavingEdit(true);
+    try {
+      await updateDoc(doc(db, 'users', editingUser.uid), {
+        credits: editCredits
+      });
+      if (user) {
+        await logActivity(user.uid, user.email || '', 'admin', 'EDIT_RESELLER', `Ažurirani podaci za ${editingUser.email}`);
+      }
+      setEditingUser(null);
+      fetchResellers();
+    } catch (error: any) {
+      alert(`Greška: ${error.message}`);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <AdminLayout>
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center text-white">
-            <ShieldCheck className="w-7 h-7 mr-2 text-red-500" />
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-400 mt-1">Upravljanje platformom i resellerima</p>
-        </div>
-        
-        <div className="flex space-x-2 mt-4 md:mt-0 overflow-x-auto pb-2 md:pb-0">
-          <button 
-            onClick={() => setActiveTab('resellers')}
-            className={`px-4 py-2 rounded-lg font-medium flex items-center whitespace-nowrap transition-colors ${activeTab === 'resellers' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            <Users className="w-4 h-4 mr-2" /> Reselleri
-          </button>
-          <button 
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-2 rounded-lg font-medium flex items-center whitespace-nowrap transition-colors ${activeTab === 'analytics' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            <BarChart2 className="w-4 h-4 mr-2" /> Analitika
-          </button>
-          <button 
-            onClick={() => setActiveTab('logs')}
-            className={`px-4 py-2 rounded-lg font-medium flex items-center whitespace-nowrap transition-colors ${activeTab === 'logs' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            <Activity className="w-4 h-4 mr-2" /> Logovi
-          </button>
-          <button 
-            onClick={() => setActiveTab('settings')}
-            className={`px-4 py-2 rounded-lg font-medium flex items-center whitespace-nowrap transition-colors ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-          >
-            <Settings className="w-4 h-4 mr-2" /> Postavke
-          </button>
-        </div>
-      </div>
-
-      {activeTab === 'resellers' && (
-        <>
-          <div className="flex justify-end mb-4">
-            <button 
-              onClick={fetchResellers}
-              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium flex items-center transition-colors mr-2"
-            >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center shadow-lg shadow-blue-500/20 transition-all"
-            >
-              <Plus className="w-5 h-5 mr-1" />
-              Novi Reseller
-            </button>
-          </div>
-
-
-          <div className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg">
-            <div className="p-5 border-b border-gray-700 bg-gray-900/50 flex items-center">
-              <Users className="w-5 h-5 mr-2 text-blue-400" />
-              <h2 className="font-bold text-lg text-white">Aktivni Reselleri</h2>
+          {/* Header & Tabs */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-900/40 backdrop-blur-md p-6 rounded-2xl border border-gray-800/60 shadow-xl">
+            <div>
+              <h1 className="text-2xl font-bold flex items-center text-white">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center mr-3 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                  <ShieldCheck className="w-6 h-6 text-red-500" />
+                </div>
+                Admin Centar
+              </h1>
+              <p className="text-gray-400 mt-2 text-sm ml-13">Upravljanje platformom, analitikom i resellerima</p>
             </div>
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-white">
-                <thead className="bg-gray-900/80 text-gray-400 text-sm">
-                  <tr>
-                    <th className="p-4 font-medium uppercase tracking-wider text-xs">Ime / Email</th>
-                    <th className="p-4 font-medium uppercase tracking-wider text-xs">Dostupni Krediti</th>
-                    <th className="p-4 font-medium uppercase tracking-wider text-xs">Domene</th>
-                    <th className="p-4 font-medium uppercase tracking-wider text-xs text-right">Akcije</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-700">
-                  {resellers.map((r) => (
-                    <tr key={r.uid} className="hover:bg-gray-750/50 transition-colors">
-                      <td className="p-4">
-                        <div className="font-medium text-white">{r.email}</div>
-                        <div className="text-xs text-gray-400">UID: {r.uid.slice(0,8)}...</div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center">
-                          <Coins className="w-4 h-4 mr-2 text-orange-500" />
-                          <span className="font-bold text-lg">{r.credits}</span>
-                        </div>
-                      </td>
-                      <td className="p-4 text-gray-300 text-sm">
-                        {r.assignedDomains.length} domena
-                      </td>
-                      <td className="p-4 text-right">
-                        <button 
-                          onClick={() => addCredits(r.uid, r.credits, r.email)}
-                          className="text-blue-400 hover:text-blue-300 bg-blue-900/20 px-3 py-1.5 rounded-lg text-sm font-medium mr-2 transition-colors"
-                        >
-                          + Krediti
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {resellers.length === 0 && !loading && (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-gray-400">
-                        Nema kreiranih resellera.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div className="flex space-x-2 mt-6 md:mt-0 overflow-x-auto pb-2 md:pb-0 bg-gray-950/50 p-1.5 rounded-xl border border-gray-800/50">
+              <button 
+                onClick={() => setActiveTab('resellers')}
+                className={`px-4 py-2.5 rounded-lg font-medium flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'resellers' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+              >
+                <Users className="w-4 h-4 mr-2" /> Reselleri
+              </button>
+              <button 
+                onClick={() => setActiveTab('analytics')}
+                className={`px-4 py-2.5 rounded-lg font-medium flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'analytics' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+              >
+                <BarChart2 className="w-4 h-4 mr-2" /> Analitika
+              </button>
+              <button 
+                onClick={() => setActiveTab('logs')}
+                className={`px-4 py-2.5 rounded-lg font-medium flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'logs' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+              >
+                <Activity className="w-4 h-4 mr-2" /> Logovi
+              </button>
+              <button 
+                onClick={() => setActiveTab('settings')}
+                className={`px-4 py-2.5 rounded-lg font-medium flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-gray-800/50'}`}
+              >
+                <Settings className="w-4 h-4 mr-2" /> Postavke
+              </button>
             </div>
           </div>
 
-          {showAddModal && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-gray-800 rounded-xl max-w-md w-full border border-gray-700 shadow-2xl">
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-white mb-6">Kreiraj Resellera</h2>
-                  <form onSubmit={handleCreateReseller} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                      <input 
-                        type="email" required 
-                        className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" 
-                        value={newEmail} onChange={e => setNewEmail(e.target.value)} 
-                      />
+          {/* Resellers Tab */}
+          {activeTab === 'resellers' && (
+            <div className="space-y-6">
+              <div className="flex justify-end">
+                <button 
+                  onClick={fetchResellers}
+                  className="bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700 text-gray-300 px-4 py-2.5 rounded-xl font-medium flex items-center transition-all mr-3 backdrop-blur-sm"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </button>
+                <button 
+                  onClick={() => setShowAddModal(true)}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium flex items-center shadow-lg shadow-blue-500/25 transition-all transform hover:-translate-y-0.5"
+                >
+                  <Plus className="w-5 h-5 mr-1.5" />
+                  Novi Reseller
+                </button>
+              </div>
+
+              <div className="bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-800/60 overflow-hidden shadow-xl">
+                <div className="p-6 border-b border-gray-800/60 bg-gray-900/40 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3 border border-blue-500/20">
+                      <Users className="w-4 h-4 text-blue-400" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Lozinka</label>
-                      <input 
-                        type="password" required minLength={6}
-                        className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" 
-                        value={newPassword} onChange={e => setNewPassword(e.target.value)} 
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-1">Početni Krediti</label>
-                      <input 
-                        type="number" required min={0}
-                        className="w-full bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all" 
-                        value={newCredits} onChange={e => setNewCredits(Number(e.target.value))} 
-                      />
-                    </div>
-                    <div className="flex space-x-3 pt-4">
-                      <button 
-                        type="button" onClick={() => setShowAddModal(false)}
-                        className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg font-medium transition-colors"
-                      >
-                        Odustani
-                      </button>
-                      <button 
-                        type="submit" disabled={isCreating}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
-                      >
-                        {isCreating ? 'Kreiranje...' : 'Kreiraj'}
-                      </button>
-                    </div>
-                  </form>
+                    <h2 className="font-semibold text-lg text-white">Aktivni Reselleri</h2>
+                  </div>
+                  <span className="text-xs font-medium bg-blue-500/10 text-blue-400 px-2.5 py-1 rounded-full border border-blue-500/20">Ukupno: {resellers.length}</span>
+                </div>
+                
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-white">
+                    <thead className="bg-gray-900/80 text-gray-400 text-xs uppercase tracking-wider">
+                      <tr>
+                        <th className="px-6 py-4 font-medium">Ime / Email</th>
+                        <th className="px-6 py-4 font-medium">Dostupni Krediti</th>
+                        <th className="px-6 py-4 font-medium">Domene</th>
+                        <th className="px-6 py-4 font-medium text-right">Akcije</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-800/60">
+                      {resellers.map((r) => (
+                        <tr key={r.uid} className="hover:bg-gray-800/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center mr-3 border border-gray-600/30">
+                                <span className="text-gray-300 font-medium text-sm">{r.email.charAt(0).toUpperCase()}</span>
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-200">{r.email}</div>
+                                <div className="text-xs text-gray-500 mt-0.5 font-mono">UID: {r.uid.slice(0,8)}...</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center mr-2 border border-orange-500/20">
+                                <Coins className="w-4 h-4 text-orange-400" />
+                              </div>
+                              <span className="font-semibold text-lg text-gray-200">{r.credits}</span>
+                            </div>
+                          </td>
+                            <td className="px-6 py-4">
+                            <div className="flex items-center space-x-2">
+                              <span className="bg-gray-800/80 text-gray-300 text-xs font-medium px-2.5 py-1 rounded-md border border-gray-700/50">
+                                {r.assignedDomains.length} domena
+                              </span>
+                              {r.status === 'suspended' && (
+                                <span className="bg-red-500/10 text-red-400 text-xs font-medium px-2.5 py-1 rounded-md border border-red-500/20">
+                                  Suspendiran
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="relative inline-block text-left">
+                              <button 
+                                onClick={() => setActionMenuOpen(actionMenuOpen === r.uid ? null : r.uid)}
+                                className="p-2 text-gray-400 hover:text-white bg-gray-800/30 hover:bg-gray-700/50 rounded-lg transition-colors"
+                              >
+                                <MoreVertical className="w-5 h-5" />
+                              </button>
+                              
+                              {actionMenuOpen === r.uid && (
+                                <div ref={menuRef} className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                                  <div className="py-1">
+                                    <button 
+                                      onClick={() => { setEditingUser(r); setEditCredits(r.credits); setActionMenuOpen(null); }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                                    >
+                                      <Edit className="w-4 h-4 mr-2" /> Uredi Podatke
+                                    </button>
+                                    <button 
+                                      onClick={() => addCredits(r.uid, r.credits, r.email)}
+                                      className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 hover:text-blue-300 flex items-center"
+                                    >
+                                      <Coins className="w-4 h-4 mr-2" /> Dodaj Kredite
+                                    </button>
+                                    <button 
+                                      onClick={() => handlePasswordReset(r.email)}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
+                                    >
+                                      <Key className="w-4 h-4 mr-2" /> Reset Lozinke
+                                    </button>
+                                    <button 
+                                      onClick={() => handleSuspend(r.uid, r.status, r.email)}
+                                      className={`w-full text-left px-4 py-2 text-sm flex items-center ${r.status === 'suspended' ? 'text-green-400 hover:bg-gray-700' : 'text-orange-400 hover:bg-gray-700'}`}
+                                    >
+                                      {r.status === 'suspended' ? <><CheckCircle className="w-4 h-4 mr-2" /> Aktiviraj Račun</> : <><Ban className="w-4 h-4 mr-2" /> Suspendiraj Račun</>}
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDelete(r.uid, r.email)}
+                                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center border-t border-gray-700 mt-1 pt-2"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" /> Obriši Račun
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {resellers.length === 0 && !loading && (
+                        <tr>
+                          <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                            <div className="flex flex-col items-center justify-center">
+                              <Users className="w-12 h-12 text-gray-700 mb-3" />
+                              <p>Nema kreiranih resellera.</p>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          )}
-        </>
-      )}
 
-      {activeTab === 'analytics' && (
-        <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
-          <h2 className="text-xl font-bold text-white flex items-center mb-6">
-            <BarChart2 className="w-5 h-5 mr-2 text-blue-500" />
-            Analitika Sustava
-          </h2>
-          {isLoadingAnalytics ? (
-            <div className="text-center text-gray-500 py-8">Učitavanje analitike...</div>
-          ) : analyticsData ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-gray-900/50 p-6 rounded-lg border border-gray-700/50 flex flex-col items-center justify-center text-center">
-                <Users className="w-12 h-12 text-blue-500 mb-4" />
-                <h3 className="text-gray-400 font-medium uppercase tracking-wider text-sm mb-1">Ukupno Resellera</h3>
-                <p className="text-4xl font-bold text-white">{analyticsData.totalResellers}</p>
-              </div>
-              <div className="bg-gray-900/50 p-6 rounded-lg border border-gray-700/50 flex flex-col items-center justify-center text-center">
-                <Coins className="w-12 h-12 text-orange-500 mb-4" />
-                <h3 className="text-gray-400 font-medium uppercase tracking-wider text-sm mb-1">Ukupno Kredita u Optjecaju</h3>
-                <p className="text-4xl font-bold text-white">{analyticsData.totalCreditsAllocated}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8">Nema podataka za analitiku.</div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'logs' && (
-        <div className="bg-gray-800 rounded-xl p-8 border border-gray-700 shadow-lg">
-          <h2 className="text-xl font-bold text-white flex items-center mb-6">
-            <Activity className="w-5 h-5 mr-2 text-blue-500" />
-            Globalni Logovi
-          </h2>
-          {isLoadingLogs ? (
-            <div className="text-center text-gray-500 py-8">Učitavanje zapisa...</div>
-          ) : logs.length > 0 ? (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-              {logs.map((log) => (
-                <div key={log.id} className="flex items-start p-4 bg-gray-900/50 rounded-lg border border-gray-700/50">
-                  <div className="flex-shrink-0 mt-1">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <div className="flex justify-between items-start">
-                        <p className="text-white font-medium">{log.action}</p>
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium uppercase tracking-wider ${log.role === 'admin' ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'}`}>
-                            {log.role}
-                        </span>
+              {/* Add Reseller Modal */}
+              {showAddModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                  <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500" />
+                    <div className="p-8">
+                      <h2 className="text-2xl font-bold text-white mb-2">Kreiraj Resellera</h2>
+                      <p className="text-gray-400 text-sm mb-6">Unesite podatke za novog korisnika sustava.</p>
+                      
+                      <form onSubmit={handleCreateReseller} className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1.5">Email adresa</label>
+                          <input 
+                            type="email" required 
+                            placeholder="admin@tvrtka.com"
+                            className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600" 
+                            value={newEmail} onChange={e => setNewEmail(e.target.value)} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1.5">Lozinka</label>
+                          <input 
+                            type="password" required minLength={6}
+                            placeholder="••••••••"
+                            className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600" 
+                            value={newPassword} onChange={e => setNewPassword(e.target.value)} 
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1.5">Početni Krediti</label>
+                          <input 
+                            type="number" required min={0}
+                            className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all" 
+                            value={newCredits} onChange={e => setNewCredits(Number(e.target.value))} 
+                          />
+                        </div>
+                        <div className="flex space-x-3 pt-6">
+                          <button 
+                            type="button" onClick={() => setShowAddModal(false)}
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 rounded-xl font-medium transition-colors border border-gray-700"
+                          >
+                            Odustani
+                          </button>
+                          <button 
+                            type="submit" disabled={isCreating}
+                            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3 rounded-xl font-medium transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50"
+                          >
+                            {isCreating ? 'Spremanje...' : 'Kreiraj Korisnika'}
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                    <p className="text-gray-400 text-sm mt-1">{log.details}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <p className="text-gray-500 text-xs">{log.userEmail}</p>
-                        <p className="text-gray-500 text-xs">
-                        {log.timestamp ? (
-                          typeof log.timestamp?.toDate === 'function' 
-                            ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm", { locale: hr }) 
-                            : format(new Date(log.timestamp), "d. MMMM yyyy. 'u' HH:mm", { locale: hr })
-                        ) : 'Upravo sada'}
-                        </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Reseller Modal */}
+              {editingUser && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                  <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+                    <div className="p-8">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-2xl font-bold text-white">Uredi Resellera</h2>
+                        <span className="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded-md font-mono">{editingUser.uid.slice(0, 8)}...</span>
                       </div>
+                      
+                      <form onSubmit={handleSaveEdit} className="space-y-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1.5">Email adresa (Read-only)</label>
+                          <input 
+                            type="email" readOnly disabled
+                            className="w-full bg-gray-800/50 border border-gray-700/50 rounded-xl p-3 text-gray-500 outline-none cursor-not-allowed" 
+                            value={editingUser.email}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-400 mb-1.5">Dostupni Krediti</label>
+                          <input 
+                            type="number" required min={0}
+                            className="w-full bg-gray-950/50 border border-gray-700 rounded-xl p-3 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all" 
+                            value={editCredits} onChange={e => setEditCredits(Number(e.target.value))} 
+                          />
+                        </div>
+                        
+                        <div className="flex space-x-3 pt-6 border-t border-gray-800">
+                          <button 
+                            type="button" onClick={() => setEditingUser(null)}
+                            className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 rounded-xl font-medium transition-colors border border-gray-700"
+                          >
+                            Odustani
+                          </button>
+                          <button 
+                            type="submit" disabled={isSavingEdit}
+                            className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3 rounded-xl font-medium transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                          >
+                            {isSavingEdit ? 'Spremanje...' : 'Spremi Izmjene'}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-          ) : (
-            <div className="text-center text-gray-500 py-8 border-2 border-dashed border-gray-700 rounded-lg">
-              Nema zabilježenih aktivnosti.
+          )}
+
+
+          {/* Analytics Tab */}
+          {activeTab === 'analytics' && (
+            <div className="bg-gray-900/40 backdrop-blur-md rounded-2xl p-8 border border-gray-800/60 shadow-xl">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mr-3 border border-blue-500/20">
+                    <BarChart2 className="w-5 h-5 text-blue-400" />
+                  </div>
+                  Analitika Sustava
+                </h2>
+                <button onClick={fetchAnalytics} className="p-2 bg-gray-800/50 rounded-lg hover:bg-gray-700 text-gray-400 transition-colors">
+                  <RefreshCw className={`w-4 h-4 ${isLoadingAnalytics ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {isLoadingAnalytics ? (
+                <div className="text-center text-gray-500 py-12">
+                  <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+                  Učitavanje analitike...
+                </div>
+              ) : analyticsData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 p-8 rounded-2xl border border-gray-700/50 flex flex-col relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-blue-500/10 transition-colors" />
+                    <Users className="w-8 h-8 text-blue-400 mb-6" />
+                    <h3 className="text-gray-400 font-medium text-sm mb-1">Ukupno Resellera</h3>
+                    <p className="text-5xl font-bold text-white tracking-tight">{analyticsData.totalResellers}</p>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/40 to-gray-900/40 p-8 rounded-2xl border border-gray-700/50 flex flex-col relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-orange-500/10 transition-colors" />
+                    <Coins className="w-8 h-8 text-orange-400 mb-6" />
+                    <h3 className="text-gray-400 font-medium text-sm mb-1">Ukupno Kredita u Optjecaju</h3>
+                    <p className="text-5xl font-bold text-white tracking-tight">{analyticsData.totalCreditsAllocated}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">Nema podataka za analitiku.</div>
+              )}
+            </div>
+          )}
+
+          {/* Logs Tab */}
+          {activeTab === 'logs' && (
+            <div className="bg-gray-900/40 backdrop-blur-md rounded-2xl p-6 border border-gray-800/60 shadow-xl flex flex-col h-[700px]">
+              <div className="flex items-center justify-between mb-6 flex-shrink-0">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center mr-3 border border-green-500/20">
+                    <Activity className="w-5 h-5 text-green-400" />
+                  </div>
+                  Globalni Logovi
+                </h2>
+                <button onClick={fetchLogs} className="p-2 bg-gray-800/50 rounded-lg hover:bg-gray-700 text-gray-400 transition-colors">
+                  <RefreshCw className={`w-4 h-4 ${isLoadingLogs ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {isLoadingLogs ? (
+                <div className="text-center text-gray-500 py-12 flex-1 flex flex-col justify-center items-center">
+                  <div className="w-8 h-8 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin mb-4"></div>
+                  Učitavanje zapisa...
+                </div>
+              ) : logs.length > 0 ? (
+                <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                  {logs.map((log) => (
+                    <div key={log.id} className="flex items-start p-5 bg-gray-800/30 hover:bg-gray-800/50 rounded-xl border border-gray-700/30 transition-colors group">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className={`w-2.5 h-2.5 rounded-full ${log.role === 'admin' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]'}`}></div>
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <div className="flex justify-between items-start">
+                          <p className="text-gray-200 font-semibold">{log.action}</p>
+                          <span className={`text-[10px] px-2 py-1 rounded-md font-bold uppercase tracking-wider border ${
+                            log.role === 'admin' 
+                              ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+                              : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                          }`}>
+                            {log.role}
+                          </span>
+                        </div>
+                        <p className="text-gray-400 text-sm mt-1.5">{log.details}</p>
+                        <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-800">
+                          <p className="text-gray-500 text-xs font-medium">{log.userEmail}</p>
+                          <p className="text-gray-500 text-xs bg-gray-900/50 px-2 py-1 rounded-md">
+                            {log.timestamp ? (
+                              typeof log.timestamp?.toDate === 'function' 
+                                ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm", { locale: hr }) 
+                                : format(new Date(log.timestamp), "d. MMMM yyyy. 'u' HH:mm", { locale: hr })
+                            ) : 'Upravo sada'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-12 flex-1 flex flex-col justify-center items-center border-2 border-dashed border-gray-800/60 rounded-xl">
+                  <Activity className="w-12 h-12 text-gray-700 mb-3" />
+                  <p>Nema zabilježenih aktivnosti.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Settings Tab */}
+          {activeTab === 'settings' && (
+            <div className="bg-gray-900/40 backdrop-blur-md rounded-2xl border border-gray-800/60 shadow-xl overflow-hidden">
+              <div className="p-6 border-b border-gray-800/60 bg-gray-900/40 flex items-center">
+                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center mr-3 border border-gray-700">
+                  <Settings className="w-5 h-5 text-gray-400" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-xl text-white">Postavke Sustava</h2>
+                  <p className="text-sm text-gray-400 mt-1">Konfiguracija i prilagodba Vopo platforme</p>
+                </div>
+              </div>
+              
+              <div className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* General Settings */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-2">Opće Postavke</h3>
+                    
+                    <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700/50">
+                      <div>
+                        <p className="text-white font-medium">Održavanje Sustava</p>
+                        <p className="text-gray-400 text-sm mt-1">Uključi mod održavanja (onemogućava prijave resellerima)</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-xl border border-gray-700/50">
+                      <div>
+                        <p className="text-white font-medium">Javna Registracija</p>
+                        <p className="text-gray-400 text-sm mt-1">Dozvoli korisnicima da se sami registriraju na portal</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" defaultChecked />
+                        <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Appearance */}
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-semibold text-white border-b border-gray-800 pb-2">Izgled</h3>
+                    
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-400">Glavna Tema</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <button className="flex items-center justify-center py-3 bg-gray-800 border-2 border-blue-500 text-white rounded-xl font-medium">
+                          Dark Mode
+                        </button>
+                        <button className="flex items-center justify-center py-3 bg-gray-800/50 border-2 border-transparent text-gray-400 hover:text-white rounded-xl font-medium transition-colors opacity-50 cursor-not-allowed" title="Light mode is coming soon">
+                          Light Mode
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-sm font-medium text-gray-400">Jezik Sustava</label>
+                      <select className="w-full bg-gray-900 border border-gray-700 text-white rounded-xl p-3 outline-none focus:border-blue-500">
+                        <option value="hr">Hrvatski</option>
+                        <option value="en">English</option>
+                        <option value="de">Deutsch</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-6 border-t border-gray-800 flex justify-end">
+                  <button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-500/25 transition-all">
+                    Spremi Promjene
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
-      )}
-
-      {activeTab === 'settings' && (
-        <div className="bg-gray-800 rounded-xl p-8 text-center border border-gray-700 shadow-lg">
-          <Settings className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-white">Postavke Sustava</h2>
-          <p className="text-gray-400 mt-2">Uskoro: Konfiguracija platforme</p>
-        </div>
-        )}
-      </div>
-    </AdminLayout>
-  </ProtectedRoute>
+      </AdminLayout>
+    </ProtectedRoute>
   );
 }

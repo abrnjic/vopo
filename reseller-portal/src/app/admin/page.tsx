@@ -15,7 +15,7 @@ import { hr } from 'date-fns/locale';
 
 
 const secondaryApp = initializeApp({
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyDI0928okWbvWQ0SgjRqv436jteZIMmT78",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "vopoapp-86a75.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "vopoapp-86a75",
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "vopoapp-86a75.firebasestorage.app",

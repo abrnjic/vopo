@@ -64,6 +64,11 @@ android {
         buildConfigField("String", "OFFICIAL_APPLICATION_ID", "\"com.vopo.app\"")
         buildConfigField("String", "OFFICIAL_SIGNING_CERT_SHA256", "\"$officialSigningCertSha256\"")
         buildConfigField("String", "APP_UPDATE_CHANNEL", "\"stable\"")
+        buildConfigField("String", "API_URL", "\"\"") // To be populated later when API is active
+        buildConfigField("String", "CONNECT_URL", "\"https://vopoapp.com/connect\"")
+        buildConfigField("String", "SUPPORT_EMAIL", "\"support@vopoapp.com\"")
+        buildConfigField("String", "PRIVACY_URL", "\"https://vopoapp.com/legal/privacy\"")
+        buildConfigField("String", "TERMS_URL", "\"https://vopoapp.com/legal/terms\"")
         buildConfigField("long", "BUILD_TIMESTAMP_UTC", "0L")
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a")

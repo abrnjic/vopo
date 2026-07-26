@@ -10,8 +10,7 @@ export interface SendSupportEmailOptions {
 export class EmailService {
   private resend: Resend;
 
-  constructor() {
-    const apiKey = process.env.RESEND_API_KEY;
+  constructor(apiKey: string) {
     if (!apiKey) {
       console.warn("RESEND_API_KEY is not set. Emails will not be sent.");
     }
@@ -19,16 +18,17 @@ export class EmailService {
   }
 
   async sendSupportEmail(options: SendSupportEmailOptions): Promise<void> {
-    if (!process.env.RESEND_API_KEY) {
+    if (!this.resend || (this.resend as any).key === "dummy_key") {
       console.log("Mock sending support email:", options);
       return;
     }
 
+
     try {
       await this.resend.emails.send({
-        from: "VOPO Support <support@vopoapp.com>",
+        from: "VOPO Support <noreply@vopoapp.com>",
         to: ["support@vopoapp.com"],
-        reply_to: options.replyTo,
+        reply_to: "support@vopoapp.com",
         subject: `[Support Request] ${options.subject}`,
         text: `Message from User ID: ${options.userId}\n\n${options.message}`,
       });

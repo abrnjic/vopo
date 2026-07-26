@@ -169,7 +169,7 @@
     <string name="add_group_remove_btn">Ukloniti</string>
     <string name="add_group_add_btn">Dodati</string>
     <string name="add_group_create_new_btn">Stvori novu grupu</string>
-    <!-- M4 hide individual channels -->
+    
     <string name="channel_action_hide">Sakrij ovaj kanal</string>
     <string name="live_quick_filter_hidden_channels">Skriveni kanali (%1$d)</string>
     <string name="hidden_channels_dialog_title">Skriveni kanali</string>
@@ -1607,7 +1607,7 @@
     <string name="tv_input_setup_try_scan_again">Pokušajte ponovno s automatskim skeniranjem</string>
     <string name="tv_input_setup_retry_scan">Ponovno pokušaj automatsko skeniranje</string>
     <string name="tv_input_setup_success_hint">Android TV Live TV sada može otvoriti vaše VOPO kanale.</string>
-    <!-- M2: Google Drive backup sync -->
+    
     <string name="settings_drive_section_title">Google Drive sigurnosna kopija</string>
     <string name="settings_drive_section_subtitle">Gurnite i povucite svoju VOPO konfiguraciju u privatnu mapu Diska.</string>
     <string name="settings_drive_signin">Prijavite se na Google disk</string>
@@ -1621,7 +1621,7 @@
     <string name="settings_drive_last_pull">Izvučeno: %1$s</string>
     <string name="settings_drive_never_synced">Još nikad sinkronizirano</string>
     <string name="setup_import_from_drive">Uvezi s Diska</string>
-    <!-- Download feature -->
+    
     <string name="download_button_label">preuzimanje</string>
     <string name="download_started">Preuzimanje je počelo</string>
     <string name="download_failed">Preuzimanje nije uspjelo: %1$s</string>
@@ -1702,4 +1702,4 @@
     <string name="settings_expiry_unknown">Istek nepoznat</string>
     <string name="settings_expiry_none">Nema podataka o isteku</string>
     <string name="settings_expiry_expired">Isteklo</string>
-</resources>
+<string name="settings_support">Support</string><string name="settings_terms">Terms of Service</string></resources>

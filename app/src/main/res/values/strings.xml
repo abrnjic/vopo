@@ -182,7 +182,7 @@
     <string name="add_group_add_btn">Add</string>
     <string name="add_group_create_new_btn">Create New Group</string>
 
-    <!-- M4 hide individual channels -->
+    
     <string name="channel_action_hide">Hide this channel</string>
     <string name="live_quick_filter_hidden_channels">Hidden channels (%1$d)</string>
     <string name="hidden_channels_dialog_title">Hidden channels</string>
@@ -1658,7 +1658,7 @@
     <string name="tv_input_setup_retry_scan">Retry Auto Scan</string>
     <string name="tv_input_setup_success_hint">Android TV Live TV can now open your VOPO channels.</string>
 
-    <!-- M2: Google Drive backup sync -->
+    
     <string name="settings_drive_section_title">Google Drive backup</string>
     <string name="settings_drive_section_subtitle">Push and pull your VOPO configuration to a private Drive folder.</string>
     <string name="settings_drive_signin">Sign in to Google Drive</string>
@@ -1673,7 +1673,7 @@
     <string name="settings_drive_never_synced">Never synced yet</string>
     <string name="setup_import_from_drive">Import from Drive</string>
 
-    <!-- Download feature -->
+    
     <string name="download_button_label">Download</string>
     <string name="download_started">Download started</string>
     <string name="download_failed">Download failed: %1$s</string>
@@ -1755,4 +1755,12 @@
     <string name="settings_expiry_unknown">Expiry unknown</string>
     <string name="settings_expiry_none">No expiry reported</string>
     <string name="settings_expiry_expired">Expired</string>
+<string name="settings_support">Support</string><string name="settings_terms">Terms of Service</string>
+
+    <!-- License Error -->
+    <string name="license_error_expired">Subscription expired</string>
+    <string name="license_error_unregistered">Activation required</string>
+    <string name="license_error_instruction">Your device is not activated. Connect your account and add a subscription at:\n\n%1$s</string>
+    <string name="device_id_label">DEVICE ID:</string>
+    <string name="loading_ellipsis">Loading...</string>
 </resources>

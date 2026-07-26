@@ -6,7 +6,7 @@ import { collection, query, where, getDocs, doc, updateDoc, setDoc, orderBy, lim
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
-import { logActivity } from '../../utils/activityLogger';
+import { logActivity, ActivityAction } from '../../utils/activityLogger';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
@@ -234,7 +234,21 @@ export default function AdminDashboard() {
         credits: editCredits
       });
       if (user) {
-        await logActivity(user.uid, user.email || '', 'admin', 'EDIT_RESELLER', `Ažurirani podaci za ${editingUser.email}`);
+        const creditDiff = editCredits - editingUser.credits;
+        let actionType: ActivityAction = 'EDIT_RESELLER';
+        let logMessage = `Ažurirani podaci za ${editingUser.email}`;
+
+        if (creditDiff !== 0) {
+          if (creditDiff > 0) {
+            actionType = 'ADD_CREDITS';
+            logMessage = `Dodano ${creditDiff} kredita korisniku ${editingUser.email} (Novo stanje: ${editCredits})`;
+          } else {
+            actionType = 'REMOVE_CREDITS';
+            logMessage = `Skinuto ${Math.abs(creditDiff)} kredita korisniku ${editingUser.email} (Novo stanje: ${editCredits})`;
+          }
+        }
+
+        await logActivity(user.uid, user.email || '', 'admin', actionType, logMessage);
       }
       setEditingUser(null);
       fetchResellers();

@@ -16,7 +16,8 @@ export type ActivityAction =
   | 'UPDATE_STATUS'
   | 'DELETE_USER'
   | 'PASSWORD_RESET'
-  | 'EDIT_RESELLER';
+  | 'EDIT_RESELLER'
+  | 'REMOVE_CREDITS';
 
 export interface ActivityLog {
   userId: string;

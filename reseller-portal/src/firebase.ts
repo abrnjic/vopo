@@ -17,11 +17,19 @@ const getFirebaseConfig = () => {
   
   for (const [key, value] of Object.entries(config)) {
     if (!value) {
-      throw new Error(`Missing Firebase configuration key: ${key}`);
+      console.warn(`Missing Firebase configuration key: ${key}`);
     }
   }
   
-  return config;
+  // Use fallbacks to prevent initializeApp from crashing during Next.js build (SSR prerendering)
+  return {
+    apiKey: config.apiKey || "fallback",
+    authDomain: config.authDomain || "fallback",
+    projectId: config.projectId || "fallback",
+    storageBucket: config.storageBucket || "fallback",
+    messagingSenderId: config.messagingSenderId || "fallback",
+    appId: config.appId || "fallback"
+  };
 };
 
 const firebaseConfig = getFirebaseConfig();

@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.vopo.app.ui.screens.home.HomeViewModel

@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  passwordHash   String
+  role           String         // "admin", "reseller", "subreseller"
+  status         String         @default("pending") // "pending", "active", "suspended"
+  walletBalance  Float          @default(0.0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Self-referencing relation for hierarchy
+  parentId       String?
+  parent         User?          @relation("UserHierarchy", fields: [parentId], references: [id])
+  children       User[]         @relation("UserHierarchy")
+
+  // Relations
+  ownedDomains   Domain[]       @relation("DomainOwner")
+  assignedDomains Domain[]      @relation("DomainAssignee")
+  licenses       License[]      @relation("LicenseActivator")
+  auditLogs      AuditLog[]     @relation("AuditUser")
+  transactions   Transaction[]  @relation("TransactionUser")
+}
+
+model Domain {
+  id           String   @id @default(uuid())
+  name         String   @unique
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  
+  ownerId      String
+  owner        User     @relation("DomainOwner", fields: [ownerId], references: [id])
+  
+  assigneeId   String?
+  assignee     User?    @relation("DomainAssignee", fields: [assigneeId], references: [id])
+}
+
+model License {
+  id           String   @id @default(uuid())
+  deviceMac    String
+  appName      String
+  licenseType  String   // "1_year", "lifetime"
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+
+  activatorId  String
+  activator    User     @relation("LicenseActivator", fields: [activatorId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String
+  timestamp DateTime @default(now())
+  
+  userId    String
+  user      User     @relation("AuditUser", fields: [userId], references: [id])
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  amount    Float
+  type      String   // "deposit", "withdrawal"
+  note      String?
+  timestamp DateTime @default(now())
+  
+  userId    String
+  user      User     @relation("TransactionUser", fields: [userId], references: [id])
+}

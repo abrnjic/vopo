@@ -1,0 +1,54 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Pomoćne funkcije za uloge
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.role == 'admin';
+    }
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // USERS kolekcija
+    match /users/{userId} {
+      // Admin može sve
+      allow read, write: if isAdmin();
+      // Korisnik može vidjeti sebe
+      allow read: if isOwner(userId);
+      // Reseller može vidjeti svoje pod-korisnike
+      allow read: if isAuthenticated() && request.auth.token.role == 'reseller' 
+                  && resource.data.parentId == request.auth.uid;
+      
+      // NITKO ne može direktno ažurirati walletBalance preko klijenta (samo Cloud Functions)
+      allow update: if (isAdmin() || isOwner(userId)) 
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'role', 'status']);
+    }
+
+    // DOMAINS kolekcija
+    match /domains/{domainId} {
+      allow read: if isAuthenticated(); // Prilagoditi po vlasniku
+      allow write: if isAdmin();
+      allow create, update: if isAuthenticated() && request.auth.token.role == 'reseller' 
+                            && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // LICENSES kolekcija
+    match /licenses/{licenseId} {
+      // Svi autentificirani korisnici mogu vidjeti (može se suziti na vlasništvo)
+      allow read: if isAuthenticated();
+      // Klijent ne smije stvarati licence izravno - to radi isključivo Cloud Function nakon skidanja kredita!
+      allow write: if false; 
+    }
+
+    // AUDIT LOGS kolekcija
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      // Nitko ne smije mijenjati audit logove, čak ni Admin
+      allow write: if false; 
+    }
+  }
+}

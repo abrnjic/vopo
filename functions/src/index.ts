@@ -1,16 +1,15 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { EmailService } from "./services/EmailService";
-import * as dotenv from "dotenv";
+import { defineSecret } from "firebase-functions/params";
 
-// Load environment variables
-dotenv.config();
+const resendApiKey = defineSecret("RESEND_API_KEY");
 
 admin.initializeApp();
 
-const emailService = new EmailService();
-
-export const sendSupportEmail = functions.https.onCall(async (data, context) => {
+export const sendSupportEmail = functions
+  .runWith({ secrets: [resendApiKey] })
+  .https.onCall(async (data, context) => {
   // Validate request
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -18,6 +17,13 @@ export const sendSupportEmail = functions.https.onCall(async (data, context) => 
       "The function must be called while authenticated."
     );
   }
+
+  // App Check validation (recommended if enforced)
+  // if (context.app == undefined) {
+  //   throw new functions.https.HttpsError(
+  //       'failed-precondition',
+  //       'The function must be called from an App Check verified app.')
+  // }
 
   const { subject, message, replyTo } = data;
 
@@ -27,6 +33,16 @@ export const sendSupportEmail = functions.https.onCall(async (data, context) => 
       "The function must be called with a subject and message."
     );
   }
+
+  if (subject.length > 200 || message.length > 5000) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Subject or message exceeds maximum length."
+    );
+  }
+
+  const apiKey = resendApiKey.value();
+  const emailService = new EmailService(apiKey);
 
   try {
     await emailService.sendSupportEmail({

@@ -1,0 +1,208 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 00000000..930c3a1a
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,57 @@
++# dependencies
++/node_modules
++/.pnp
++.pnp.*
++.yarn/*
++!.yarn/patches
++!.yarn/plugins
++!.yarn/releases
++!.yarn/versions
++
++# testing
++/coverage
++
++# next.js
++/.next/
++/out/
++
++# production
++/build
++/dist
++
++# misc
++.DS_Store
++*.pem
++
++# debug
++npm-debug.log*
++yarn-debug.log*
++yarn-error.log*
++.pnpm-debug.log*
++
++# env files (can opt-in for committing if needed)
++.env*
++!.env.example
++
++# vercel
++.vercel
++
++# typescript
++*.tsbuildinfo
++next-env.d.ts
++
++# Android
++*.apk
++*.ap_
++*.dex
++*.class
++bin/
++gen/
++out/
++.gradle/
++build/
++local.properties
++proguard/
++*.log
++*.log.*
++catch_*.log
+diff --git a/app/google-services.json b/app/google-services.json
+index 58c717ce..b0853f38 100644
+--- a/app/google-services.json
++++ b/app/google-services.json
+@@ -23,6 +23,25 @@
+           "other_platform_oauth_client": []
+         }
+       }
++    },
++    {
++      "client_info": {
++        "mobilesdk_app_id": "1:1000759434828:android:bc673a3df3d3779fcd1ee9",
++        "android_client_info": {
++          "package_name": "com.vopo.app"
++        }
++      },
++      "oauth_client": [],
++      "api_key": [
++        {
++          "current_key": "AIzaSyABPTxMiG0iQLLfne0FZChxlgJ8eE3SNxM"
++        }
++      ],
++      "services": {
++        "appinvite_service": {
++          "other_platform_oauth_client": []
++        }
++      }
+     }
+   ],
+   "configuration_version": "1"
+diff --git a/app/src/main/java/com/vopo/app/ui/screens/welcome/WelcomeScreen.kt b/app/src/main/java/com/vopo/app/ui/screens/welcome/WelcomeScreen.kt
+index 1fee023b..27665a8f 100644
+--- a/app/src/main/java/com/vopo/app/ui/screens/welcome/WelcomeScreen.kt
++++ b/app/src/main/java/com/vopo/app/ui/screens/welcome/WelcomeScreen.kt
+@@ -283,13 +283,13 @@ private fun LicenseErrorCard(
+                 iconSize = 48.dp
+             )
+             Text(
+-                text = if (isExpired) "Pretplata je istekla" else "Potrebna aktivacija",
++                text = if (isExpired) stringResource(R.string.license_error_expired) else stringResource(R.string.license_error_unregistered),
+                 style = MaterialTheme.typography.headlineMedium,
+                 color = AppColors.TextPrimary,
+                 textAlign = TextAlign.Center
+             )
+             Text(
+-                text = "Vaš uređaj nije aktiviran. Molimo posjetite portal kako biste dodali liniju.",
++                text = stringResource(R.string.license_error_instruction, BuildConfig.CONNECT_URL),
+                 style = MaterialTheme.typography.bodyLarge,
+                 color = AppColors.TextSecondary,
+                 textAlign = TextAlign.Center
+@@ -298,13 +298,13 @@ private fun LicenseErrorCard(
+             Spacer(modifier = Modifier.height(16.dp))
+             
+             Text(
+-                text = "ID UREĐAJA:",
++                text = stringResource(R.string.device_id_label),
+                 style = MaterialTheme.typography.labelLarge,
+                 color = AppColors.TextSecondary
+             )
+             
+             Text(
+-                text = deviceId.ifBlank { "Učitavanje..." },
++                text = deviceId.ifBlank { stringResource(R.string.loading_ellipsis) },
+                 style = MaterialTheme.typography.displayMedium,
+                 color = AppColors.Brand,
+                 textAlign = TextAlign.Center,
+diff --git a/app/src/main/res/values/strings.xml b/app/src/main/res/values/strings.xml
+index 17ecee5b..b46a0f71 100644
+--- a/app/src/main/res/values/strings.xml
++++ b/app/src/main/res/values/strings.xml
+@@ -182,7 +182,7 @@
+     <string name="add_group_add_btn">Add</string>
+     <string name="add_group_create_new_btn">Create New Group</string>
+ 
+-    <!-- M4 hide individual channels -->
++    
+     <string name="channel_action_hide">Hide this channel</string>
+     <string name="live_quick_filter_hidden_channels">Hidden channels (%1$d)</string>
+     <string name="hidden_channels_dialog_title">Hidden channels</string>
+@@ -1658,7 +1658,7 @@
+     <string name="tv_input_setup_retry_scan">Retry Auto Scan</string>
+     <string name="tv_input_setup_success_hint">Android TV Live TV can now open your VOPO channels.</string>
+ 
+-    <!-- M2: Google Drive backup sync -->
++    
+     <string name="settings_drive_section_title">Google Drive backup</string>
+     <string name="settings_drive_section_subtitle">Push and pull your VOPO configuration to a private Drive folder.</string>
+     <string name="settings_drive_signin">Sign in to Google Drive</string>
+@@ -1673,7 +1673,7 @@
+     <string name="settings_drive_never_synced">Never synced yet</string>
+     <string name="setup_import_from_drive">Import from Drive</string>
+ 
+-    <!-- Download feature -->
++    
+     <string name="download_button_label">Download</string>
+     <string name="download_started">Download started</string>
+     <string name="download_failed">Download failed: %1$s</string>
+@@ -1755,4 +1755,12 @@
+     <string name="settings_expiry_unknown">Expiry unknown</string>
+     <string name="settings_expiry_none">No expiry reported</string>
+     <string name="settings_expiry_expired">Expired</string>
++<string name="settings_support">Support</string><string name="settings_terms">Terms of Service</string>
++
++    <!-- License Error -->
++    <string name="license_error_expired">Subscription expired</string>
++    <string name="license_error_unregistered">Activation required</string>
++    <string name="license_error_instruction">Your device is not activated. Connect your account and add a subscription at:\n\n%1$s</string>
++    <string name="device_id_label">DEVICE ID:</string>
++    <string name="loading_ellipsis">Loading...</string>
+ </resources>
+diff --git a/functions/src/services/EmailService.ts b/functions/src/services/EmailService.ts
+index f65b19b9..a15d5fce 100644
+--- a/functions/src/services/EmailService.ts
++++ b/functions/src/services/EmailService.ts
+@@ -10,8 +10,7 @@ export interface SendSupportEmailOptions {
+ export class EmailService {
+   private resend: Resend;
+ 
+-  constructor() {
+-    const apiKey = process.env.RESEND_API_KEY;
++  constructor(apiKey: string) {
+     if (!apiKey) {
+       console.warn("RESEND_API_KEY is not set. Emails will not be sent.");
+     }
+@@ -19,16 +18,17 @@ export class EmailService {
+   }
+ 
+   async sendSupportEmail(options: SendSupportEmailOptions): Promise<void> {
+-    if (!process.env.RESEND_API_KEY) {
++    if (!this.resend || (this.resend as any).key === "dummy_key") {
+       console.log("Mock sending support email:", options);
+       return;
+     }
+ 
++
+     try {
+       await this.resend.emails.send({
+-        from: "VOPO Support <support@vopoapp.com>",
++        from: "VOPO Support <noreply@vopoapp.com>",
+         to: ["support@vopoapp.com"],
+-        reply_to: options.replyTo,
++        reply_to: "support@vopoapp.com",
+         subject: `[Support Request] ${options.subject}`,
+         text: `Message from User ID: ${options.userId}\n\n${options.message}`,
+       });

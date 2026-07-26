@@ -283,13 +283,13 @@ private fun LicenseErrorCard(
                 iconSize = 48.dp
             )
             Text(
-                text = if (isExpired) "Pretplata je istekla" else "Potrebna aktivacija",
+                text = if (isExpired) stringResource(R.string.license_error_expired) else stringResource(R.string.license_error_unregistered),
                 style = MaterialTheme.typography.headlineMedium,
                 color = AppColors.TextPrimary,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Vaš uređaj nije aktiviran. Molimo posjetite portal kako biste dodali liniju.",
+                text = stringResource(R.string.license_error_instruction, BuildConfig.CONNECT_URL),
                 style = MaterialTheme.typography.bodyLarge,
                 color = AppColors.TextSecondary,
                 textAlign = TextAlign.Center
@@ -298,13 +298,13 @@ private fun LicenseErrorCard(
             Spacer(modifier = Modifier.height(16.dp))
             
             Text(
-                text = "ID UREĐAJA:",
+                text = stringResource(R.string.device_id_label),
                 style = MaterialTheme.typography.labelLarge,
                 color = AppColors.TextSecondary
             )
             
             Text(
-                text = deviceId.ifBlank { "Učitavanje..." },
+                text = deviceId.ifBlank { stringResource(R.string.loading_ellipsis) },
                 style = MaterialTheme.typography.displayMedium,
                 color = AppColors.Brand,
                 textAlign = TextAlign.Center,

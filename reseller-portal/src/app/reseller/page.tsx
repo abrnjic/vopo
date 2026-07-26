@@ -127,73 +127,30 @@ export default function ResellerDashboard() {
 
     setIsActivating(true);
     try {
-      const licenseData: any = {
-        deviceId: deviceId.trim(),
-        resellerId: user.uid,
-        customerName: customerName.trim(),
-        customerContact: customerContact.trim(),
-        xtreamConfig: {
-          url: selectedDomain,
-          username: username.trim(),
-          password: password.trim()
+      const idToken = await user?.getIdToken();
+      const res = await fetch('/api/reseller/activate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
         },
-        selectedDomain: selectedDomain,
-        updatedAt: serverTimestamp()
-      };
-
-      if (licenseType === '1_year' || licenseType === 'lifetime') {
-        licenseData.status = 'Active';
-        licenseData.isLifetime = licenseType === 'lifetime';
-        if (licenseType === '1_year') {
-            const expirationDate = new Date();
-            expirationDate.setFullYear(expirationDate.getFullYear() + 1);
-            licenseData.expiresAt = expirationDate;
-        }
-      } else {
-        licenseData.status = 'Trial'; // or just let it stay whatever it was, but setting it explicitly is fine.
-      }
-
-      await setDoc(doc(db, 'licenses', deviceId.trim()), licenseData, { merge: true });
-
-      if (creditsToDeduct > 0) {
-        await updateDoc(doc(db, 'users', user.uid), {
-          credits: increment(-creditsToDeduct)
-        });
-        
-        await addDoc(collection(db, 'transactions'), {
-          resellerId: user.uid,
+        body: JSON.stringify({
           deviceId: deviceId.trim(),
-          type: 'activation',
-          creditsDeducted: creditsToDeduct,
           licenseType,
           customerName: customerName.trim(),
           customerContact: customerContact.trim(),
-          timestamp: serverTimestamp()
-        });
-      } else {
-        await addDoc(collection(db, 'transactions'), {
-          resellerId: user.uid,
-          deviceId: deviceId.trim(),
-          type: 'trial_setup',
-          creditsDeducted: 0,
-          licenseType: 'trial',
-          customerName: customerName.trim(),
-          customerContact: customerContact.trim(),
-          timestamp: serverTimestamp()
-        });
+          username: username.trim(),
+          password: password.trim(),
+          selectedDomain
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Neuspješna aktivacija');
       }
 
       alert(creditsToDeduct > 0 ? 'Linija uspješno aktivirana!' : 'Probna linija uspješno postavljena!');
-      
-      if (user) {
-        await logActivity(
-          user.uid, 
-          user.email || '', 
-          'reseller', 
-          'CREATE_LICENSE', 
-          `Created ${licenseType} license for device ${deviceId.trim()} (${customerName.trim()})`
-        );
-      }
 
       setDeviceId('');
       setUsername('');
@@ -202,7 +159,15 @@ export default function ResellerDashboard() {
       setCustomerContact('');
       
       // Osvježi listu nedavnih
-      setRecentLines(prev => [{ id: deviceId.trim(), ...licenseData }, ...prev.filter(l => l.id !== deviceId.trim())]);
+      setRecentLines(prev => [{ 
+        id: deviceId.trim(), 
+        deviceId: deviceId.trim(),
+        resellerId: user.uid,
+        status: licenseType === 'trial' ? 'Trial' : 'Active',
+        isTrial: licenseType === 'trial',
+        customerName: customerName,
+        customerContact: customerContact
+      }, ...prev.filter(l => l.id !== deviceId.trim())]);
     } catch (error) {
       console.error(error);
       alert('Došlo je do greške.');

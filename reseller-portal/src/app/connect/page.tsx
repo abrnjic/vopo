@@ -2,8 +2,6 @@
 
 import { useState } from 'react';
 import { Tv, Upload, Shield, CheckCircle, AlertCircle } from 'lucide-react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../firebase';
 
 export default function ConnectPage() {
   const [deviceId, setDeviceId] = useState('');
@@ -20,41 +18,26 @@ export default function ConnectPage() {
     setError('');
 
     try {
-      const licenseRef = doc(db, 'licenses', deviceId.trim());
-      const licenseSnap = await getDoc(licenseRef);
-
-      if (licenseSnap.exists()) {
-        const data = licenseSnap.data();
-        if (data.status === 'Active') {
-          setError('Ovaj uređaj već ima aktivnu licencu. Kontaktirajte preprodavača za izmjene.');
-          setLoading(false);
-          return;
-        } else if (data.status === 'Expired') {
-          setError('Trial ili licenca za ovaj uređaj je istekla. Molimo kontaktirajte preprodavača za aktivaciju.');
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Calculate expiration for 3 days trial
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + 3);
-
-      await setDoc(licenseRef, {
-        deviceId: deviceId.trim(),
-        resellerId: 'self_registered',
-        status: 'Trial',
-        trialStartedAt: serverTimestamp(),
-        expiresAt: expirationDate,
-        isLifetime: false,
-        xtreamConfig: {
-          url: portalUrl.trim(),
-          username: username.trim(),
-          password: password.trim()
+      const response = await fetch('/api/connect', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        selectedDomain: portalUrl.trim(),
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+        body: JSON.stringify({
+          deviceId,
+          portalUrl,
+          username,
+          password
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Došlo je do pogreške. Molimo pokušajte ponovno.');
+        setLoading(false);
+        return;
+      }
 
       setSubmitted(true);
     } catch (err) {

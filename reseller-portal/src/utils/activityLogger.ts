@@ -1,5 +1,4 @@
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+// Activity logger now uses backend API for secure writes
 
 export type ActivityAction = 
   | 'CREATE_LICENSE' 
@@ -36,14 +35,19 @@ export const logActivity = async (
   details: string
 ) => {
   try {
-    const logRef = collection(db, 'activity_logs');
-    await addDoc(logRef, {
-      userId,
-      userEmail,
-      role,
-      action,
-      details,
-      timestamp: Date.now()
+    const { auth } = await import('../firebase');
+    const idToken = await auth.currentUser?.getIdToken();
+
+    await fetch('/api/log', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${idToken}`
+      },
+      body: JSON.stringify({
+        action,
+        details
+      })
     });
   } catch (error) {
     console.error("Failed to log activity:", error);

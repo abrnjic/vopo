@@ -55,3 +55,4 @@ proguard/
 *.log
 *.log.*
 catch_*.log
+google-services.json

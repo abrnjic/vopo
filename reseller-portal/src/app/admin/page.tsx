@@ -1,22 +1,26 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { Users, Plus, ShieldCheck, Coins, RefreshCw, BarChart2, Activity, Settings } from 'lucide-react';
 import { collection, query, where, getDocs, doc, updateDoc, setDoc, orderBy, limit } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { logActivity } from '../utils/activityLogger';
-import { useAuth } from '../context/AuthContext';
+import { logActivity } from '../../utils/activityLogger';
+import { useAuth } from '../../context/AuthContext';
+import AdminLayout from '../../components/AdminLayout';
+import ProtectedRoute from '../../components/ProtectedRoute';
 import { format } from 'date-fns';
 import { hr } from 'date-fns/locale';
 
 
 const secondaryApp = initializeApp({
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "vopoapp-86a75.firebaseapp.com",
-  projectId: "vopoapp-86a75",
-  storageBucket: "vopoapp-86a75.firebasestorage.app",
-  messagingSenderId: "1000759434828",
-  appId: "1:1000759434828:web:472be03a1c7fcd73cd1ee9"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "vopoapp-86a75.firebaseapp.com",
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "vopoapp-86a75",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "vopoapp-86a75.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "1000759434828",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:1000759434828:web:472be03a1c7fcd73cd1ee9"
 }, 'SecondaryApp');
 const secondaryAuth = getAuth(secondaryApp);
 
@@ -156,8 +160,10 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+    <ProtectedRoute allowedRoles={['admin']}>
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
         <div>
           <h1 className="text-2xl font-bold flex items-center text-white">
             <ShieldCheck className="w-7 h-7 mr-2 text-red-500" />
@@ -393,7 +399,9 @@ export default function AdminDashboard() {
           <h2 className="text-xl font-bold text-white">Postavke Sustava</h2>
           <p className="text-gray-400 mt-2">Uskoro: Konfiguracija platforme</p>
         </div>
-      )}
-    </div>
+        )}
+      </div>
+    </AdminLayout>
+  </ProtectedRoute>
   );
 }

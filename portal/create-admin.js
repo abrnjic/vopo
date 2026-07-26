@@ -3,7 +3,7 @@ import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyD1lfC94ca1J-BHE3wFxaoDpF9ILEKixrM",
+  apiKey: "YOUR_API_KEY",
   authDomain: "vopoapp-86a75.firebaseapp.com",
   projectId: "vopoapp-86a75",
   storageBucket: "vopoapp-86a75.firebasestorage.app",

@@ -13,12 +13,12 @@ if (process.env.MOCK_FIREBASE === 'true') {
 } else {
   if (!getApps().length) {
     try {
-      if (process.env.FIREBASE_PROJECT_ID) {
+      if (process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
         const stripQuotes = (val?: string) => val?.replace(/^["']|["']$/g, '');
         const serviceAccount = {
-          projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID),
-          clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL),
-          privateKey: stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
+          projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) || 'dummy-project',
+          clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL) || 'dummy@dummy.com',
+          privateKey: stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n') || '-----BEGIN PRIVATE KEY-----\ndummy\n-----END PRIVATE KEY-----\n',
         };
         initializeApp({
           credential: cert(serviceAccount),

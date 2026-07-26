@@ -364,51 +364,12 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-6 py-4 text-right">
-                            <div className="relative inline-block text-left">
-                              <button 
-                                onClick={() => setActionMenuOpen(actionMenuOpen === r.uid ? null : r.uid)}
-                                className="p-2 text-gray-400 hover:text-white bg-gray-800/30 hover:bg-gray-700/50 rounded-lg transition-colors"
-                              >
-                                <MoreVertical className="w-5 h-5" />
-                              </button>
-                              
-                              {actionMenuOpen === r.uid && (
-                                <div ref={menuRef} className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                                  <div className="py-1">
-                                    <button 
-                                      onClick={() => { setEditingUser(r); setEditCredits(r.credits); setActionMenuOpen(null); }}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
-                                    >
-                                      <Edit className="w-4 h-4 mr-2" /> Uredi Podatke
-                                    </button>
-                                    <button 
-                                      onClick={() => addCredits(r.uid, r.credits, r.email)}
-                                      className="w-full text-left px-4 py-2 text-sm text-blue-400 hover:bg-gray-700 hover:text-blue-300 flex items-center"
-                                    >
-                                      <Coins className="w-4 h-4 mr-2" /> Dodaj Kredite
-                                    </button>
-                                    <button 
-                                      onClick={() => handlePasswordReset(r.email)}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center"
-                                    >
-                                      <Key className="w-4 h-4 mr-2" /> Reset Lozinke
-                                    </button>
-                                    <button 
-                                      onClick={() => handleSuspend(r.uid, r.status, r.email)}
-                                      className={`w-full text-left px-4 py-2 text-sm flex items-center ${r.status === 'suspended' ? 'text-green-400 hover:bg-gray-700' : 'text-orange-400 hover:bg-gray-700'}`}
-                                    >
-                                      {r.status === 'suspended' ? <><CheckCircle className="w-4 h-4 mr-2" /> Aktiviraj Račun</> : <><Ban className="w-4 h-4 mr-2" /> Suspendiraj Račun</>}
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDelete(r.uid, r.email)}
-                                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700 hover:text-red-300 flex items-center border-t border-gray-700 mt-1 pt-2"
-                                    >
-                                      <Trash2 className="w-4 h-4 mr-2" /> Obriši Račun
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                            <button 
+                              onClick={() => setActionMenuOpen(r.uid)}
+                              className="p-2 text-gray-400 hover:text-white bg-gray-800/30 hover:bg-gray-700/50 rounded-lg transition-colors border border-gray-700/50"
+                            >
+                              Upravljaj
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -481,6 +442,65 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Action Menu Modal */}
+              {actionMenuOpen && (
+                (() => {
+                  const r = resellers.find(user => user.uid === actionMenuOpen);
+                  if (!r) return null;
+                  return (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-[60]">
+                      <div className="bg-gray-900 border border-gray-700 sm:rounded-2xl rounded-t-2xl max-w-sm w-full shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 pb-safe">
+                        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
+                          <div>
+                            <h3 className="text-lg font-bold text-white">Upravljanje</h3>
+                            <p className="text-xs text-gray-400 mt-1 truncate max-w-[200px]">{r.email}</p>
+                          </div>
+                          <button 
+                            onClick={() => setActionMenuOpen(null)}
+                            className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-full transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="p-3 space-y-1">
+                          <button 
+                            onClick={() => { setEditingUser(r); setEditCredits(r.credits); setActionMenuOpen(null); }}
+                            className="w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium text-gray-200 hover:bg-gray-800 flex items-center transition-colors"
+                          >
+                            <Edit className="w-5 h-5 mr-3 text-blue-400" /> Uredi Podatke
+                          </button>
+                          <button 
+                            onClick={() => { addCredits(r.uid, r.credits, r.email); setActionMenuOpen(null); }}
+                            className="w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium text-gray-200 hover:bg-gray-800 flex items-center transition-colors"
+                          >
+                            <Coins className="w-5 h-5 mr-3 text-emerald-400" /> Brzo dodaj kredite
+                          </button>
+                          <button 
+                            onClick={() => { handlePasswordReset(r.email); setActionMenuOpen(null); }}
+                            className="w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium text-gray-200 hover:bg-gray-800 flex items-center transition-colors"
+                          >
+                            <Key className="w-5 h-5 mr-3 text-purple-400" /> Reset Lozinke
+                          </button>
+                          <button 
+                            onClick={() => { handleSuspend(r.uid, r.status, r.email); setActionMenuOpen(null); }}
+                            className={`w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium flex items-center transition-colors hover:bg-gray-800 ${r.status === 'suspended' ? 'text-green-400' : 'text-orange-400'}`}
+                          >
+                            {r.status === 'suspended' ? <><CheckCircle className="w-5 h-5 mr-3" /> Aktiviraj Račun</> : <><Ban className="w-5 h-5 mr-3" /> Suspendiraj Račun</>}
+                          </button>
+                          <div className="h-px bg-gray-800 my-2 mx-2" />
+                          <button 
+                            onClick={() => { handleDelete(r.uid, r.email); setActionMenuOpen(null); }}
+                            className="w-full text-left px-4 py-3.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 flex items-center transition-colors"
+                          >
+                            <Trash2 className="w-5 h-5 mr-3" /> Obriši Račun
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()
               )}
 
               {/* Edit Reseller Modal */}

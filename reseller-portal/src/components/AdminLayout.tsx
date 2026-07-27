@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, Settings, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 

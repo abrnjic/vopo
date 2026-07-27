@@ -80,7 +80,7 @@ export const mockAdminDb = {
     try {
       return await callback(transaction);
     } catch (e: any) {
-      return { error: e.message || 'Transaction failed', status: e.status || 500 };
+      throw e;
     }
   }
 };

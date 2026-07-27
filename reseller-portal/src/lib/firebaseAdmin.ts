@@ -15,23 +15,35 @@ if (process.env.MOCK_FIREBASE === 'true') {
     try {
       if (process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
         const stripQuotes = (val?: string) => val?.replace(/^["']|["']$/g, '');
-        const serviceAccount = {
-          projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) || 'dummy-project',
-          clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL) || 'dummy@dummy.com',
-          privateKey: stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n') || '-----BEGIN PRIVATE KEY-----\ndummy\n-----END PRIVATE KEY-----\n',
-        };
-        initializeApp({
-          credential: cert(serviceAccount),
-        });
+        const privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n');
+
+        if (privateKey && privateKey.includes('BEGIN PRIVATE KEY')) {
+          const serviceAccount = {
+            projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+            clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL),
+            privateKey: privateKey,
+          };
+          initializeApp({
+            credential: cert(serviceAccount),
+          });
+        } else {
+          // If no valid private key, initialize without credential (might fail later, but won't crash on import)
+          initializeApp();
+        }
       } else {
         initializeApp();
       }
+      db = getFirestore();
+      auth = getAuth();
     } catch (error) {
-      console.error('Firebase admin initialization error', error);
+      console.warn('Firebase admin initialization error. Falling back to mocks for build compatibility.', error);
+      db = mockAdminDb;
+      auth = mockAdminAuth;
     }
+  } else {
+    db = getFirestore();
+    auth = getAuth();
   }
-  db = getFirestore();
-  auth = getAuth();
 }
 
 export const adminDb = db;

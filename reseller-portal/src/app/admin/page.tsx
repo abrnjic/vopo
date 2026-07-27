@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe } from 'lucide-react';
+import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
@@ -11,6 +11,7 @@ import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { format } from 'date-fns';
+import { upload } from '@vercel/blob/client';
 import { hr } from 'date-fns/locale';
 
 const secondaryApp = initializeApp({
@@ -36,7 +37,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'logs' | 'settings'>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -48,11 +49,125 @@ export default function AdminDashboard() {
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
+  // APK Upload States
+  const [apkFile, setApkFile] = useState<File | null>(null);
+  const [apkVersionName, setApkVersionName] = useState('');
+  const [apkVersionCode, setApkVersionCode] = useState('');
+  const [isUploadingApk, setIsUploadingApk] = useState(false);
+  const [apkUploadMessage, setApkUploadMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
+
   // New states for actions
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<ResellerData | null>(null);
   const [editCredits, setEditCredits] = useState(0);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const handleApkUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!apkFile || !apkVersionName || !apkVersionCode) {
+      setApkUploadMessage({ type: 'error', text: 'Molimo popunite sva polja i odaberite APK datoteku.' });
+      return;
+    }
+
+    if (!apkFile.name.endsWith('.apk')) {
+      setApkUploadMessage({ type: 'error', text: 'Samo .apk datoteke su dozvoljene.' });
+      return;
+    }
+
+    setIsUploadingApk(true);
+    setApkUploadMessage(null);
+
+    try {
+      const idToken = await user?.getIdToken();
+
+      // Calculate SHA-256 client-side
+      const arrayBuffer = await apkFile.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const checksum = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const safeVersionName = apkVersionName.replace(/[^a-zA-Z0-9.-]/g, '');
+
+      // Mock Local testing
+      if (process.env.NEXT_PUBLIC_MOCK_FIREBASE === 'true') {
+         const mockRes = await fetch('/api/admin/apk', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+           body: JSON.stringify({
+             type: "blob.generate-client-token",
+             payload: {
+                pathname: `apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk`,
+                clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum })
+             }
+           })
+         });
+         const mockData = await mockRes.json();
+         if (!mockRes.ok) throw new Error(mockData.error || 'Mock error');
+
+         // Mock upload completed webhook
+         const mockWebhookRes = await fetch('/api/admin/apk', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${idToken}` },
+           body: JSON.stringify({
+             type: "blob.upload-completed",
+             payload: {
+               blob: { url: "https://mock-blob.com/test.apk", size: apkFile.size, pathname: `apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk` },
+               tokenPayload: mockData.clientToken ? JSON.parse(atob(mockData.clientToken.split('.')[1] || 'e30=')).tokenPayload : JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, uid: user?.uid, email: user?.email })
+             }
+           })
+         });
+
+         const mockWebhookData = await mockWebhookRes.json();
+         if (!mockWebhookRes.ok) throw new Error(mockWebhookData.error || 'Mock webhook error');
+
+         setApkUploadMessage({ type: 'success', text: 'APK uspješno prenesen i objavljen. (MOCK)' });
+         setApkFile(null);
+         setApkVersionName('');
+         setApkVersionCode('');
+         return;
+      }
+
+      await upload(`apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk`, apkFile, {
+        access: 'public',
+        handleUploadUrl: '/api/admin/apk',
+        clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum }),
+        headers: {
+           Authorization: `Bearer ${idToken}`
+        }
+      });
+
+      setApkUploadMessage({ type: 'success', text: 'Upload završen. Provjera i objava u tijeku...' });
+
+      let attempts = 0;
+      let isPublished = false;
+      while (attempts < 15) {
+        await new Promise(r => setTimeout(r, 2000));
+        const checkRes = await fetch('/api/apk/latest', { cache: 'no-store' });
+        if (checkRes.ok) {
+           const data = await checkRes.json();
+           if (data.versionCode === parseInt(apkVersionCode, 10) && data.checksum === checksum) {
+              isPublished = true;
+              break;
+           }
+        }
+        attempts++;
+      }
+
+      if (isPublished) {
+         setApkUploadMessage({ type: 'success', text: `APK (v${safeVersionName}) uspješno provjeren i objavljen.` });
+         setApkFile(null);
+         setApkVersionName('');
+         setApkVersionCode('');
+      } else {
+         setApkUploadMessage({ type: 'error', text: 'Objava nije potvrđena unutar očekivanog vremena. Provjerite stanje (moguće odbijeno na provjeri integriteta).' });
+      }
+
+    } catch (error: any) {
+      setApkUploadMessage({ type: 'error', text: error.message || 'Greška prilikom prijenosa' });
+    } finally {
+      setIsUploadingApk(false);
+    }
+  };
 
   const fetchResellers = async () => {
     setLoading(true);
@@ -63,10 +178,10 @@ export default function AdminDashboard() {
       querySnapshot.forEach((doc) => {
         const d = doc.data();
         if (d.status !== 'deleted') {
-          data.push({ 
-            uid: doc.id, 
-            email: d.email, 
-            credits: d.credits || 0, 
+          data.push({
+            uid: doc.id,
+            email: d.email,
+            credits: d.credits || 0,
             assignedDomains: d.assignedDomains || [],
             status: d.status || 'active'
           });
@@ -130,7 +245,7 @@ export default function AdminDashboard() {
       const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newEmail, newPassword);
       await signOut(secondaryAuth);
       const newUid = userCredential.user.uid;
-      
+
       const idToken = await user?.getIdToken();
       const res = await fetch('/api/admin/users', {
         method: 'POST',
@@ -170,7 +285,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSuspend = async (uid: string, currentStatus: string | undefined, email: string) => {
+  const handleSuspend = async (uid: string, currentStatus: string | undefined) => {
     const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
     if (confirm(`Želite li promijeniti status u ${newStatus}?`)) {
       try {
@@ -198,7 +313,7 @@ export default function AdminDashboard() {
     setActionMenuOpen(null);
   };
 
-  const handleDelete = async (uid: string, email: string) => {
+  const handleDelete = async (uid: string) => {
     if (confirm('Jeste li sigurni da želite izbrisati ovog korisnika? (Ovo će samo označiti korisnika kao obrisanog)')) {
       try {
         const idToken = await user?.getIdToken();
@@ -295,7 +410,7 @@ export default function AdminDashboard() {
     <ProtectedRoute allowedRoles={['admin']}>
       <AdminLayout>
         <div className="space-y-6 pb-20">
-          
+
           {/* Header & Tabs */}
           <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-900/40 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none" />
@@ -308,27 +423,27 @@ export default function AdminDashboard() {
               </h1>
               <p className="text-gray-400 mt-2 text-sm ml-16 font-medium tracking-wide">Premium nadzorna ploča sustava</p>
             </div>
-            
+
             <div className="relative z-10 flex space-x-2 mt-6 md:mt-0 overflow-x-auto pb-2 md:pb-0 bg-gray-950/60 p-1.5 rounded-2xl border border-gray-800/80 shadow-inner">
-              <button 
+              <button
                 onClick={() => setActiveTab('home')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'home' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
               >
                 <Home className="w-4 h-4 mr-2" /> Početna
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('resellers')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'resellers' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
               >
                 <Users className="w-4 h-4 mr-2" /> Reselleri
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('logs')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
               >
                 <Activity className="w-4 h-4 mr-2" /> Logovi
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('settings')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'settings' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
               >
@@ -355,7 +470,7 @@ export default function AdminDashboard() {
                       <p className="text-gray-400 text-sm font-medium mb-1">Aktivni Reselleri</p>
                       <h3 className="text-3xl font-bold text-white">{analyticsData?.totalResellers || 0}</h3>
                     </div>
-                    
+
                     <div className="bg-gray-900/40 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 shadow-xl relative overflow-hidden group">
                       <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/30 transition-all duration-500" />
                       <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-4 border border-orange-500/30">
@@ -401,8 +516,8 @@ export default function AdminDashboard() {
                           </div>
                           <span className="text-xs text-gray-500 bg-gray-900/50 px-3 py-1.5 rounded-full border border-gray-800">
                              {log.timestamp ? (
-                                typeof log.timestamp?.toDate === 'function' 
-                                  ? format(log.timestamp.toDate(), "d. MMM HH:mm", { locale: hr }) 
+                                typeof log.timestamp?.toDate === 'function'
+                                  ? format(log.timestamp.toDate(), "d. MMM HH:mm", { locale: hr })
                                   : format(new Date(log.timestamp), "d. MMM HH:mm", { locale: hr })
                               ) : 'Nedavno'}
                           </span>
@@ -419,13 +534,13 @@ export default function AdminDashboard() {
           {activeTab === 'resellers' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="flex justify-end mb-6">
-                <button 
+                <button
                   onClick={fetchResellers}
                   className="bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700 text-gray-300 px-4 py-2.5 rounded-xl font-medium flex items-center transition-all mr-3 backdrop-blur-sm"
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </button>
-                <button 
+                <button
                   onClick={() => setShowAddModal(true)}
                   className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-xl font-medium flex items-center shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-0.5"
                 >
@@ -480,7 +595,7 @@ export default function AdminDashboard() {
                             </div>
                           </td>
                           <td className="px-8 py-5 text-right">
-                            <button 
+                            <button
                               onClick={() => setActionMenuOpen(r.uid)}
                               className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white bg-gray-800/50 hover:bg-blue-600 rounded-xl transition-all border border-gray-700/50 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20"
                             >
@@ -512,42 +627,42 @@ export default function AdminDashboard() {
                     <div className="p-8">
                       <h2 className="text-2xl font-bold text-white mb-2">Kreiraj Resellera</h2>
                       <p className="text-gray-400 text-sm mb-8">Unesite osnovne podatke za novog korisnika.</p>
-                      
+
                       <form onSubmit={handleCreateReseller} className="space-y-5">
                         <div>
                           <label className="block text-sm font-semibold text-gray-400 mb-2">Email adresa</label>
-                          <input 
-                            type="email" required 
+                          <input
+                            type="email" required
                             placeholder="admin@tvrtka.com"
-                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600" 
-                            value={newEmail} onChange={e => setNewEmail(e.target.value)} 
+                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600"
+                            value={newEmail} onChange={e => setNewEmail(e.target.value)}
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-400 mb-2">Lozinka</label>
-                          <input 
+                          <input
                             type="password" required minLength={6}
                             placeholder="••••••••"
-                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600" 
-                            value={newPassword} onChange={e => setNewPassword(e.target.value)} 
+                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all placeholder:text-gray-600"
+                            value={newPassword} onChange={e => setNewPassword(e.target.value)}
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-semibold text-gray-400 mb-2">Početni Krediti</label>
-                          <input 
+                          <input
                             type="number" required min={0}
-                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all" 
-                            value={newCredits} onChange={e => setNewCredits(Number(e.target.value))} 
+                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            value={newCredits} onChange={e => setNewCredits(Number(e.target.value))}
                           />
                         </div>
                         <div className="flex space-x-3 pt-6 mt-4 border-t border-gray-800">
-                          <button 
+                          <button
                             type="button" onClick={() => setShowAddModal(false)}
                             className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3.5 rounded-2xl font-bold transition-colors border border-gray-700"
                           >
                             Odustani
                           </button>
-                          <button 
+                          <button
                             type="submit" disabled={isCreating}
                             className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50"
                           >
@@ -574,7 +689,7 @@ export default function AdminDashboard() {
                             <h3 className="text-xl font-bold text-white">Upravljanje</h3>
                             <p className="text-sm text-gray-400 mt-1 truncate max-w-[200px]">{r.email}</p>
                           </div>
-                          <button 
+                          <button
                             onClick={() => setActionMenuOpen(null)}
                             className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-full transition-colors border border-gray-700/50"
                           >
@@ -582,7 +697,7 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                         <div className="p-4 space-y-2">
-                          <button 
+                          <button
                             onClick={() => { setEditingUser(r); setEditCredits(r.credits); setActionMenuOpen(null); }}
                             className="w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold text-gray-200 hover:bg-gray-800 flex items-center transition-colors group"
                           >
@@ -591,8 +706,8 @@ export default function AdminDashboard() {
                             </div>
                             Uredi Kredite i Podatke
                           </button>
-                          
-                          <button 
+
+                          <button
                             onClick={() => { handlePasswordReset(r.email); setActionMenuOpen(null); }}
                             className="w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold text-gray-200 hover:bg-gray-800 flex items-center transition-colors group"
                           >
@@ -601,9 +716,9 @@ export default function AdminDashboard() {
                             </div>
                             Pošalji Reset Lozinke
                           </button>
-                          
-                          <button 
-                            onClick={() => { handleSuspend(r.uid, r.status, r.email); setActionMenuOpen(null); }}
+
+                          <button
+                            onClick={() => { handleSuspend(r.uid, r.status); setActionMenuOpen(null); }}
                             className={`w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold flex items-center transition-colors hover:bg-gray-800 group ${r.status === 'suspended' ? 'text-green-400' : 'text-orange-400'}`}
                           >
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 transition-colors ${r.status === 'suspended' ? 'bg-green-500/10 group-hover:bg-green-500/20' : 'bg-orange-500/10 group-hover:bg-orange-500/20'}`}>
@@ -611,11 +726,11 @@ export default function AdminDashboard() {
                             </div>
                             {r.status === 'suspended' ? 'Aktiviraj Račun' : 'Suspendiraj Račun'}
                           </button>
-                          
+
                           <div className="h-px bg-gray-800 my-4 mx-2" />
-                          
-                          <button 
-                            onClick={() => { handleDelete(r.uid, r.email); setActionMenuOpen(null); }}
+
+                          <button
+                            onClick={() => { handleDelete(r.uid); setActionMenuOpen(null); }}
                             className="w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold text-red-400 hover:bg-red-500/10 flex items-center transition-colors group"
                           >
                             <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center mr-4 group-hover:bg-red-500/20 transition-colors">
@@ -643,13 +758,13 @@ export default function AdminDashboard() {
                         </div>
                         <span className="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-3 py-1.5 rounded-lg font-mono">{editingUser.uid.slice(0, 8)}...</span>
                       </div>
-                      
+
                       <form onSubmit={handleSaveEdit} className="space-y-6">
                         <div>
                           <label className="block text-sm font-semibold text-gray-400 mb-2">Email adresa (Zaključano)</label>
-                          <input 
+                          <input
                             type="email" readOnly disabled
-                            className="w-full bg-gray-800/50 border border-gray-700/50 rounded-2xl p-3.5 text-gray-500 outline-none cursor-not-allowed" 
+                            className="w-full bg-gray-800/50 border border-gray-700/50 rounded-2xl p-3.5 text-gray-500 outline-none cursor-not-allowed"
                             value={editingUser.email}
                           />
                         </div>
@@ -658,24 +773,24 @@ export default function AdminDashboard() {
                             <span>Dostupni Krediti</span>
                             <span className="text-emerald-500">Trenutno: {editingUser.credits}</span>
                           </label>
-                          <input 
+                          <input
                             type="number" required min={0}
-                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all text-lg font-bold" 
-                            value={editCredits} onChange={e => setEditCredits(Number(e.target.value))} 
+                            className="w-full bg-gray-950/60 border border-gray-700 rounded-2xl p-3.5 text-white focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 outline-none transition-all text-lg font-bold"
+                            value={editCredits} onChange={e => setEditCredits(Number(e.target.value))}
                           />
                           <p className="text-xs text-gray-500 mt-2">
                             * Sve promjene kredita bit će trajno zabilježene u Activity logu s imenom admina koji je izvršio promjenu.
                           </p>
                         </div>
-                        
+
                         <div className="flex space-x-3 pt-6 border-t border-gray-800 mt-6">
-                          <button 
+                          <button
                             type="button" onClick={() => setEditingUser(null)}
                             className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3.5 rounded-2xl font-bold transition-colors border border-gray-700"
                           >
                             Odustani
                           </button>
-                          <button 
+                          <button
                             type="submit" disabled={isSavingEdit || editCredits === editingUser.credits}
                             className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white py-3.5 rounded-2xl font-bold transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50"
                           >
@@ -720,8 +835,8 @@ export default function AdminDashboard() {
                     <div key={log.id} className="flex items-start p-5 bg-gray-900/60 hover:bg-gray-800/80 rounded-2xl border border-gray-700/40 transition-all duration-300 hover:border-gray-600/50 shadow-sm">
                       <div className="flex-shrink-0 mt-1">
                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${
-                          log.action.includes('CREDIT') 
-                            ? 'bg-orange-500/10 border-orange-500/20 text-orange-400' 
+                          log.action.includes('CREDIT')
+                            ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
                             : log.action.includes('USER') || log.action.includes('RESELLER')
                             ? 'bg-blue-500/10 border-blue-500/20 text-blue-400'
                             : 'bg-gray-700/50 border-gray-600 text-gray-300'
@@ -733,8 +848,8 @@ export default function AdminDashboard() {
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-1">
                           <h4 className="text-gray-100 font-bold text-lg tracking-wide">{log.action}</h4>
                           <span className={`mt-2 sm:mt-0 text-[10px] px-3 py-1.5 rounded-lg font-bold uppercase tracking-widest border shadow-sm ${
-                            log.role === 'admin' 
-                              ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' 
+                            log.role === 'admin'
+                              ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
                               : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
                           }`}>
                             {log.role}
@@ -748,8 +863,8 @@ export default function AdminDashboard() {
                           </p>
                           <p className="text-gray-400 text-sm font-mono mt-2 sm:mt-0 bg-gray-900 px-3 py-1.5 rounded-lg border border-gray-800">
                              {log.timestamp ? (
-                                typeof log.timestamp?.toDate === 'function' 
-                                  ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm:ss", { locale: hr }) 
+                                typeof log.timestamp?.toDate === 'function'
+                                  ? format(log.timestamp.toDate(), "d. MMMM yyyy. 'u' HH:mm:ss", { locale: hr })
                                   : format(new Date(log.timestamp), "d. MMMM yyyy. 'u' HH:mm:ss", { locale: hr })
                               ) : 'Upravo sada'}
                           </p>
@@ -780,7 +895,7 @@ export default function AdminDashboard() {
                   <p className="text-base text-gray-400 mt-1">Globalna konfiguracija sigurnosti i ponašanja platforme</p>
                 </div>
               </div>
-              
+
               <div className="p-8 md:p-10">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                   {/* General Settings */}
@@ -789,7 +904,7 @@ export default function AdminDashboard() {
                       <ShieldCheck className="w-5 h-5 mr-3 text-blue-400" />
                       Sigurnost i Pristup
                     </h3>
-                    
+
                     <div className="group flex items-center justify-between p-5 bg-gray-800/40 hover:bg-gray-800/60 rounded-2xl border border-gray-700/50 transition-all shadow-sm">
                       <div className="pr-4">
                         <p className="text-white font-bold text-base">Način Održavanja (Maintenance Mode)</p>
@@ -811,6 +926,85 @@ export default function AdminDashboard() {
                         <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 shadow-inner"></div>
                       </label>
                     </div>
+                    </div>
+                  </div>
+
+                  {/* APK Management */}
+                  <div className="space-y-6">
+                    <h3 className="text-xl font-bold text-white border-b border-gray-800 pb-4 flex items-center">
+                      <Upload className="w-5 h-5 mr-3 text-emerald-400" />
+                      Upravljanje APK Datotekom
+                    </h3>
+
+                    <div className="p-6 bg-gray-800/40 rounded-2xl border border-gray-700/50 shadow-sm">
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                        Prenesite novu verziju Vopo Android aplikacije. Nova datoteka će biti dostupna na /download.
+                      </p>
+
+                      <form onSubmit={handleApkUpload} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-300 mb-2">Verzija (Name)</label>
+                            <input
+                              type="text"
+                              placeholder="npr. 1.0.5"
+                              value={apkVersionName}
+                              onChange={(e) => setApkVersionName(e.target.value)}
+                              className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-bold text-gray-300 mb-2">Verzija (Code)</label>
+                            <input
+                              type="number"
+                              placeholder="npr. 105"
+                              value={apkVersionCode}
+                              onChange={(e) => setApkVersionCode(e.target.value)}
+                              className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-bold text-gray-300 mb-2">APK Datoteka</label>
+                          <input
+                            type="file"
+                            accept=".apk"
+                            onChange={(e) => setApkFile(e.target.files ? e.target.files[0] : null)}
+                            className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-500/10 file:text-emerald-500 hover:file:bg-emerald-500/20"
+                            required
+                          />
+                        </div>
+
+                        {apkUploadMessage && (
+                          <div className={`p-4 rounded-xl text-sm font-medium ${apkUploadMessage.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}`}>
+                            {apkUploadMessage.text}
+                          </div>
+                        )}
+
+                        <div className="flex justify-end pt-2">
+                          <button
+                            type="submit"
+                            disabled={isUploadingApk}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isUploadingApk ? (
+                              <>
+                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                Prijenos u tijeku...
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="w-4 h-4 mr-2" />
+                                Objavi APK
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
+                    </div>
                   </div>
 
                   {/* Appearance & Localization */}
@@ -819,7 +1013,7 @@ export default function AdminDashboard() {
                       <Globe className="w-5 h-5 mr-3 text-purple-400" />
                       Lokalizacija i Izgled
                     </h3>
-                    
+
                     <div className="space-y-4">
                       <label className="block text-sm font-bold text-gray-300">Glavna Tema Sučelja</label>
                       <div className="grid grid-cols-2 gap-4">
@@ -858,7 +1052,6 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </div>
-            </div>
           )}
         </div>
       </AdminLayout>

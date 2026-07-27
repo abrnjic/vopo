@@ -12,22 +12,28 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-
+    
+    defaults:
+      run:
+        working-directory: ./reseller-portal
+        
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
+          cache-dependency-path: './reseller-portal/package-lock.json'
 
       - name: Install Dependencies
         run: npm ci
-
+        
       - name: Check Whitespace and Formatting
         run: git diff --check
+        working-directory: ./
 
       - name: Lint
         run: npm run lint
@@ -42,3 +48,6 @@ jobs:
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Audit
+        run: npm audit --omit=dev

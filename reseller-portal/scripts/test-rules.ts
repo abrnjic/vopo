@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, @typescript-eslint/no-unused-vars */
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';

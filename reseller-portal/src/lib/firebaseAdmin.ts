@@ -36,9 +36,8 @@ if (process.env.MOCK_FIREBASE === 'true') {
       db = getFirestore();
       auth = getAuth();
     } catch (error) {
-      console.warn('Firebase admin initialization error. Falling back to mocks for build compatibility.', error);
-      db = mockAdminDb;
-      auth = mockAdminAuth;
+      console.error('Firebase admin initialization failed.', error);
+      throw new Error('Production Firebase initialization failed. Mock fallback is disabled.');
     }
   } else {
     db = getFirestore();

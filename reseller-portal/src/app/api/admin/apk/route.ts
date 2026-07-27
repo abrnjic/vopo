@@ -86,7 +86,6 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
     const { versionName, versionCode, checksum, uid, email } = JSON.parse(tokenPayload);
 
     if (!validateBlobUrl(blob.url, versionName, versionCode)) {
-      await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
       throw new Error('Invalid Blob URL characteristics.');
     }
 
@@ -108,7 +107,6 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
     // We check content length but also gracefully handle missing header or mock environment limitations
     const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
     if (contentLength > 100 * 1024 * 1024) {
-      await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
       throw new Error('Blob headers exceed maximum allowed size.');
     }
 
@@ -123,7 +121,6 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
       if (done) break;
       byteCount += value.length;
       if (byteCount > 100 * 1024 * 1024) {
-        await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
         throw new Error('Blob stream exceeds maximum allowed size.');
       }
       hash.update(value);
@@ -142,11 +139,8 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
     }
 
     if (!isValidHash) {
-      await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
       throw new Error(`SHA-256 mismatch. Client: ${checksum}, Server: ${serverHash}`);
     }
-
-    let wasPublished = false;
 
     await adminDb.runTransaction(async (transaction: any) => {
        const doc = await transaction.get(metadataRef);
@@ -184,17 +178,17 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
          actorUid: uid,
          actorEmail: email || '',
          actorRole: 'admin',
-         action: 'UPDATE_PROFILE',
-         details: `Objavljena nova verzija aplikacije: ${versionName} (${versionCode})`,
+         action: 'APK_PUBLISHED',
+         details: { message: `Objavljena nova verzija aplikacije: ${versionName} (${versionCode})`, versionCode },
          timestamp: new Date().toISOString(),
          ipAddress: 'server'
        });
-
-       wasPublished = true;
     });
 
   } catch (error) {
     console.error('Error in onUploadCompleted:', error instanceof Error ? error.message : 'Unknown error');
+    // Ensure we delete the failed candidate blob, but not if it's already the latest (idempotency doesn't throw)
+    await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
     throw error;
   }
 };

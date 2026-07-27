@@ -4,6 +4,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import crypto from 'crypto';
 import { del } from '@vercel/blob';
+import { validateBlobUrl } from '@/utils/blobValidator';
 
 export const onBeforeGenerateToken = async (pathname: string, clientPayload: string | null, request: NextRequest) => {
   // 3. Provjeri Firebase ID token i potvrdi ulogu i status
@@ -14,7 +15,7 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   if (authResult.context.role !== 'admin') {
     throw new Error('Unauthorized: Not an admin');
   }
-  
+
   // Provjeri status korisnika (aktivan)
   const userDoc = await adminDb.collection('users').doc(authResult.context.uid).get();
   if (!userDoc.exists || userDoc.data()?.status !== 'active') {
@@ -22,10 +23,6 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   }
 
   // Validiraj ekstenziju, versionName, versionCode
-  if (!pathname.endsWith('.apk')) {
-    throw new Error('Invalid file extension. Only .apk is allowed.');
-  }
-
   const payload = JSON.parse(clientPayload || '{}');
   const { versionName, versionCode, checksum } = payload;
 
@@ -33,16 +30,32 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
     throw new Error('Missing versionName, versionCode, or checksum in clientPayload');
   }
 
-  const vCodeNum = parseInt(versionCode, 10);
-  if (isNaN(vCodeNum) || vCodeNum <= 0) {
-    throw new Error('Invalid versionCode. Must be a positive integer.');
-  }
-
   // Format sigurnog versionName
   const safeVersionName = versionName.replace(/[^a-zA-Z0-9.-]/g, '');
   if (safeVersionName !== versionName || safeVersionName.length === 0) {
     throw new Error('Invalid versionName format.');
   }
+
+  if (!/^[1-9]\d*$/.test(versionCode)) {
+    throw new Error('Invalid versionCode format. Must be a positive integer without leading zeros.');
+  }
+
+  const vCodeNum = parseInt(versionCode, 10);
+  if (vCodeNum > Number.MAX_SAFE_INTEGER) {
+    throw new Error('versionCode exceeds maximum safe integer.');
+  }
+
+  if (!/^[a-fA-F0-9]{64}$/.test(checksum)) {
+    throw new Error('Invalid checksum format. Must be a 64-character hexadecimal string.');
+  }
+  const safeChecksum = checksum.toLowerCase();
+
+  const expectedPathname = `apk/releases/vopoapp-${safeVersionName}-${versionCode}.apk`;
+  if (pathname !== expectedPathname) {
+    throw new Error('Invalid pathname. Must match exactly: apk/releases/vopoapp-{versionName}-{versionCode}.apk');
+  }
+
+
 
   // Provjeri da novi versionCode mora biti veci od trenutačnog
   const metadataDoc = await adminDb.collection('system').doc('apk_metadata').get();
@@ -60,7 +73,7 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
     tokenPayload: JSON.stringify({
       versionName: safeVersionName,
       versionCode: vCodeNum.toString(),
-      checksum,
+      checksum: safeChecksum,
       uid: authResult.context.uid,
       email: authResult.context.email
     }),
@@ -71,6 +84,11 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
   try {
     if (!tokenPayload) throw new Error('Missing tokenPayload');
     const { versionName, versionCode, checksum, uid, email } = JSON.parse(tokenPayload);
+
+    if (!validateBlobUrl(blob.url, versionName, versionCode)) {
+      await del(blob.url).catch(e => console.error("Failed to delete blob:", e.message));
+      throw new Error('Invalid Blob URL characteristics.');
+    }
 
     // Idempotency: Brzi read prije skidanja cijelog APK-a
     const metadataRef = adminDb.collection('system').doc('apk_metadata');
@@ -86,7 +104,7 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
     // Verify SHA-256 via Stream
     const response = await fetch(blob.url);
     if (!response.ok) throw new Error('Failed to fetch blob for verification');
-    
+
     // We check content length but also gracefully handle missing header or mock environment limitations
     const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
     if (contentLength > 100 * 1024 * 1024) {
@@ -134,7 +152,7 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
        const doc = await transaction.get(metadataRef);
        if (doc.exists) {
          const currentData = doc.data();
-         
+
          // Idempotentnost unutar transakcije
          if (currentData?.latestUrl === blob.url && currentData?.versionCode === versionCode) {
            return; // Već procesirano
@@ -146,7 +164,7 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
            throw new Error('versionCode conflict: newer version already exists');
          }
        }
-       
+
        const metadata = {
          versionName,
          versionCode,
@@ -155,16 +173,25 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
          latestUrl: blob.url,
          updatedAt: new Date().toISOString(),
        };
-       
+
        transaction.set(metadataRef, metadata);
+
+       // Deterministic audit log ID
+       const auditId = `apk_dist_${versionCode}_${serverHash.substring(0, 8)}`;
+       const auditRef = adminDb.collection('activity_logs').doc(auditId);
+
+       transaction.set(auditRef, {
+         actorUid: uid,
+         actorEmail: email || '',
+         actorRole: 'admin',
+         action: 'UPDATE_PROFILE',
+         details: `Objavljena nova verzija aplikacije: ${versionName} (${versionCode})`,
+         timestamp: new Date().toISOString(),
+         ipAddress: 'server'
+       });
+
        wasPublished = true;
     });
-
-    // Activity Log samo ako smo uspjeli unutar transakcije objaviti
-    if (wasPublished) {
-      const { logActivity } = await import('@/utils/activityLogger');
-      await logActivity(uid, email || '', 'admin', 'UPDATE_PROFILE' as any, `Objavljena nova verzija aplikacije: ${versionName} (${versionCode})`);
-    }
 
   } catch (error) {
     console.error('Error in onUploadCompleted:', error instanceof Error ? error.message : 'Unknown error');

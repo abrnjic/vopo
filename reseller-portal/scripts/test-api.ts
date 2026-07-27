@@ -134,7 +134,7 @@ test('API P0 Tests', async (t) => {
     await resellerActivateRoute(req);
     assert.strictEqual(mockState.users.get('reseller1').credits, 9); // Charge 1
     const req2 = createMockReq({ deviceId: 'dev1', licenseType: '1_year' }, 'reseller1:reseller:r@test.com');
-    await resellerActivateRoute(req2); 
+    await resellerActivateRoute(req2);
     assert.strictEqual(mockState.users.get('reseller1').credits, 9); // No extra charge
   });
 

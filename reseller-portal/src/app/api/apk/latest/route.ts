@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const doc = await adminDb.collection('system').doc('apk_metadata').get();
-    
+
     if (!doc.exists) {
       return NextResponse.json({ error: 'Metadata not found' }, { status: 404 });
     }

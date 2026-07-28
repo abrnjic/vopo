@@ -3,48 +3,66 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { mockAdminAuth, mockAdminDb } from './mockFirebaseAdmin';
 
-let db: any;
-let auth: any;
+let _db: any;
+let _auth: any;
 
-if (process.env.MOCK_FIREBASE === 'true') {
-  console.log('Using MOCK Firebase Admin');
-  db = mockAdminDb;
-  auth = mockAdminAuth;
-} else {
+function initFirebaseAdmin() {
+  if (_db && _auth) return;
+
+  if (process.env.MOCK_FIREBASE === 'true' && process.env.NODE_ENV === 'test') {
+    console.log('Using MOCK Firebase Admin');
+    _db = mockAdminDb;
+    _auth = mockAdminAuth;
+    return;
+  }
+
+  if (process.env.MOCK_FIREBASE === 'true') {
+    console.warn('MOCK_FIREBASE=true ignored because NODE_ENV is not "test"');
+  }
+
   if (!getApps().length) {
-    try {
-      if (process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID) {
-        const stripQuotes = (val?: string) => val?.replace(/^["']|["']$/g, '');
-        const privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n');
+    const stripQuotes = (val?: string) => val?.replace(/^["']|["']$/g, '');
+    const projectId = stripQuotes(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+    const clientEmail = stripQuotes(process.env.FIREBASE_CLIENT_EMAIL);
+    const privateKey = stripQuotes(process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n');
 
-        if (privateKey && privateKey.includes('BEGIN PRIVATE KEY')) {
-          const serviceAccount = {
-            projectId: stripQuotes(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
-            clientEmail: stripQuotes(process.env.FIREBASE_CLIENT_EMAIL),
-            privateKey: privateKey,
-          };
-          initializeApp({
-            credential: cert(serviceAccount),
-          });
-        } else {
-          // If no valid private key, initialize without credential (might fail later, but won't crash on import)
-          initializeApp();
-        }
-      } else {
-        initializeApp();
-      }
-      db = getFirestore();
-      auth = getAuth();
+    if (!projectId || !clientEmail || !privateKey || !privateKey.includes('BEGIN PRIVATE KEY')) {
+      throw new Error('Production Firebase initialization failed: Missing or invalid FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, or FIREBASE_PRIVATE_KEY.');
+    }
+
+    try {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+      });
+      _db = getFirestore();
+      _auth = getAuth();
     } catch (error) {
       console.error('Firebase admin initialization failed.', error);
-      throw new Error('Production Firebase initialization failed. Mock fallback is disabled.');
+      throw new Error('Production Firebase initialization failed.');
     }
   } else {
-    db = getFirestore();
-    auth = getAuth();
+    _db = getFirestore();
+    _auth = getAuth();
   }
 }
 
-export const adminDb = db;
-export const adminAuth = auth;
+export const adminDb: any = new Proxy({}, {
+  get: (_, prop) => {
+    initFirebaseAdmin();
+    const value = _db[prop];
+    return typeof value === 'function' ? value.bind(_db) : value;
+  }
+});
+
+export const adminAuth: any = new Proxy({}, {
+  get: (_, prop) => {
+    initFirebaseAdmin();
+    const value = _auth[prop];
+    return typeof value === 'function' ? value.bind(_auth) : value;
+  }
+});
 

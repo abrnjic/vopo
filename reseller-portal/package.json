@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "MOCK_FIREBASE=true npx tsx scripts/test-api.ts && MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts",
+    "test": "NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-api.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts && npx tsx scripts/test-prod-init.ts",
     "test:rules": "firebase emulators:exec --project vopo-reseller-test 'npx tsx scripts/test-rules.ts'"
   },
   "dependencies": {

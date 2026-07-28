@@ -8,7 +8,7 @@ import { validateBlobUrl } from '@/utils/blobValidator';
 export async function GET() {
   try {
     const doc = await adminDb.collection('system').doc('apk_metadata').get();
-    
+
     if (!doc.exists || !doc.data()?.latestUrl) {
       return new NextResponse('APK not found', { status: 404 });
     }

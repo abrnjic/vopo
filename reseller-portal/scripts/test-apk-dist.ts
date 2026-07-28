@@ -293,18 +293,18 @@ test('APK Distribution Tests', async (t) => {
       }).persist();
 
       (mockState as any).system.set('apk_metadata', { versionCode: '20', checksum: 'old', latestUrl: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-20.apk' });
-      
+
       try {
         const tokenPayload = JSON.stringify({ versionName: '1.0', versionCode: '10', checksum: 'a'.repeat(64), uid: 'admin1', email: 'a@v.com' });
         await onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-10.apk' }, tokenPayload });
       } catch (e) {
         // Expected SHA mismatch
       }
-      
+
       assert.strictEqual(delCallCount, 1);
       assert.strictEqual(lastDelUrl, 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-10.apk');
       assert.ok(!delUrls.includes('https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-20.apk'));
-      
+
       const meta = (mockState as any).system.get('apk_metadata');
       assert.strictEqual(meta.versionCode, '20');
   });
@@ -331,58 +331,84 @@ test('APK Distribution Tests', async (t) => {
 
   await t.test('22. dva istodobna pokušaja objave (transaction check)', async () => {
       (mockState as any).system.set('apk_metadata', { versionCode: '30' });
-      
-      // Simulate real concurrency using a simple lock for the mock transaction
-      let activeTx = false;
+
+      // Simulate real concurrency using an optimistic locking transaction mock
+      let dbVersion = 0;
       const originalTx = mockAdminDb.runTransaction;
       mockAdminDb.runTransaction = async (fn: any) => {
-         while(activeTx) {
-             await new Promise(r => setTimeout(r, 10)); // retry loop simulating firestore backoff
+         let retries = 3;
+         while (retries > 0) {
+            const startVersion = dbVersion;
+            const writes: any[] = [];
+
+            const tx = {
+               get: async (ref: any) => {
+                   await new Promise(r => setTimeout(r, 10)); // Force interleaving
+                   if (startVersion !== dbVersion) throw new Error('Transaction failed simulation');
+                   return ref.get();
+               },
+               set: (ref: any, data: any, opts: any) => {
+                   writes.push(() => ref.set(data, opts));
+                   return tx;
+               },
+               update: (ref: any, data: any) => {
+                   writes.push(() => ref.update(data));
+                   return tx;
+               }
+            };
+            try {
+                const result = await fn(tx);
+                if (startVersion !== dbVersion) throw new Error('Transaction failed simulation');
+                dbVersion++;
+                for (const w of writes) w();
+                return result;
+            } catch (err: any) {
+                if (err.message === 'Transaction failed simulation') {
+                    retries--;
+                    continue;
+                }
+                throw err;
+            }
          }
-         activeTx = true;
-         try {
-             return await originalTx(fn);
-         } finally {
-             activeTx = false;
-         }
+         throw new Error('Transaction failed simulation');
       };
 
       delCallCount = 0;
       delUrls = [];
 
-      const tokenPayload1 = JSON.stringify({ versionName: '1.0', versionCode: '40', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
-      const tokenPayload2 = JSON.stringify({ versionName: '1.0', versionCode: '35', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
+      const tokenPayload40 = JSON.stringify({ versionName: '1.0', versionCode: '40', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
+      const tokenPayload35 = JSON.stringify({ versionName: '1.0', versionCode: '35', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
+
+      const url40 = 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-40.apk';
+      const url35 = 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-35.apk';
 
       // Start older version upload and newer version upload concurrently
-      const p1 = onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-40.apk' }, tokenPayload: tokenPayload1 });
-      const p2 = onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-35.apk' }, tokenPayload: tokenPayload2 });
+      const p40 = onUploadCompleted({ blob: { url: url40 }, tokenPayload: tokenPayload40 });
+      const p35 = onUploadCompleted({ blob: { url: url35 }, tokenPayload: tokenPayload35 });
 
-      const results = await Promise.allSettled([p1, p2]);
-      
+      const results = await Promise.allSettled([p40, p35]);
       mockAdminDb.runTransaction = originalTx;
 
-      // Check results
-      const res40 = results[0];
-      const res35 = results[1];
-      
-      assert.strictEqual(res40.status, 'fulfilled');
-      assert.strictEqual(res35.status, 'rejected'); // 35 should fail because 40 commits first (or if 35 commits first, 40 overwrites it. But wait, if 35 is older, it can't overwrite 40. Wait, if 40 commits first, 35 fails. If 35 commits first, 40 overwrites 35. Let's make both 40 to test idempotency/duplicate protection).
-      
-      // Actually the user asks: "starija verzija ne može prebrisati noviju, postoji samo jedan odgovarajući audit zapis, konačni metadata odgovara novijoj verziji, neuspjeli kandidat pravilno je obrađen."
-      
+      // 1. Check Promise results
+      assert.strictEqual(results[0].status, 'fulfilled');
+      assert.strictEqual(results[1].status, 'rejected');
+
+      // 2. Final versionCode is 40 (35 didn't overwrite 40)
       const meta = (mockState as any).system.get('apk_metadata');
       assert.strictEqual(meta.versionCode, '40');
-      
-      // Check audits
+
+      // 3. Check audits
       const audits = Array.from((mockState as any).activity_logs.values());
-      const apkAudits = audits.filter((a: any) => a.action === 'APK_PUBLISHED' && a.details?.versionCode === '40');
-      assert.strictEqual(apkAudits.length, 1);
-      
+      const apkAudits40 = audits.filter((a: any) => a.action === 'APK_PUBLISHED' && a.details?.versionCode === '40');
       const apkAudits35 = audits.filter((a: any) => a.action === 'APK_PUBLISHED' && a.details?.versionCode === '35');
-      // If 35 failed, there shouldn't be an audit for it, or maybe there is if it committed first. But wait, if 35 failed transaction check, no audit is written.
-      
-      // Failed candidate (v35 or v40 depending on race) should be deleted
-      assert.ok(delCallCount >= 1);
+
+      assert.strictEqual(apkAudits40.length, 1);
+      assert.strictEqual(apkAudits35.length, 0);
+
+      // 4. Failed candidate (v35) deleted exactly once, v40 not deleted
+      assert.strictEqual(delCallCount, 1);
+      assert.strictEqual(delUrls[0], url35);
+      assert.ok(!delUrls.includes(url40));
   });
 
   await t.test('23. ponovljeni onUploadCompleted callback (idempotencija)', async () => {

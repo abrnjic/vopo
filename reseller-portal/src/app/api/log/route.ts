@@ -4,6 +4,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rateLimit';
+import crypto from 'crypto';
 
 const LogSchema = z.object({
   action: z.enum(['LOGIN', 'LOGOUT', 'VIEW_LICENSES', 'VIEW_USERS', 'EXPORT_DATA', 'OTHER']),
@@ -21,12 +22,24 @@ export async function POST(req: NextRequest) {
     const authContext = auth.context;
 
     // Rate limit check
-    const rateLimit = checkRateLimit(`log_${authContext.uid}`, 10, 60000); // 10 req per minute per user
-    if (!rateLimit.success) {
-      return NextResponse.json({ error: 'Too many requests' }, { 
-        status: 429,
-        headers: rateLimit.headers 
-      });
+    const ip = req.headers.get('x-real-ip') || req.headers.get('x-vercel-forwarded-for') || req.headers.get('x-forwarded-for') || 'unknown';
+    const hashedUid = crypto.createHash('sha256').update(authContext.uid).digest('hex');
+
+    try {
+      const ipLimit = await checkRateLimit(`ip_${ip}`, 20, 60000); // 20 req per minute per IP for logs
+      if (!ipLimit.success) {
+        return NextResponse.json({ error: 'Too many requests from this IP' }, { status: 429, headers: ipLimit.headers });
+      }
+
+      const userLimit = await checkRateLimit(`user_${hashedUid}`, 10, 60000); // 10 req per minute per user for logs
+      if (!userLimit.success) {
+        return NextResponse.json({ error: 'Too many requests for this user' }, { status: 429, headers: userLimit.headers });
+      }
+    } catch (limitError: any) {
+      if (limitError.message === '503') {
+        return NextResponse.json({ error: 'Service Unavailable' }, { status: 503, headers: { 'Retry-After': '30' } });
+      }
+      throw limitError;
     }
 
     const body = await req.json();

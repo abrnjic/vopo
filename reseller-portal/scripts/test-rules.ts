@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const, @typescript-eslint/no-unused-vars */
 import { assertFails, assertSucceeds, initializeTestEnvironment, RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -35,38 +36,41 @@ test('Firestore Security Rules', async (t) => {
   await t.test('neprijavljeno čitanje (unauthenticated read) is denied', async () => {
     const unauthedDb = testEnv.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(unauthedDb, 'licenses', 'lic1')));
+    await assertFails(getDoc(doc(unauthedDb, 'users', 'admin1')));
   });
 
   await t.test('reseller čita tuđi zapis (reseller reads other record) is denied', async () => {
-    const resellerDb = testEnv.authenticatedContext('reseller2').firestore();
-    // Assuming rule is: allow read if request.auth.uid == resource.data.resellerId
-    // If the rule allows all authenticated to read, this test might need adjusting. 
-    // Let's assume the rules allow any auth to read licenses for now (as per current rules).
-    // Wait, the user asked to test "reseller čita tuđi zapis". If the rule allows it, the test should reflect that or we should fix the rule.
-    // Let's test what the current rule does:
-    const docSnap = await assertSucceeds(getDoc(doc(resellerDb, 'licenses', 'lic1')));
-    // The current rule is `allow read: if request.auth != null;`. So it succeeds.
+    const resellerDb = testEnv.authenticatedContext('reseller2', { role: 'reseller' }).firestore();
+    await assertFails(getDoc(doc(resellerDb, 'licenses', 'lic1')));
+    await assertFails(getDoc(doc(resellerDb, 'transactions', 'newT')));
   });
 
-  await t.test('reseller čita vlastiti zapis', async () => {
-    const resellerDb = testEnv.authenticatedContext('reseller1').firestore();
+  await t.test('reseller čita vlastiti zapis (reseller reads own record) is allowed', async () => {
+    const resellerDb = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertSucceeds(getDoc(doc(resellerDb, 'users', 'reseller1')));
+    await assertSucceeds(getDoc(doc(resellerDb, 'licenses', 'lic1')));
   });
 
-  await t.test('klijentski create/update/delete u licenses je zabranjen', async () => {
-    const db = testEnv.authenticatedContext('reseller1').firestore();
+  await t.test('klijentski create/update/delete u licenses i devices je zabranjen', async () => {
+    const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertFails(setDoc(doc(db, 'licenses', 'newLic'), { test: 1 }));
     await assertFails(updateDoc(doc(db, 'licenses', 'lic1'), { status: 'Expired' }));
     await assertFails(deleteDoc(doc(db, 'licenses', 'lic1')));
+
+    await assertFails(setDoc(doc(db, 'devices', 'dev1'), { test: 1 }));
+    await assertFails(updateDoc(doc(db, 'devices', 'dev1'), { test: 2 }));
+    await assertFails(deleteDoc(doc(db, 'devices', 'dev1')));
   });
 
   await t.test('klijentski write u transactions je zabranjen', async () => {
-    const db = testEnv.authenticatedContext('reseller1').firestore();
+    const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertFails(setDoc(doc(db, 'transactions', 'newT'), { test: 1 }));
+    await assertFails(updateDoc(doc(db, 'transactions', 'newT'), { test: 2 }));
+    await assertFails(deleteDoc(doc(db, 'transactions', 'newT')));
   });
 
   await t.test('klijentski write u activity_logs je zabranjen', async () => {
-    const db = testEnv.authenticatedContext('reseller1').firestore();
+    const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertFails(setDoc(doc(db, 'activity_logs', 'newLog'), { test: 1 }));
   });
 
@@ -77,7 +81,7 @@ test('Firestore Security Rules', async (t) => {
 
   await t.test('klijent mijenja vlastiti status je zabranjeno', async () => {
     const db = testEnv.authenticatedContext('reseller1').firestore();
-    await assertFails(updateDoc(doc(db, 'users', 'reseller1'), { status: 'active' }));
+    await assertFails(updateDoc(doc(db, 'users', 'reseller1'), { status: 'inactive' }));
   });
 
   await t.test('klijent mijenja vlastite credits je zabranjeno', async () => {

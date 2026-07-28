@@ -1,7 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,7 +11,7 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
-    
+
     // USERS kolekcija
     match /users/{userId} {
       allow read: if isAdmin() || isOwner(userId) || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.parentId == request.auth.uid);
@@ -31,35 +31,40 @@ service cloud.firestore {
 
     // LICENSES kolekcija
     match /licenses/{licenseId} {
-      // Svako može čitati ako mu treba, no obično samo reselleri/admini
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.resellerId == request.auth.uid) || true; 
-      allow create: if false; 
-      allow update: if false; 
-      allow delete: if false; 
+      // Samo admini i vlasnici (reselleri) mogu čitati
+      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.resellerId == request.auth.uid);
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // DEVICES kolekcija (čisto za svaki slučaj, pristup ide isključivo preko API-ja)
+    match /devices/{deviceId} {
+      allow read, write: if false;
     }
 
     // TRANSACTIONS kolekcija
     match /transactions/{transactionId} {
       allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.resellerId == request.auth.uid);
-      allow create: if false; 
-      allow update: if false; 
-      allow delete: if false; 
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     // AUDIT LOGS kolekcija
     match /audit_logs/{logId} {
       allow read: if isAdmin();
-      allow create: if false; 
-      allow update: if false; 
-      allow delete: if false; 
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     // ACTIVITY LOGS kolekcija
     match /activity_logs/{logId} {
       allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.userId == request.auth.uid);
-      allow create: if false; 
-      allow update: if false; 
-      allow delete: if false; 
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }

@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rateLimit';
+import crypto from 'crypto';
 
 const ConnectSchema = z.object({
   deviceId: z.string().min(1).max(50),
@@ -13,15 +14,6 @@ const ConnectSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimit = checkRateLimit(`connect_${ip}`, 5, 60000); // 5 req per min
-    if (!rateLimit.success) {
-      return NextResponse.json({ error: 'Too many requests' }, { 
-        status: 429,
-        headers: rateLimit.headers 
-      });
-    }
-
     const body = await req.json();
     const parsed = ConnectSchema.safeParse(body);
     if (!parsed.success) {
@@ -31,8 +23,31 @@ export async function POST(req: NextRequest) {
     const { deviceId, portalUrl, username, password } = parsed.data;
     const safeDeviceId = deviceId.trim();
 
+    // 1. IP Rate Limiting
+    const ip = req.headers.get('x-real-ip') || req.headers.get('x-vercel-forwarded-for') || req.headers.get('x-forwarded-for') || 'unknown';
+
+    // 2. Hash device ID for rate limiting
+    const hashedDevice = crypto.createHash('sha256').update(safeDeviceId.toLowerCase()).digest('hex');
+
+    try {
+      const ipLimit = await checkRateLimit(`ip_${ip}`, 10, 60000); // 10 req per min per IP
+      if (!ipLimit.success) {
+        return NextResponse.json({ error: 'Too many requests from this IP' }, { status: 429, headers: ipLimit.headers });
+      }
+
+      const deviceLimit = await checkRateLimit(`device_${hashedDevice}`, 5, 60000); // 5 req per min per device
+      if (!deviceLimit.success) {
+        return NextResponse.json({ error: 'Too many requests for this device' }, { status: 429, headers: deviceLimit.headers });
+      }
+    } catch (limitError: any) {
+      if (limitError.message === '503') {
+        return NextResponse.json({ error: 'Service Unavailable' }, { status: 503, headers: { 'Retry-After': '30' } });
+      }
+      throw limitError;
+    }
+
     const licenseRef = adminDb.collection('licenses').doc(safeDeviceId);
-    
+
     // We use a transaction to ensure idempotency and prevent overwrites
     const result = await adminDb.runTransaction(async (transaction: any) => {
       const licenseSnap = await transaction.get(licenseRef);

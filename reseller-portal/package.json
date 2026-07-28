@@ -7,9 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "MOCK_FIREBASE=true npx tsx scripts/test-api.ts"
+    "test": "NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-api.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts && npx tsx scripts/test-prod-init.ts",
+    "test:rules": "firebase emulators:exec --project vopo-reseller-test 'npx tsx scripts/test-rules.ts'"
   },
   "dependencies": {
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
+    "@vercel/blob": "^2.6.1",
     "date-fns": "^4.4.0",
     "firebase": "^12.16.0",
     "firebase-admin": "^14.2.0",

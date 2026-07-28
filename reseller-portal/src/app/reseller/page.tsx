@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc, updateDoc, setDoc, serverTimestamp, collection, query, where, getDocs, increment, addDoc, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, increment, addDoc, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../utils/activityLogger';
 import { format } from 'date-fns';

@@ -13,3 +13,7 @@ Provjere: npm ci i produkcijski Next.js build prolaze u /private/tmp/vopo-domain
 Ograničenje: nije potvrđeno stvarno emitiranje s dvije produkcijske IPTV domene. Android uređajska autentikacija/licenca (B01 iz PROJECT_READINESS_2026-09-17.md) ostaje zaseban blocker i ova izmjena ga ne rješava. graphify update . nije dostupan, pa graf nije ažuriran.
 
 Dokazi: /private/tmp/vopo-domains-build.log i /private/tmp/vopo-domains-android-tests.log.
+
+Objava: commit 34b3ba2f06ea53530ad0e12279f2886c158a1ed5 poslan je na main. Vercel deployment 69oWJ6p6SrKpLJWTuL79U53mzxWi završio je kao Ready i dodijeljen je www.vopoapp.com. U javnom administratorskom panelu potvrđena je kartica Domene i obrazac Dodaj. Runtime provjera otkrila je ERR_REQUIRE_ESM pri učitavanju jose kroz jwks-rsa/Firebase Admin, prije ulaska u API handler.
+
+Popravak runtimea: package.json i lockfile određuju Node.js 24.x; CI koristi Node.js 24. Lokalno na v24.14.1 potvrđeno je učitavanje firebase-admin/auth i produkcijski build. Službena Vercel dokumentacija podržava Node.js 24 i engines odabir: https://vercel.com/docs/functions/runtimes/node-js/node-js-versions. Objavu popravka i autentificirani dohvat treba potvrditi u produkciji.

@@ -21,7 +21,7 @@ export default function DomainManager({ targetUserId, catalog = false, onChange 
       try {
         const token = await user?.getIdToken();
         const res = await fetch(`/api/domains${catalog ? '?catalog=1' : targetUserId ? `?targetUserId=${encodeURIComponent(targetUserId)}` : ''}`, { headers: { Authorization: `Bearer ${token}` } });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({ error: 'Server nije mogao obraditi zahtjev. Pokušajte ponovno.' }));
         if (!res.ok) throw new Error(data.error);
         if (current) { setDomains(data); setError(''); setLoaded(true); }
       } catch (e: any) { if (current) setError(e.message || 'Dohvat domena nije uspio.'); }
@@ -36,7 +36,7 @@ export default function DomainManager({ targetUserId, catalog = false, onChange 
     try {
       const token = await user?.getIdToken();
       const res = await fetch('/api/domains', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ targetUserId, catalog, action, source, domain, replacement }) });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({ error: 'Server nije mogao obraditi zahtjev. Pokušajte ponovno.' }));
       if (!res.ok) throw new Error(data.error);
       setDomains(data);
       onChange?.(data);

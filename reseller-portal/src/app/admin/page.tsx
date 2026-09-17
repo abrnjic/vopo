@@ -5,13 +5,14 @@ import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, T
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { logActivity, ActivityAction } from '../../utils/activityLogger';
 import { useAuth } from '../../context/AuthContext';
 import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { format } from 'date-fns';
 import { upload } from '@vercel/blob/client';
+import DomainManager from '../../components/DomainManager';
 import { hr } from 'date-fns/locale';
 
 const secondaryApp = initializeApp({
@@ -29,18 +30,22 @@ interface ResellerData {
   email: string;
   credits: number;
   assignedDomains: string[];
+  customDomains: string[];
   status?: 'active' | 'suspended' | 'deleted';
 }
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'logs' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'logs' | 'settings'>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [domainReseller, setDomainReseller] = useState('');
+  const [catalogDomains, setCatalogDomains] = useState<string[]>([]);
+  const [newDomains, setNewDomains] = useState('');
   const [newCredits, setNewCredits] = useState(0);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -61,6 +66,17 @@ export default function AdminDashboard() {
   const [editingUser, setEditingUser] = useState<ResellerData | null>(null);
   const [editCredits, setEditCredits] = useState(0);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    async function loadCatalog() {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/domains?catalog=1', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok && current) setCatalogDomains((await res.json()).assignedDomains || []);
+    }
+    if (user) void loadCatalog().catch(console.error);
+    return () => { current = false; };
+  }, [user]);
 
   const handleApkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,6 +199,7 @@ export default function AdminDashboard() {
             email: d.email,
             credits: d.credits || 0,
             assignedDomains: d.assignedDomains || [],
+            customDomains: d.customDomains || [],
             status: d.status || 'active'
           });
         }
@@ -242,39 +259,24 @@ export default function AdminDashboard() {
     e.preventDefault();
     setIsCreating(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(secondaryAuth, newEmail, newPassword);
-      await signOut(secondaryAuth);
-      const newUid = userCredential.user.uid;
-
       const idToken = await user?.getIdToken();
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch('/api/admin/resellers', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          action: 'create',
-          targetUserId: newUid,
-          data: {
-            email: newEmail,
-            role: 'reseller',
-            credits: newCredits,
-            assignedDomains: [],
-            customDomains: [],
-            status: 'active'
-          }
-        })
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ email: newEmail, password: newPassword, credits: newCredits,
+          assignedDomains: newDomains.split(/[\n,]+/).map(d => d.trim()).filter(Boolean) })
       });
 
       if (!res.ok) {
-        throw new Error('Neuspješno spremanje korisnika u bazu');
+        const data = await res.json();
+        throw new Error(data.error || 'Neuspješno spremanje korisnika u bazu');
       }
 
       setShowAddModal(false);
       setNewEmail('');
       setNewPassword('');
       setNewCredits(0);
+      setNewDomains('');
       fetchResellers();
       fetchAnalytics();
     } catch (error: any) {
@@ -437,6 +439,9 @@ export default function AdminDashboard() {
               >
                 <Users className="w-4 h-4 mr-2" /> Reselleri
               </button>
+              <button onClick={() => setActiveTab('domains')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'domains' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                <Globe className="w-4 h-4 mr-2" /> Domene
+              </button>
               <button
                 onClick={() => setActiveTab('logs')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
@@ -585,7 +590,7 @@ export default function AdminDashboard() {
                             <td className="px-8 py-5">
                             <div className="flex items-center space-x-3">
                               <span className="bg-gray-800/80 text-gray-300 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-700/50">
-                                {r.assignedDomains.length} domena
+                                {new Set([...r.assignedDomains, ...r.customDomains]).size} domena
                               </span>
                               {r.status === 'suspended' && (
                                 <span className="bg-red-500/10 text-red-400 text-xs font-semibold px-3 py-1.5 rounded-lg border border-red-500/20 flex items-center">
@@ -622,7 +627,7 @@ export default function AdminDashboard() {
               {/* Add Reseller Modal */}
               {showAddModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                  <div className="bg-gray-900 border border-gray-700 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
+                  <div className="bg-gray-900 border border-gray-700 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500" />
                     <div className="p-8">
                       <h2 className="text-2xl font-bold text-white mb-2">Kreiraj Resellera</h2>
@@ -655,6 +660,20 @@ export default function AdminDashboard() {
                             value={newCredits} onChange={e => setNewCredits(Number(e.target.value))}
                           />
                         </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-400 mb-2">Domene servera</label>
+                          {catalogDomains.length > 0 && <div className="space-y-2 mb-3">{catalogDomains.map(domain => (
+                            <label key={domain} className="flex gap-2 items-center text-sm text-white break-all">
+                              <input type="checkbox" checked={newDomains.split(/[\n,]+/).map(d => d.trim()).includes(domain)} onChange={e => {
+                                const values = newDomains.split(/[\n,]+/).map(d => d.trim()).filter(Boolean);
+                                setNewDomains((e.target.checked ? [...new Set([...values, domain])] : values.filter(d => d !== domain)).join('\n'));
+                              }} />{domain}
+                            </label>
+                          ))}</div>}
+                          <textarea aria-label="Domene novog resellera" rows={3} value={newDomains} onChange={e => setNewDomains(e.target.value)} placeholder="https://server.example:8080&#10;https://drugi.example" className="w-full rounded-lg bg-gray-950 border border-gray-700 p-3 text-white" />
+                          <p className="text-xs text-gray-400 mt-2">Jedna adresa po retku. Domene možete dodati i naknadno.</p>
+                        </div>
+
                         <div className="flex space-x-3 pt-6 mt-4 border-t border-gray-800">
                           <button
                             type="button" onClick={() => setShowAddModal(false)}
@@ -748,7 +767,7 @@ export default function AdminDashboard() {
               {/* Advanced Edit Reseller Modal */}
               {editingUser && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                  <div className="bg-gray-900 border border-gray-700 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
+                  <div className="bg-gray-900 border border-gray-700 rounded-3xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative animate-in zoom-in-95 duration-200">
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
                     <div className="p-8">
                       <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
@@ -759,6 +778,7 @@ export default function AdminDashboard() {
                         <span className="text-xs bg-gray-800 border border-gray-700 text-gray-400 px-3 py-1.5 rounded-lg font-mono">{editingUser.uid.slice(0, 8)}...</span>
                       </div>
 
+                      <DomainManager targetUserId={editingUser.uid} onChange={() => { void fetchResellers(); }} />
                       <form onSubmit={handleSaveEdit} className="space-y-6">
                         <div>
                           <label className="block text-sm font-semibold text-gray-400 mb-2">Email adresa (Zaključano)</label>
@@ -879,6 +899,25 @@ export default function AdminDashboard() {
                   <p className="text-lg font-medium text-gray-400">Nema zabilježenih aktivnosti u revizorskom zapisu.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'domains' && (
+            <div className="space-y-6">
+              <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6">
+                <h2 className="text-2xl font-bold mb-5 text-white">Upravljanje domenama</h2>
+                <p className="text-gray-400 mb-5">Ovdje održavate popis domena koje možete dodijeliti novom reselleru.</p>
+                <DomainManager catalog onChange={data => setCatalogDomains(data.assignedDomains)} />
+              </div>
+              <div className="bg-gray-900 rounded-2xl border border-gray-700 p-6 space-y-4">
+                <label htmlFor="domain-reseller" className="block text-white font-bold">Domene pojedinog resellera</label>
+                <select id="domain-reseller" value={domainReseller} onChange={e => setDomainReseller(e.target.value)} className="w-full bg-gray-950 rounded-lg border border-gray-700 p-3 text-white">
+                  <option value="">Odaberite resellera</option>
+                  {resellers.map(r => <option key={r.uid} value={r.uid}>{r.email}</option>)}
+                </select>
+                {domainReseller && <DomainManager key={domainReseller} targetUserId={domainReseller} onChange={() => { void fetchResellers(); }} />}
+                {!resellers.length && <button type="button" onClick={() => { setActiveTab('resellers'); setShowAddModal(true); }} className="rounded-lg bg-blue-600 px-4 py-3 text-white">Kreiraj resellera</button>}
+              </div>
             </div>
           )}
 

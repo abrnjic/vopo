@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/check-firebase-config.mjs --development && next dev",
+    "build": "node scripts/check-firebase-config.mjs && next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-api.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts && npx tsx scripts/test-prod-init.ts",
+    "test": "NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-api.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts && npx tsx scripts/test-prod-init.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-domains.ts",
     "test:rules": "firebase emulators:exec --project vopo-reseller-test 'npx tsx scripts/test-rules.ts'"
   },
   "dependencies": {

@@ -1,5 +1,7 @@
 export const mockState = {
   users: new Map(),
+  authUsers: new Map(),
+  settings: new Map(),
   licenses: new Map(),
   transactions: new Map(),
   activity_logs: new Map(),
@@ -86,6 +88,16 @@ export const mockAdminDb = {
 };
 
 export const mockAdminAuth = {
+  createUser: async (properties: any) => {
+    if (mockState.throwAuthError) throw new Error('Mock Auth Error');
+    if ([...mockState.authUsers.values()].some(u => u.email === properties.email)) {
+      throw Object.assign(new Error('Email exists'), { code: 'auth/email-already-exists' });
+    }
+    const uid = `created-${mockState.authUsers.size}`;
+    mockState.authUsers.set(uid, { uid, ...properties });
+    return { uid, email: properties.email };
+  },
+  deleteUser: async (uid: string) => { mockState.authUsers.delete(uid); },
   verifyIdToken: async (token: string, checkRevoked?: boolean) => {
     if (token === 'invalid_token' || token === 'revoked') {
       throw new Error('auth/id-token-revoked');

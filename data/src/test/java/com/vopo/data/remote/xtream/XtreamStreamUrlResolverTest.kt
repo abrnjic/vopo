@@ -66,6 +66,22 @@ class XtreamStreamUrlResolverTest {
 
 
     @Test
+    fun resellerDomains_preserve_host_protocol_port_and_base_path_for_api_and_playback() {
+        listOf("http://one.example:8080", "https://two.example/base").forEach { serverUrl ->
+            assertThat(XtreamUrlFactory.buildPlayerApiUrl(serverUrl, "alice", "secret"))
+                .isEqualTo("$serverUrl/player_api.php?username=alice&password=secret")
+            assertThat(XtreamUrlFactory.buildPlaybackUrl(
+                serverUrl = serverUrl,
+                username = "alice",
+                password = "secret",
+                kind = XtreamStreamKind.LIVE,
+                streamId = 123,
+                containerExtension = "m3u8"
+            )).isEqualTo("$serverUrl/live/alice/secret/123.m3u8")
+        }
+    }
+
+    @Test
     fun buildPlaybackUrl_uses_live_container_extension_when_present() {
         val url = XtreamUrlFactory.buildPlaybackUrl(
             serverUrl = "https://stream.example.com",

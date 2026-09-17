@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import DomainManager from '../../components/DomainManager';
+import { useState, useEffect, useMemo } from 'react';
 import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, increment, addDoc, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, increment, addDoc, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../utils/activityLogger';
 import { format } from 'date-fns';
@@ -16,6 +17,7 @@ export default function ResellerDashboard() {
   const { user, userData } = useAuth();
   const [activeTab, setActiveTab] = useState<'activate' | 'analytics' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
+  const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
   
   const [recentLines, setRecentLines] = useState<any[]>([]);
@@ -29,9 +31,6 @@ export default function ResellerDashboard() {
   const [customerContact, setCustomerContact] = useState('');
   const [licenseType, setLicenseType] = useState<'1_year' | 'lifetime' | 'trial'>('1_year');
   const [isActivating, setIsActivating] = useState(false);
-
-  // Domain Form State
-  const [newDomain, setNewDomain] = useState('');
 
   // Analytics & Logs State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -51,6 +50,7 @@ export default function ResellerDashboard() {
         if (uDoc.exists()) {
           setCredits(uDoc.data().credits || 0);
           setCustomDomains(uDoc.data().customDomains || []);
+          setAssignedDomains(uDoc.data().assignedDomains || []);
         }
       };
       
@@ -103,14 +103,14 @@ export default function ResellerDashboard() {
     }
   }, [user]);
 
-  const allDomains = [...(userData?.assignedDomains || []), ...customDomains];
+  const allDomains = useMemo(() => [...new Set([...assignedDomains, ...customDomains])], [assignedDomains, customDomains]);
   
   // Set default domain if available
   useEffect(() => {
-    if (allDomains.length > 0 && !selectedDomain) {
-      setSelectedDomain(allDomains[0]);
+    if (!allDomains.includes(selectedDomain)) {
+      setSelectedDomain(allDomains[0] || '');
     }
-  }, [allDomains]);
+  }, [allDomains, selectedDomain]);
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,52 +173,6 @@ export default function ResellerDashboard() {
       alert('Došlo je do greške.');
     } finally {
       setIsActivating(false);
-    }
-  };
-
-  const handleAddDomain = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !newDomain.trim()) return;
-
-    try {
-      const updatedDomains = [...customDomains, newDomain.trim()];
-      await updateDoc(doc(db, 'users', user.uid), { customDomains: updatedDomains });
-      setCustomDomains(updatedDomains);
-      
-      await logActivity(
-        user.uid, 
-        user.email || '', 
-        'reseller', 
-        'ADD_DOMAIN', 
-        `Added custom domain: ${newDomain.trim()}`
-      );
-      
-      setNewDomain('');
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleDeleteDomain = async (domainToRemove: string) => {
-    if (!user) return;
-    try {
-      const updatedDomains = customDomains.filter(d => d !== domainToRemove);
-      await updateDoc(doc(db, 'users', user.uid), { customDomains: updatedDomains });
-      setCustomDomains(updatedDomains);
-      
-      await logActivity(
-        user.uid, 
-        user.email || '', 
-        'reseller', 
-        'DELETE_DOMAIN', 
-        `Deleted custom domain: ${domainToRemove}`
-      );
-
-      if (selectedDomain === domainToRemove) {
-        setSelectedDomain(updatedDomains[0] || '');
-      }
-    } catch (error) {
-      console.error(error);
     }
   };
 
@@ -624,52 +578,8 @@ export default function ResellerDashboard() {
               <Settings className="w-5 h-5 mr-2 text-blue-500" />
               Moje Domene (Portal URL-ovi)
             </h2>
-            <form className="flex space-x-3 mb-8" onSubmit={handleAddDomain}>
-            <input 
-              type="url" required
-              className="flex-1 bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
-              placeholder="npr. http://moj-novi-portal.com:8080" 
-              value={newDomain} onChange={e => setNewDomain(e.target.value)}
-            />
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-medium flex items-center text-white transition-all shadow-lg shadow-blue-500/20">
-              <Plus className="w-5 h-5 mr-2" />
-              Dodaj Domenu
-            </button>
-          </form>
-
-          <div className="space-y-3">
-            {userData?.assignedDomains?.map((d, i) => (
-              <div key={`assigned-${i}`} className="flex justify-between items-center p-4 bg-gray-900 rounded-lg border border-gray-700">
-                <div className="font-medium text-white flex items-center">
-                  <span className="bg-blue-900/50 text-blue-400 text-xs px-2 py-1 rounded mr-3 uppercase font-bold tracking-wider">Dodijeljeno</span>
-                  {d}
-                </div>
-              </div>
-            ))}
-            
-            {customDomains.map((d, i) => (
-              <div key={`custom-${i}`} className="flex justify-between items-center p-4 bg-gray-900 rounded-lg border border-gray-700 group hover:border-gray-500 transition-colors">
-                <div className="font-medium text-white flex items-center">
-                  <span className="bg-gray-700 text-gray-300 text-xs px-2 py-1 rounded mr-3 uppercase font-bold tracking-wider">Vlastito</span>
-                  {d}
-                </div>
-                <button 
-                  onClick={() => handleDeleteDomain(d)}
-                  className="text-red-400 hover:text-red-300 p-2 hover:bg-red-900/20 rounded transition-colors opacity-0 group-hover:opacity-100"
-                  title="Obriši domenu"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-            ))}
-
-            {allDomains.length === 0 && (
-              <div className="text-center text-gray-500 py-8 border-2 border-dashed border-gray-700 rounded-lg">
-                Trenutno nemate niti jednu domenu. Dodajte prvu domenu iznad.
-              </div>
-            )}
+            <DomainManager onChange={data => { setAssignedDomains(data.assignedDomains); setCustomDomains(data.customDomains); }} />
           </div>
-        </div>
         </div>
       )}
 

@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { verifyAuthToken } from '@/lib/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
+import { DomainSchema, domainsForUser } from '@/lib/domains';
 
 const ActivateSchema = z.object({
   deviceId: z.string().min(1).max(50),
@@ -11,7 +12,7 @@ const ActivateSchema = z.object({
   customerContact: z.string().max(100).optional(),
   username: z.string().max(100).optional(),
   password: z.string().max(100).optional(),
-  selectedDomain: z.string().max(200).optional()
+  selectedDomain: DomainSchema.optional()
 }).strict();
 
 export async function POST(req: NextRequest) {
@@ -53,6 +54,13 @@ export async function POST(req: NextRequest) {
 
       const resellerData = resellerSnap.data();
       const currentCredits = resellerData?.credits || 0;
+      const availableDomains = domainsForUser(resellerData || {});
+      if (selectedDomain && !availableDomains.includes(selectedDomain)) {
+        return { error: 'Domena nije dodijeljena ovom reselleru.', status: 403 };
+      }
+      if (!selectedDomain && (availableDomains.length > 0 || username || password)) {
+        return { error: 'Odaberite domenu servera.', status: 400 };
+      }
 
       if (currentCredits < creditsToDeduct) {
         return { error: 'Not enough credits', status: 400 };

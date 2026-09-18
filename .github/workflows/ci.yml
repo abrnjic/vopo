@@ -55,6 +55,9 @@ jobs:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ vars.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
+      - name: Production Runtime Smoke Test
+        run: npm run test:runtime
+
       - name: Audit
         run: npm audit --omit=dev
         continue-on-error: true

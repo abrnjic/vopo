@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-api.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-apk-dist.ts && npx tsx scripts/test-prod-init.ts && NODE_ENV=test MOCK_FIREBASE=true npx tsx scripts/test-domains.ts",
-    "test:rules": "firebase emulators:exec --project vopo-reseller-test 'npx tsx scripts/test-rules.ts'"
+    "test:rules": "firebase emulators:exec --project vopo-reseller-test 'npx tsx scripts/test-rules.ts'",
+    "test:runtime": "node scripts/check-production-runtime.mjs"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",

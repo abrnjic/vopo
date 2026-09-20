@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { verifyAuthToken } from '@/lib/auth';
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import crypto from 'crypto';
-import { del } from '@vercel/blob';
+import { del, get } from '@vercel/blob';
 import { validateBlobUrl } from '@/utils/blobValidator';
 import { apkMetadataDocument, apkPathname, parseApkChannel } from '@/lib/apkChannel';
 
@@ -107,18 +107,18 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
     }
 
     // Verify SHA-256 via Stream
-    const response = await fetch(blob.url);
-    if (!response.ok) throw new Error('Failed to fetch blob for verification');
+    const fetchedBlob = await get(blob.url, { access: 'public', useCache: false });
+    if (!fetchedBlob || fetchedBlob.statusCode !== 200) {
+      throw new Error('Failed to fetch blob for verification');
+    }
 
-    // We check content length but also gracefully handle missing header or mock environment limitations
-    const contentLength = parseInt(response.headers.get('content-length') || '0', 10);
+    const contentLength = fetchedBlob.blob.size;
     if (contentLength > 100 * 1024 * 1024) {
       throw new Error('Blob headers exceed maximum allowed size.');
     }
 
     const hash = crypto.createHash('sha256');
-    const readable = response.body;
-    if (!readable) throw new Error('No body in response');
+    const readable = fetchedBlob.stream;
 
     let byteCount = 0;
     const reader = readable.getReader();

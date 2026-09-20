@@ -40,6 +40,18 @@ const mockAgent = new MockAgent();
 // mockAgent.disableNetConnect();
 setGlobalDispatcher(mockAgent);
 const mockPool = mockAgent.get('https://vercel.com');
+const mockBlobPool = mockAgent.get('https://foo.public.blob.vercel-storage.com');
+let blobGetCallCount = 0;
+mockBlobPool.intercept({
+  path: '/apk/releases/vopoapp-1.0-10.apk?too-large=1',
+  method: 'GET'
+}).reply(200, 'too large', { headers: { 'content-length': '200000000', 'content-type': 'application/vnd.android.package-archive' } }).persist();
+mockBlobPool.intercept({ path: /.*/, method: 'GET' })
+  .reply(200, () => {
+    blobGetCallCount++;
+    return 'hello';
+  }, { headers: { 'content-length': '5', 'content-type': 'application/vnd.android.package-archive' } })
+  .persist();
 
 // Wait, we can't use jest since it's node:test.
 // The route file imports `del` from `@vercel/blob`.
@@ -204,7 +216,6 @@ test('APK Distribution Tests', async (t) => {
   // Vercel Blob webhook mock validation
   const testHash = crypto.createHash('sha256').update('hello').digest('hex');
 
-  let fetchCallCount = 0;
   let delCallCount = 0;
   let lastDelUrl = '';
 
@@ -220,7 +231,6 @@ test('APK Distribution Tests', async (t) => {
       return new Response(JSON.stringify({}), { status: 200 });
     }
 
-    fetchCallCount++;
     if (sUrl.includes('too-large')) {
         return new Response('too large', { headers: { 'content-length': '200000000' } });
     }
@@ -235,7 +245,7 @@ test('APK Distribution Tests', async (t) => {
   };
 
   await t.test('13. Uspješan upload i objavu metapodataka', async () => {
-     fetchCallCount = 0;
+     blobGetCallCount = 0;
      (mockState as any).system.delete('apk_metadata');
      const tokenPayload = JSON.stringify({ versionName: '1.0', versionCode: '10', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
      await onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-10.apk' }, tokenPayload });
@@ -244,7 +254,7 @@ test('APK Distribution Tests', async (t) => {
      const meta = (mockState as any).system.get('apk_metadata');
      assert.strictEqual(meta.versionCode, '10');
      assert.strictEqual(meta.checksum, testHash);
-     assert.ok(fetchCallCount > 0);
+     assert.ok(blobGetCallCount > 0);
 
      // Validate audit log written
      const logs = Array.from((mockState as any).activity_logs.values());
@@ -254,7 +264,7 @@ test('APK Distribution Tests', async (t) => {
   });
 
   await t.test('13b. testni upload ne mijenja stabilni kanal', async () => {
-     fetchCallCount = 0;
+     blobGetCallCount = 0;
      (mockState as any).system.delete('apk_test_metadata');
      const stableMeta = (mockState as any).system.get('apk_metadata');
      const tokenPayload = JSON.stringify({ versionName: '1.0-test', versionCode: '16', checksum: testHash, channel: 'test', uid: 'admin1', email: 'a@v.com' });
@@ -470,11 +480,11 @@ test('APK Distribution Tests', async (t) => {
      (mockState as any).system.set('apk_metadata', { versionCode: '100', latestUrl: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-100.apk' });
      const tokenPayload = JSON.stringify({ versionName: '1.0', versionCode: '100', checksum: testHash, uid: 'admin1', email: 'a@v.com' });
 
-     fetchCallCount = 0;
+     blobGetCallCount = 0;
      delCallCount = 0;
      await onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-100.apk' }, tokenPayload });
 
-     assert.strictEqual(fetchCallCount, 0); // Idempotency check hit
+     assert.strictEqual(blobGetCallCount, 0); // Idempotency check hit
      assert.strictEqual(delCallCount, 0);
   });
 

@@ -4,9 +4,12 @@ export function validateBlobUrl(latestUrl: string, expectedVersionName: string, 
   try {
     const url = new URL(latestUrl);
 
-    const expectedHostname = process.env.BLOB_HOSTNAME;
-    if (!expectedHostname || url.hostname !== expectedHostname) {
-      console.error('Invalid blob URL hostname. Expected:', expectedHostname);
+    const expectedHostname = process.env.BLOB_HOSTNAME?.trim();
+    const isAllowedHostname = expectedHostname
+      ? url.hostname === expectedHostname
+      : /^[a-z0-9-]+\.public\.blob\.vercel-storage\.com$/i.test(url.hostname);
+    if (!isAllowedHostname) {
+      console.error('Invalid blob URL hostname. Expected:', expectedHostname || '*.public.blob.vercel-storage.com');
       return false;
     }
 

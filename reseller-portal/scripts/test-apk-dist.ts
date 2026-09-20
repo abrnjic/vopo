@@ -79,6 +79,17 @@ test('APK Distribution Tests', async (t) => {
     assert.strictEqual(validateBlobUrl('https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0.1-10.apk', '1.0.1', '10', 'test'), false);
   });
 
+  await t.test('2c. validateBlobUrl uses a strict Vercel public Blob fallback without BLOB_HOSTNAME', () => {
+    const configuredHostname = process.env.BLOB_HOSTNAME;
+    delete process.env.BLOB_HOSTNAME;
+    try {
+      assert.strictEqual(validateBlobUrl('https://store-123.public.blob.vercel-storage.com/apk/test/vopoapp-test-1.0.1-10.apk', '1.0.1', '10', 'test'), true);
+      assert.strictEqual(validateBlobUrl('https://store-123.public.blob.vercel-storage.com.evil.example/apk/test/vopoapp-test-1.0.1-10.apk', '1.0.1', '10', 'test'), false);
+    } finally {
+      process.env.BLOB_HOSTNAME = configuredHostname;
+    }
+  });
+
   // Client Token Generation tests
   await t.test('3. Zahtjev bez Firebase tokena', async () => {
      const res = await adminApkRoute(createMockReq({ type: 'blob.generate-client-token', payload: { pathname: 'apk/releases/vopoapp-1.0-1.apk', clientPayload: validClientPayload } }));

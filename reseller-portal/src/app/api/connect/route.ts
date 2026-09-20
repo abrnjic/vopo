@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
         },
         selectedDomain: portalUrl ? portalUrl.trim() : '',
         updatedAt: FieldValue.serverTimestamp()
-      });
+      }, { merge: true });
 
       return { success: true };
     });

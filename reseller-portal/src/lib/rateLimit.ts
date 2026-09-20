@@ -1,5 +1,7 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import crypto from 'crypto';
+import { adminDb } from './firebaseAdmin';
 
 interface RateLimitInfo {
   count: number;
@@ -51,11 +53,40 @@ export async function checkRateLimit(key: string, limit: number, windowMs: numbe
       throw new Error('503');
     }
   } else {
-    // If we are in production and Upstash is not configured, we MUST NOT use fallback.
-    // It would silently bypass limits on a distributed system. Return 503.
+    // Use Firestore as a distributed production fallback. An in-memory limiter would
+    // be ineffective across multiple serverless instances.
     if (process.env.NODE_ENV === 'production') {
-      console.error('Redis is not configured in production. Blocking requests to prevent unprotected access.');
-      throw new Error('503');
+      try {
+        const now = Date.now();
+        const id = crypto.createHash('sha256').update(key).digest('hex');
+        const ref = adminDb.collection('rate_limits').doc(id);
+        const result = await adminDb.runTransaction(async (transaction: any) => {
+          const snapshot = await transaction.get(ref);
+          const current = snapshot.exists ? snapshot.data() : null;
+          const resetTime = typeof current?.resetTime === 'number' && current.resetTime > now
+            ? current.resetTime
+            : now + windowMs;
+          const count = typeof current?.count === 'number' && current.resetTime > now
+            ? current.count + 1
+            : 1;
+          transaction.set(ref, { count, resetTime, updatedAt: now }, { merge: true });
+          return { count, resetTime };
+        });
+        const success = result.count <= limit;
+        return {
+          success,
+          remaining: Math.max(0, limit - result.count),
+          resetTime: result.resetTime,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': Math.max(0, limit - result.count).toString(),
+            'Retry-After': success ? '0' : Math.ceil((result.resetTime - now) / 1000).toString()
+          }
+        };
+      } catch (error) {
+        console.error('Firestore rate limiter error:', error);
+        throw new Error('503');
+      }
     }
 
     // Local In-Memory Fallback

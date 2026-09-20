@@ -1,6 +1,7 @@
-/* eslint-disable prefer-const, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import test from 'node:test';
 import assert from 'node:assert';
+import { NextRequest } from 'next/server';
 
 process.env.MOCK_FIREBASE = 'true';
 
@@ -10,6 +11,8 @@ import { POST as authUsersRoute } from '../src/app/api/admin/users/route';
 import { POST as resellerActivateRoute } from '../src/app/api/reseller/activate/route';
 import { POST as logRoute } from '../src/app/api/log/route';
 import { POST as adminCreditsRoute } from '../src/app/api/admin/credits/route';
+import { POST as deviceRegisterRoute } from '../src/app/api/device/register/route';
+import { GET as deviceLicenseRoute } from '../src/app/api/device/license/route';
 
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
 
@@ -26,6 +29,13 @@ const createMockReq = (body: any, token?: string, ip?: string) => {
   } as any;
 };
 
+const DEVICE_TOKEN = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const OTHER_DEVICE_TOKEN = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
+const createDeviceGet = (deviceId: string, token = DEVICE_TOKEN) => new NextRequest(
+  `http://localhost/api/device/license?deviceId=${encodeURIComponent(deviceId)}`,
+  { headers: { Authorization: `Device ${token}` } }
+) as any;
+
 test('API P0 Tests', async (t) => {
   t.beforeEach(() => {
     resetFallbackCache();
@@ -33,6 +43,7 @@ test('API P0 Tests', async (t) => {
     mockState.licenses.clear();
     mockState.transactions.clear();
     mockState.activity_logs.clear();
+    mockState.rate_limits.clear();
     mockState.throwAuthError = false;
     mockState.throwDbError = false;
 
@@ -47,6 +58,41 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(res.status, 201);
     const lic = mockState.licenses.get('dev1');
     assert.strictEqual(lic.status, 'Trial');
+  });
+
+  await t.test('uređaj registrira tajni token prije aktivacije i jedini čita licencu', async () => {
+    const registration = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-001', deviceToken: DEVICE_TOKEN }) as any);
+    assert.strictEqual(registration.status, 200);
+
+    await connectRoute(createMockReq({ deviceId: 'SEC-URE-001', portalUrl: 'https://tv.example', username: 'u', password: 'p' }));
+    const response = await deviceLicenseRoute(createDeviceGet('SEC-URE-001'));
+    assert.strictEqual(response.status, 200);
+    const body = await response.json();
+    assert.strictEqual(body.status, 'trial');
+    assert.deepStrictEqual(body.config, { url: 'https://tv.example', username: 'u', password: 'p' });
+
+    const denied = await deviceLicenseRoute(createDeviceGet('SEC-URE-001', OTHER_DEVICE_TOKEN));
+    assert.strictEqual(denied.status, 401);
+  });
+
+  await t.test('drugi token ne može preuzeti već registrirani uređaj', async () => {
+    await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: DEVICE_TOKEN }) as any);
+    const takeover = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: OTHER_DEVICE_TOKEN }) as any);
+    assert.strictEqual(takeover.status, 409);
+  });
+
+  await t.test('istekla godišnja i opozvana lifetime licenca nisu aktivne', async () => {
+    await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-003', deviceToken: DEVICE_TOKEN }) as any);
+    const tokenHash = mockState.licenses.get('SEC-URE-003').accessTokenHash;
+    mockState.licenses.set('SEC-URE-003', { accessTokenHash: tokenHash, status: 'Active', isLifetime: false, expiresAt: new Date(Date.now() - 1000), xtreamConfig: { url: 'https://secret', username: 'u', password: 'p' } });
+    let response = await deviceLicenseRoute(createDeviceGet('SEC-URE-003'));
+    assert.strictEqual((await response.json()).status, 'expired');
+
+    mockState.licenses.set('SEC-URE-003', { accessTokenHash: tokenHash, status: 'Expired', isLifetime: true, expiresAt: null, xtreamConfig: { url: 'https://secret', username: 'u', password: 'p' } });
+    response = await deviceLicenseRoute(createDeviceGet('SEC-URE-003'));
+    const revoked = await response.json();
+    assert.strictEqual(revoked.status, 'expired');
+    assert.strictEqual(revoked.config, null);
   });
 
   await t.test('nevaljan format aktivacijskog koda', async () => {
@@ -149,12 +195,40 @@ test('API P0 Tests', async (t) => {
     assert.ok(diff > msInYear - 10000 && diff <= msInYear + 10000); // 1 year diff
   });
 
+  await t.test('obnova produžuje postojeći budući rok umjesto skraćivanja od danas', async () => {
+    const previousExpiry = new Date();
+    previousExpiry.setMonth(previousExpiry.getMonth() + 6);
+    mockState.licenses.set('dev_renew', {
+      resellerId: 'reseller1',
+      status: 'Active',
+      isLifetime: false,
+      expiresAt: previousExpiry,
+      updatedAt: { toMillis: () => Date.now() - 10 * 60 * 1000 },
+    });
+    const req = createMockReq({ deviceId: 'dev_renew', licenseType: '1_year' }, 'reseller1:reseller:r@test.com');
+    const res = await resellerActivateRoute(req);
+    assert.strictEqual(res.status, 200);
+    const renewed = mockState.licenses.get('dev_renew').expiresAt;
+    assert.ok(renewed.getTime() > previousExpiry.getTime() + 364 * 24 * 60 * 60 * 1000);
+  });
+
   await t.test('lifetime aktivaciju bez klijentskog expiresAt', async () => {
     const req = createMockReq({ deviceId: 'dev_life', licenseType: 'lifetime' }, 'reseller1:reseller:r@test.com');
     await resellerActivateRoute(req);
     const lic = mockState.licenses.get('dev_life');
     assert.strictEqual(lic.isLifetime, true);
     assert.strictEqual(lic.expiresAt, null);
+  });
+
+  await t.test('reseller trial dobiva serverski početak i istek za tri dana', async () => {
+    const req = createMockReq({ deviceId: 'dev_trial_expiry', licenseType: 'trial' }, 'reseller1:reseller:r@test.com');
+    const res = await resellerActivateRoute(req);
+    assert.strictEqual(res.status, 200);
+    const lic = mockState.licenses.get('dev_trial_expiry');
+    assert.ok(lic.trialStartedAt);
+    assert.ok(lic.expiresAt instanceof Date);
+    const threeDays = 3 * 24 * 60 * 60 * 1000;
+    assert.ok(lic.expiresAt.getTime() - Date.now() > threeDays - 10_000);
   });
 
   await t.test('ponovno stvaranje triala (overwrite zaštita)', async () => {
@@ -248,24 +322,26 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(res1.status, 429); // IP blocked
   });
 
-  await t.test('Rate limit produkcija bez Redis konfiguracije vraća kontrolirani 503', async () => {
+  await t.test('Rate limit produkcija bez Redisa koristi distribuirani Firestore fallback', async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     const req = createMockReq({ deviceId: 'dev_prod_test' });
     const res = await connectRoute(req);
-    assert.strictEqual(res.status, 503);
-    const body = await res.json();
-    assert.strictEqual(body.error, 'Service Unavailable');
+    assert.strictEqual(res.status, 201);
+    assert.strictEqual(mockState.rate_limits.size, 2);
     process.env.NODE_ENV = originalEnv;
   });
 
-  await t.test('Rate limit logovi ne otkrivaju Redis podatke na greški', async () => {
+  await t.test('Rate limit pogreška ne otkriva podatke infrastrukture', async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
+    mockState.throwDbError = true;
     const req = createMockReq({ deviceId: 'dev_prod_test' });
     const res = await connectRoute(req);
     const body = await res.json();
     assert.ok(!JSON.stringify(body).includes('redis'));
+    assert.strictEqual(res.status, 503);
+    mockState.throwDbError = false;
     process.env.NODE_ENV = originalEnv;
   });
 });

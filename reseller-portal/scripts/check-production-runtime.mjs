@@ -17,14 +17,21 @@ try {
     }, 100);
     server.once('error', error => { clearInterval(poll); clearTimeout(timeout); reject(error); });
   });
-  for (const path of ['/api/domains?catalog=1', '/api/admin/users', '/api/admin/resellers', '/api/reseller/activate']) {
-    const isGet = path.startsWith('/api/domains');
-    const res = await fetch(`http://127.0.0.1:${port}${path}`, { method: isGet ? 'GET' : 'POST', headers: { 'Content-Type': 'application/json' }, body: isGet ? undefined : '{}', signal: AbortSignal.timeout(10000) });
-    assert.equal(res.status, 401, `${path} must reject unauthenticated access without crashing`);
+  const checks = [
+    { path: '/api/domains?catalog=1', method: 'GET', status: 401, error: 'No token provided' },
+    { path: '/api/admin/users', method: 'POST', status: 401, error: 'No token provided' },
+    { path: '/api/admin/resellers', method: 'POST', status: 401, error: 'No token provided' },
+    { path: '/api/reseller/activate', method: 'POST', status: 401, error: 'No token provided' },
+    { path: '/api/device/license?deviceId=runtime-check', method: 'GET', status: 401, error: 'Unauthorized' },
+    { path: '/api/device/register', method: 'POST', status: 400, error: 'Invalid device registration.' },
+  ];
+  for (const check of checks) {
+    const res = await fetch(`http://127.0.0.1:${port}${check.path}`, { method: check.method, headers: { 'Content-Type': 'application/json' }, body: check.method === 'GET' ? undefined : '{}', signal: AbortSignal.timeout(10000) });
+    assert.equal(res.status, check.status, `${check.path} must reject an invalid request without crashing`);
     assert.match(res.headers.get('content-type') || '', /application\/json/);
     const body = await res.json();
-    assert.equal(body.error, 'No token provided');
-    console.log(`Runtime check passed: ${path}`);
+    assert.equal(body.error, check.error);
+    console.log(`Runtime check passed: ${check.path}`);
   }
 } catch (error) {
   console.error(error.message);

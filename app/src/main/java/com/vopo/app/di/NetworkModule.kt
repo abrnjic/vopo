@@ -16,6 +16,7 @@ import com.vopo.data.remote.xtream.XtreamApiService
 import com.vopo.data.remote.xtream.OkHttpXtreamApiService
 import com.vopo.data.remote.xtream.XtreamUrlFactory
 import com.vopo.data.parser.XmltvParser
+import com.vopo.data.repository.LicenseApiBaseUrl
 import com.vopo.player.AudioCompatibilityMemoryStore
 import com.vopo.player.Media3PlayerEngine
 import com.vopo.player.PlayerEngine
@@ -41,6 +42,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
+    @Provides
+    @LicenseApiBaseUrl
+    fun provideLicenseApiBaseUrl(): String = BuildConfig.API_URL
 
     @Provides
     @Singleton

@@ -5,6 +5,7 @@ export const mockState = {
   licenses: new Map(),
   transactions: new Map(),
   activity_logs: new Map(),
+  rate_limits: new Map(),
   throwAuthError: false,
   throwDbError: false
 };
@@ -98,7 +99,7 @@ export const mockAdminAuth = {
     return { uid, email: properties.email };
   },
   deleteUser: async (uid: string) => { mockState.authUsers.delete(uid); },
-  verifyIdToken: async (token: string, checkRevoked?: boolean) => {
+  verifyIdToken: async (token: string, _checkRevoked?: boolean) => {
     if (token === 'invalid_token' || token === 'revoked') {
       throw new Error('auth/id-token-revoked');
     }

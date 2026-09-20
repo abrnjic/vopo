@@ -69,10 +69,11 @@ export async function POST(req: NextRequest) {
       const safeDeviceId = deviceId.trim();
       const licenseRef = adminDb.collection('licenses').doc(safeDeviceId);
       const licenseSnap = await transaction.get(licenseRef);
+      const existingLicenseData = licenseSnap.exists ? licenseSnap.data() : null;
 
       // Ownership check: If license exists and is not Trial, make sure it's owned by this reseller
       if (licenseSnap.exists) {
-        const licenseData = licenseSnap.data();
+        const licenseData = existingLicenseData;
         if (licenseData?.status === 'Active' || licenseData?.status === 'Expired') {
           if (licenseData.resellerId !== resellerUid) {
             return { error: 'This device is already licensed by another reseller.', status: 403 };
@@ -107,7 +108,14 @@ export async function POST(req: NextRequest) {
         licenseData.status = 'Active';
         licenseData.isLifetime = licenseType === 'lifetime';
         if (licenseType === '1_year') {
-          const expirationDate = new Date();
+          const previousExpiry = existingLicenseData?.expiresAt?.toDate
+            ? existingLicenseData.expiresAt.toDate()
+            : existingLicenseData?.expiresAt instanceof Date
+              ? existingLicenseData.expiresAt
+              : null;
+          const expirationDate = previousExpiry && previousExpiry.getTime() > Date.now()
+            ? new Date(previousExpiry)
+            : new Date();
           expirationDate.setFullYear(expirationDate.getFullYear() + 1);
           licenseData.expiresAt = expirationDate;
         } else {
@@ -115,6 +123,11 @@ export async function POST(req: NextRequest) {
         }
       } else {
         licenseData.status = 'Trial';
+        licenseData.isLifetime = false;
+        licenseData.trialStartedAt = FieldValue.serverTimestamp();
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 3);
+        licenseData.expiresAt = expirationDate;
       }
 
       if (creditsToDeduct > 0) {

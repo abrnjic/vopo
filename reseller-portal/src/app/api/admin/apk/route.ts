@@ -72,6 +72,7 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   return {
     allowedContentTypes: ['application/vnd.android.package-archive', 'application/octet-stream'],
     maximumSizeInBytes: 100 * 1024 * 1024, // 100MB
+    addRandomSuffix: false,
     tokenPayload: JSON.stringify({
       versionName: safeVersionName,
       versionCode: vCodeNum.toString(),

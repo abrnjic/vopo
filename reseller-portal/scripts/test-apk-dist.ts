@@ -142,6 +142,7 @@ test('APK Distribution Tests', async (t) => {
     const payload = JSON.stringify({ versionName: '1.0-test', versionCode: '16', checksum: validChecksum, channel: 'test' });
     const result = await onBeforeGenerateToken('apk/test/vopoapp-test-1.0-test-16.apk', payload, createMockReq({}, 'mock-token-admin1'));
     assert.ok(result.tokenPayload);
+    assert.strictEqual(result.addRandomSuffix, false);
     assert.strictEqual(JSON.parse(result.tokenPayload).channel, 'test');
   });
 

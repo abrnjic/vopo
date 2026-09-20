@@ -5,6 +5,7 @@ import { handleUpload, type HandleUploadBody } from '@vercel/blob/client';
 import crypto from 'crypto';
 import { del } from '@vercel/blob';
 import { validateBlobUrl } from '@/utils/blobValidator';
+import { apkMetadataDocument, apkPathname, parseApkChannel } from '@/lib/apkChannel';
 
 export const onBeforeGenerateToken = async (pathname: string, clientPayload: string | null, request: NextRequest) => {
   // 3. Provjeri Firebase ID token i potvrdi ulogu i status
@@ -25,6 +26,7 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   // Validiraj ekstenziju, versionName, versionCode
   const payload = JSON.parse(clientPayload || '{}');
   const { versionName, versionCode, checksum } = payload;
+  const channel = parseApkChannel(payload.channel);
 
   if (!versionName || !versionCode || !checksum) {
     throw new Error('Missing versionName, versionCode, or checksum in clientPayload');
@@ -50,15 +52,15 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   }
   const safeChecksum = checksum.toLowerCase();
 
-  const expectedPathname = `apk/releases/vopoapp-${safeVersionName}-${versionCode}.apk`;
+  const expectedPathname = apkPathname(channel, safeVersionName, versionCode);
   if (pathname !== expectedPathname) {
-    throw new Error('Invalid pathname. Must match exactly: apk/releases/vopoapp-{versionName}-{versionCode}.apk');
+    throw new Error(`Invalid pathname. Must match exactly: ${expectedPathname}`);
   }
 
 
 
   // Provjeri da novi versionCode mora biti veci od trenutačnog
-  const metadataDoc = await adminDb.collection('system').doc('apk_metadata').get();
+  const metadataDoc = await adminDb.collection('system').doc(apkMetadataDocument(channel)).get();
   if (metadataDoc.exists) {
     const currentData = metadataDoc.data();
     const currentCode = parseInt(currentData?.versionCode, 10);
@@ -74,6 +76,7 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
       versionName: safeVersionName,
       versionCode: vCodeNum.toString(),
       checksum: safeChecksum,
+      channel,
       uid: authResult.context.uid,
       email: authResult.context.email
     }),
@@ -83,14 +86,16 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
 export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
   try {
     if (!tokenPayload) throw new Error('Missing tokenPayload');
-    const { versionName, versionCode, checksum, uid, email } = JSON.parse(tokenPayload);
+    const parsedTokenPayload = JSON.parse(tokenPayload);
+    const { versionName, versionCode, checksum, uid, email } = parsedTokenPayload;
+    const channel = parseApkChannel(parsedTokenPayload.channel);
 
-    if (!validateBlobUrl(blob.url, versionName, versionCode)) {
+    if (!validateBlobUrl(blob.url, versionName, versionCode, channel)) {
       throw new Error('Invalid Blob URL characteristics.');
     }
 
     // Idempotency: Brzi read prije skidanja cijelog APK-a
-    const metadataRef = adminDb.collection('system').doc('apk_metadata');
+    const metadataRef = adminDb.collection('system').doc(apkMetadataDocument(channel));
     const initialDoc = await metadataRef.get();
     if (initialDoc.exists) {
       const data = initialDoc.data();
@@ -160,6 +165,7 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
        }
 
        const metadata = {
+         channel,
          versionName,
          versionCode,
          checksum: serverHash,
@@ -171,15 +177,15 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
        transaction.set(metadataRef, metadata);
 
        // Deterministic audit log ID
-       const auditId = `apk_dist_${versionCode}_${serverHash.substring(0, 8)}`;
+       const auditId = `apk_dist_${channel}_${versionCode}_${serverHash.substring(0, 8)}`;
        const auditRef = adminDb.collection('activity_logs').doc(auditId);
 
        transaction.set(auditRef, {
          actorUid: uid,
          actorEmail: email || '',
          actorRole: 'admin',
-         action: 'APK_PUBLISHED',
-         details: { message: `Objavljena nova verzija aplikacije: ${versionName} (${versionCode})`, versionCode },
+         action: channel === 'test' ? 'APK_TEST_PUBLISHED' : 'APK_PUBLISHED',
+         details: { message: `Objavljena ${channel === 'test' ? 'testna' : 'stabilna'} verzija aplikacije: ${versionName} (${versionCode})`, versionCode, channel },
          timestamp: new Date().toISOString(),
          ipAddress: 'server'
        });

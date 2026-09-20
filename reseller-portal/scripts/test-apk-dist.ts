@@ -11,7 +11,9 @@ process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_123';
 import { mockState, mockAdminDb } from '../src/lib/mockFirebaseAdmin';
 import { POST as adminApkRoute, onBeforeGenerateToken, onUploadCompleted } from '../src/app/api/admin/apk/route';
 import { GET as latestApkRoute } from '../src/app/api/apk/latest/route';
+import { GET as testApkRoute } from '../src/app/api/apk/test/route';
 import { GET as downloadRoute } from '../src/app/download/route';
+import { GET as testDownloadRoute } from '../src/app/download/test/route';
 import { validateBlobUrl } from '../src/utils/blobValidator';
 
 const createMockReq = (body: any, token?: string, method = 'POST', url = 'http://localhost/api/admin/apk') => {
@@ -70,6 +72,11 @@ test('APK Distribution Tests', async (t) => {
     for (const url of invalidUrls) {
       assert.strictEqual(validateBlobUrl(url, '1.0', '1'), false);
     }
+  });
+
+  await t.test('2b. validateBlobUrl accepts only deterministic test channel path', () => {
+    assert.strictEqual(validateBlobUrl('https://foo.public.blob.vercel-storage.com/apk/test/vopoapp-test-1.0.1-10.apk', '1.0.1', '10', 'test'), true);
+    assert.strictEqual(validateBlobUrl('https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0.1-10.apk', '1.0.1', '10', 'test'), false);
   });
 
   // Client Token Generation tests
@@ -131,6 +138,13 @@ test('APK Distribution Tests', async (t) => {
      }
   });
 
+  await t.test('7d. test kanal koristi odvojenu putanju i metadata verziju', async () => {
+    const payload = JSON.stringify({ versionName: '1.0-test', versionCode: '16', checksum: validChecksum, channel: 'test' });
+    const result = await onBeforeGenerateToken('apk/test/vopoapp-test-1.0-test-16.apk', payload, createMockReq({}, 'mock-token-admin1'));
+    assert.ok(result.tokenPayload);
+    assert.strictEqual(JSON.parse(result.tokenPayload).channel, 'test');
+  });
+
   // Latest API tests
   await t.test('8. /api/apk/latest bez metadata zapisa', async () => {
      const res = await latestApkRoute();
@@ -163,6 +177,16 @@ test('APK Distribution Tests', async (t) => {
      const res = await downloadRoute();
      assert.strictEqual(res.status, 307);
      assert.strictEqual(res.headers.get('Location'), 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-100.apk');
+  });
+
+  await t.test('12b. stalni test link koristi samo test metadata dokument', async () => {
+    (mockState as any).system.set('apk_test_metadata', { versionCode: '16', versionName: '1.0-test', checksum: validChecksum, latestUrl: 'https://foo.public.blob.vercel-storage.com/apk/test/vopoapp-test-1.0-test-16.apk' });
+    const metadataRes = await testApkRoute();
+    assert.strictEqual(metadataRes.status, 200);
+    assert.strictEqual((await metadataRes.json()).versionCode, '16');
+    const downloadRes = await testDownloadRoute();
+    assert.strictEqual(downloadRes.status, 307);
+    assert.strictEqual(downloadRes.headers.get('Location'), 'https://foo.public.blob.vercel-storage.com/apk/test/vopoapp-test-1.0-test-16.apk');
   });
 
   // Vercel Blob webhook mock validation
@@ -215,6 +239,25 @@ test('APK Distribution Tests', async (t) => {
      assert.strictEqual(logs.length, 1);
      assert.strictEqual(logs[0].action, 'APK_PUBLISHED');
      assert.strictEqual(logs[0].details.versionCode, '10');
+  });
+
+  await t.test('13b. testni upload ne mijenja stabilni kanal', async () => {
+     fetchCallCount = 0;
+     (mockState as any).system.delete('apk_test_metadata');
+     const stableMeta = (mockState as any).system.get('apk_metadata');
+     const tokenPayload = JSON.stringify({ versionName: '1.0-test', versionCode: '16', checksum: testHash, channel: 'test', uid: 'admin1', email: 'a@v.com' });
+     await onUploadCompleted({ blob: { url: 'https://foo.public.blob.vercel-storage.com/apk/test/vopoapp-test-1.0-test-16.apk' }, tokenPayload });
+
+     const testMeta = (mockState as any).system.get('apk_test_metadata');
+     assert.strictEqual(testMeta.channel, 'test');
+     assert.strictEqual(testMeta.versionCode, '16');
+     assert.strictEqual(testMeta.checksum, testHash);
+     assert.deepStrictEqual((mockState as any).system.get('apk_metadata'), stableMeta);
+
+     const logs = Array.from((mockState as any).activity_logs.values()) as any[];
+     const testLog = logs.find((log) => log.action === 'APK_TEST_PUBLISHED');
+     assert.strictEqual(testLog.details.versionCode, '16');
+     assert.strictEqual(testLog.details.channel, 'test');
   });
 
   await t.test('14. neispravan versionCode (prije generiranja tokena)', async () => {

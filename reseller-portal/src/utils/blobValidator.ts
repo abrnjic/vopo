@@ -1,4 +1,6 @@
-export function validateBlobUrl(latestUrl: string, expectedVersionName: string, expectedVersionCode: string): boolean {
+import { apkPathname, type ApkChannel } from '@/lib/apkChannel';
+
+export function validateBlobUrl(latestUrl: string, expectedVersionName: string, expectedVersionCode: string, channel: ApkChannel = 'stable'): boolean {
   try {
     const url = new URL(latestUrl);
 
@@ -12,7 +14,7 @@ export function validateBlobUrl(latestUrl: string, expectedVersionName: string, 
     const hasNoPort = url.port === '';
     const hasNoAuth = url.username === '' && url.password === '';
 
-    const expectedPathname = `/apk/releases/vopoapp-${expectedVersionName}-${expectedVersionCode}.apk`;
+    const expectedPathname = `/${apkPathname(channel, expectedVersionName, expectedVersionCode)}`;
     const isValidPath = url.pathname === expectedPathname;
 
     if (!isHttps || !hasNoPort || !hasNoAuth || !isValidPath) {

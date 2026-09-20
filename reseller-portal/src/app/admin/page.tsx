@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { upload } from '@vercel/blob/client';
 import DomainManager from '../../components/DomainManager';
 import { hr } from 'date-fns/locale';
+import { apkPathname, type ApkChannel } from '../../lib/apkChannel';
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
   const [apkFile, setApkFile] = useState<File | null>(null);
   const [apkVersionName, setApkVersionName] = useState('');
   const [apkVersionCode, setApkVersionCode] = useState('');
+  const [apkChannel, setApkChannel] = useState<ApkChannel>('test');
   const [isUploadingApk, setIsUploadingApk] = useState(false);
   const [apkUploadMessage, setApkUploadMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
 
@@ -103,6 +105,8 @@ export default function AdminDashboard() {
       const checksum = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
       const safeVersionName = apkVersionName.replace(/[^a-zA-Z0-9.-]/g, '');
+      const uploadPath = apkPathname(apkChannel, safeVersionName, apkVersionCode);
+      const metadataEndpoint = apkChannel === 'test' ? '/api/apk/test' : '/api/apk/latest';
 
       // Mock Local testing
       if (process.env.NEXT_PUBLIC_MOCK_FIREBASE === 'true') {
@@ -112,8 +116,8 @@ export default function AdminDashboard() {
            body: JSON.stringify({
              type: "blob.generate-client-token",
              payload: {
-                pathname: `apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk`,
-                clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum })
+                pathname: uploadPath,
+                clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, channel: apkChannel })
              }
            })
          });
@@ -127,8 +131,8 @@ export default function AdminDashboard() {
            body: JSON.stringify({
              type: "blob.upload-completed",
              payload: {
-               blob: { url: "https://mock-blob.com/test.apk", size: apkFile.size, pathname: `apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk` },
-               tokenPayload: mockData.clientToken ? JSON.parse(atob(mockData.clientToken.split('.')[1] || 'e30=')).tokenPayload : JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, uid: user?.uid, email: user?.email })
+               blob: { url: "https://mock-blob.com/test.apk", size: apkFile.size, pathname: uploadPath },
+               tokenPayload: mockData.clientToken ? JSON.parse(atob(mockData.clientToken.split('.')[1] || 'e30=')).tokenPayload : JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, channel: apkChannel, uid: user?.uid, email: user?.email })
              }
            })
          });
@@ -143,10 +147,10 @@ export default function AdminDashboard() {
          return;
       }
 
-      await upload(`apk/releases/vopoapp-${safeVersionName}-${apkVersionCode}.apk`, apkFile, {
+      await upload(uploadPath, apkFile, {
         access: 'public',
         handleUploadUrl: '/api/admin/apk',
-        clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum }),
+        clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, channel: apkChannel }),
         headers: {
            Authorization: `Bearer ${idToken}`
         }
@@ -158,10 +162,10 @@ export default function AdminDashboard() {
       let isPublished = false;
       while (attempts < 15) {
         await new Promise(r => setTimeout(r, 2000));
-        const checkRes = await fetch('/api/apk/latest', { cache: 'no-store' });
+        const checkRes = await fetch(metadataEndpoint, { cache: 'no-store' });
         if (checkRes.ok) {
            const data = await checkRes.json();
-           if (data.versionCode === parseInt(apkVersionCode, 10) && data.checksum === checksum) {
+           if (String(data.versionCode) === apkVersionCode && data.checksum === checksum) {
               isPublished = true;
               break;
            }
@@ -170,7 +174,7 @@ export default function AdminDashboard() {
       }
 
       if (isPublished) {
-         setApkUploadMessage({ type: 'success', text: `APK (v${safeVersionName}) uspješno provjeren i objavljen.` });
+         setApkUploadMessage({ type: 'success', text: `${apkChannel === 'test' ? 'Testni' : 'Stabilni'} APK (v${safeVersionName}) uspješno provjeren i objavljen.` });
          setApkFile(null);
          setApkVersionName('');
          setApkVersionCode('');
@@ -977,10 +981,30 @@ export default function AdminDashboard() {
 
                     <div className="p-6 bg-gray-800/40 rounded-2xl border border-gray-700/50 shadow-sm">
                       <p className="text-gray-400 text-sm mb-6 leading-relaxed">
-                        Prenesite novu verziju Vopo Android aplikacije. Nova datoteka će biti dostupna na /download.
+                        Prenesite novu verziju Vopo Android aplikacije. Testni i stabilni kanal imaju odvojene stalne poveznice.
                       </p>
 
+                      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+                        <a href="/download/test" className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-sm text-blue-300 hover:bg-blue-500/20">
+                          Testni APK: <strong>www.vopoapp.com/download/test</strong>
+                        </a>
+                        <a href="/download" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300 hover:bg-emerald-500/20">
+                          Stabilni APK: <strong>www.vopoapp.com/download</strong>
+                        </a>
+                      </div>
+
                       <form onSubmit={handleApkUpload} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-bold text-gray-300 mb-2">Kanal objave</label>
+                          <select
+                            value={apkChannel}
+                            onChange={(e) => setApkChannel(e.target.value as ApkChannel)}
+                            className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+                          >
+                            <option value="test">Testni — /download/test</option>
+                            <option value="stable">Stabilni — /download</option>
+                          </select>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-bold text-gray-300 mb-2">Verzija (Name)</label>

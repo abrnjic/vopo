@@ -12,9 +12,12 @@ internal suspend fun hasUsableLiveCatalogForActivation(
     providerType: ProviderType,
     channelDao: ChannelDao,
     categoryDao: CategoryDao,
-    syncMetadataRepository: SyncMetadataRepository
+    syncMetadataRepository: SyncMetadataRepository,
+    requireCommittedContent: Boolean = false
 ): Boolean {
-    if (providerType != ProviderType.XTREAM_CODES && providerType != ProviderType.STALKER_PORTAL) {
+    // A failed sync may leave usable content behind. In that case every provider
+    // type must prove it has committed content before onboarding can succeed.
+    if (!requireCommittedContent && providerType != ProviderType.XTREAM_CODES && providerType != ProviderType.STALKER_PORTAL) {
         return true
     }
 

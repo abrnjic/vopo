@@ -669,7 +669,8 @@ class ProviderRepositoryImpl @Inject constructor(
                 providerData.type,
                 channelDao,
                 categoryDao,
-                syncMetadataRepository
+                syncMetadataRepository,
+                requireCommittedContent = true
             )
             updateProviderSyncStatus(providerData.id, ProviderStatus.PARTIAL, isActive = hasUsable)
             

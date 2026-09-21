@@ -51,6 +51,8 @@ class SettingsDerivedStateObserversTest {
         whenever(application.getString(R.string.settings_capability_xtream_without_epg))
             .thenReturn("Xtream without EPG")
 
+        whenever(application.getString(R.string.settings_expiry_unknown)).thenReturn("Unknown")
+
         val diagnostics = observeProviderDiagnostics(
             providerRepository = providerRepository,
             syncMetadataRepository = syncMetadataRepository,

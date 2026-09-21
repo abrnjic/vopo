@@ -51,6 +51,33 @@ test('Firestore Security Rules', async (t) => {
     await assertSucceeds(getDoc(doc(resellerDb, 'licenses', 'lic1')));
   });
 
+  await t.test('vlastiti profil je čitljiv bez role claima', async () => {
+    const db = testEnv.authenticatedContext('reseller1').firestore();
+    await assertSucceeds(getDoc(doc(db, 'users', 'reseller1')));
+    await assertSucceeds(getDoc(doc(db, 'licenses', 'lic1')));
+  });
+
+  await t.test('lažni admin claim ne daje admin pristup', async () => {
+    const db = testEnv.authenticatedContext('reseller1', { role: 'admin' }).firestore();
+    await assertFails(getDoc(doc(db, 'users', 'admin1')));
+  });
+
+  await t.test('suspendiran reseller sa starim claimom ne može čitati licence', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await updateDoc(doc(context.firestore(), 'users', 'reseller1'), { status: 'suspended' });
+    });
+    const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
+    await assertFails(getDoc(doc(db, 'licenses', 'lic1')));
+  });
+
+  await t.test('reseller ne može preuzeti tuđu domenu', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'domains', 'foreign'), { ownerId: 'reseller2' });
+    });
+    const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
+    await assertFails(updateDoc(doc(db, 'domains', 'foreign'), { ownerId: 'reseller1' }));
+  });
+
   await t.test('klijentski create/update/delete u licenses i devices je zabranjen', async () => {
     const db = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertFails(setDoc(doc(db, 'licenses', 'newLic'), { test: 1 }));

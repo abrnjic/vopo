@@ -208,6 +208,7 @@ class ProviderRepositoryImplTest {
 
     @Test
     fun `validateM3u returns saved provider sync error exception when initial sync fails after save`() = runTest {
+        whenever(channelDao.getCount(9L)).thenReturn(flowOf(0))
         whenever(providerDao.getByUrlAndUser("https://example.com/list.m3u", "", "")).thenReturn(null)
         whenever(credentialCrypto.encryptIfNeeded("")).thenReturn("")
         whenever(providerDao.insert(any())).thenReturn(9L)
@@ -241,6 +242,43 @@ class ProviderRepositoryImplTest {
         assertThat(failure.provider.isActive).isFalse()
         assertThat(failure.message).contains("Playlist saved, but initial sync failed")
         verify(providerDao, never()).setActive(9L)
+        verify(syncManager).scheduleProviderSyncResume(9L)
+    }
+
+    @Test
+    fun `validateM3u keeps committed channels usable when initial sync partially fails`() = runTest {
+        whenever(channelDao.getCount(9L)).thenReturn(flowOf(12))
+        whenever(providerDao.getByUrlAndUser("https://example.com/list.m3u", "", "")).thenReturn(null)
+        whenever(credentialCrypto.encryptIfNeeded("")).thenReturn("")
+        whenever(providerDao.insert(any())).thenReturn(9L)
+        whenever(providerDao.getById(9L)).thenReturn(
+            ProviderEntity(
+                id = 9L,
+                name = "Playlist",
+                type = ProviderType.M3U,
+                serverUrl = "https://example.com/list.m3u",
+                m3uUrl = "https://example.com/list.m3u",
+                isActive = false,
+                status = ProviderStatus.PARTIAL
+            )
+        )
+        whenever(syncManager.sync(eq(9L), eq(false), anyOrNull(), anyOrNull(), anyOrNull(), eq(false)))
+            .thenReturn(Result.error("timeout"))
+
+        val result = repository.validateM3u(
+            url = "https://example.com/list.m3u",
+            name = "Playlist",
+            epgSyncMode = ProviderEpgSyncMode.UPFRONT,
+            m3uVodClassificationEnabled = false,
+            onProgress = {},
+            id = null
+        )
+
+        assertThat(result.isSuccess).isTrue()
+        val saved = (result as Result.Success).data
+        assertThat(saved.status).isEqualTo(ProviderStatus.PARTIAL)
+        assertThat(saved.isActive).isTrue()
+        verify(providerDao).setActive(9L)
         verify(syncManager).scheduleProviderSyncResume(9L)
     }
 

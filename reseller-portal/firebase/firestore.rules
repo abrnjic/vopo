@@ -5,8 +5,17 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+    function hasActiveRole(role) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'user') == role
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('status', 'active') == 'active';
+    }
     function isAdmin() {
-      return isAuthenticated() && request.auth.token.role == 'admin';
+      return hasActiveRole('admin');
+    }
+    function isReseller() {
+      return hasActiveRole('reseller');
     }
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -14,7 +23,7 @@ service cloud.firestore {
 
     // USERS kolekcija
     match /users/{userId} {
-      allow read: if isAdmin() || isOwner(userId) || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.parentId == request.auth.uid);
+      allow read: if isOwner(userId) || isAdmin() || (isReseller() && resource.data.parentId == request.auth.uid);
       allow create: if false; // Only API
       allow delete: if false; // Only API
       // Dopušteno ažuriranje samo određenih sigurnih polja klijentu:
@@ -24,15 +33,15 @@ service cloud.firestore {
     // DOMAINS kolekcija
     match /domains/{domainId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.token.role == 'reseller' && request.resource.data.ownerId == request.auth.uid;
-      allow update: if isAuthenticated() && request.auth.token.role == 'reseller' && request.resource.data.ownerId == request.auth.uid;
+      allow create: if isReseller() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isReseller() && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == resource.data.ownerId;
       allow delete: if isAdmin();
     }
 
     // LICENSES kolekcija
     match /licenses/{licenseId} {
       // Samo admini i vlasnici (reselleri) mogu čitati
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.resellerId == request.auth.uid);
+      allow read: if isAdmin() || (isReseller() && resource.data.resellerId == request.auth.uid);
       allow create: if false;
       allow update: if false;
       allow delete: if false;
@@ -45,7 +54,7 @@ service cloud.firestore {
 
     // TRANSACTIONS kolekcija
     match /transactions/{transactionId} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.resellerId == request.auth.uid);
+      allow read: if isAdmin() || (isReseller() && resource.data.resellerId == request.auth.uid);
       allow create: if false;
       allow update: if false;
       allow delete: if false;
@@ -61,7 +70,7 @@ service cloud.firestore {
 
     // ACTIVITY LOGS kolekcija
     match /activity_logs/{logId} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.token.role == 'reseller' && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (isReseller() && resource.data.userId == request.auth.uid);
       allow create: if false;
       allow update: if false;
       allow delete: if false;

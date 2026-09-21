@@ -188,6 +188,7 @@ class PlayerAudioFocusController(
         }
     }
 
+    @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.O)
     private fun buildAudioFocusRequest(): AudioFocusRequest {
         val attributes = android.media.AudioAttributes.Builder()
             .setUsage(android.media.AudioAttributes.USAGE_MEDIA)

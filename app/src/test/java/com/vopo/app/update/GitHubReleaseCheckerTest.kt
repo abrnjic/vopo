@@ -49,6 +49,7 @@ class GitHubReleaseCheckerTest {
         assertThat(release.versionName).isEqualTo("1.0.16")
         assertThat(release.versionCode).isEqualTo(17)
         assertThat(release.downloadUrl).isEqualTo("https://www.vopoapp.com/download")
+        assertThat(release.sha256).isEqualTo("a".repeat(64))
         assertThat(release.publishedAt).isEqualTo("2026-09-21T10:00:00Z")
     }
 

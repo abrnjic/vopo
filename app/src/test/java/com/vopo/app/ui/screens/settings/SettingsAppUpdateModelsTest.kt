@@ -7,6 +7,20 @@ import org.junit.Test
 class SettingsAppUpdateModelsTest {
 
     @Test
+    fun releaseInfoRequiresChecksumBeforeDownload() {
+        val withoutChecksum = AppUpdateUiModel(
+            latestVersionName = "1.0.16",
+            latestVersionCode = 17,
+            releaseUrl = "https://www.vopoapp.com/download",
+            downloadUrl = "https://www.vopoapp.com/download"
+        )
+        val withChecksum = withoutChecksum.copy(sha256 = "a".repeat(64))
+
+        assertThat(withoutChecksum.toReleaseInfoOrNull()).isNull()
+        assertThat(withChecksum.toReleaseInfoOrNull()?.sha256).isEqualTo("a".repeat(64))
+    }
+
+    @Test
     fun stableBuildIgnoresBetaRelease() {
         val result = isRemoteVersionNewerForBuild(
             remoteVersionCode = 12,

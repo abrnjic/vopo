@@ -23,6 +23,7 @@ data class GitHubReleaseInfo(
     val versionCode: Int?,
     val releaseUrl: String,
     val downloadUrl: String?,
+    val sha256: String,
     val releaseNotes: String,
     val publishedAt: String?
 )
@@ -77,6 +78,7 @@ class GitHubReleaseChecker @Inject constructor(
                         versionCode = versionCode,
                         releaseUrl = updateChannel.downloadUrl,
                         downloadUrl = updateChannel.downloadUrl,
+                        sha256 = checksum.lowercase(),
                         releaseNotes = json.optString("releaseNotes").trim(),
                         publishedAt = json.optString("updatedAt").takeIf { it.isNotBlank() }
                     )

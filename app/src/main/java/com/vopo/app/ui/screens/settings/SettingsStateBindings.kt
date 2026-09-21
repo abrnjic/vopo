@@ -114,6 +114,7 @@ internal fun observeSettingsPreferenceSnapshot(
             cachedAppUpdateVersionCode = null,
             cachedAppUpdateReleaseUrl = null,
             cachedAppUpdateDownloadUrl = null,
+            cachedAppUpdateSha256 = null,
             cachedAppUpdateReleaseNotes = "",
             cachedAppUpdatePublishedAt = null
         )
@@ -259,6 +260,8 @@ internal fun observeSettingsPreferenceSnapshot(
         snapshot.copy(cachedAppUpdateReleaseUrl = releaseUrl)
     }.combine(preferencesRepository.cachedAppUpdateDownloadUrl) { snapshot, downloadUrl ->
         snapshot.copy(cachedAppUpdateDownloadUrl = downloadUrl)
+    }.combine(preferencesRepository.cachedAppUpdateSha256) { snapshot, sha256 ->
+        snapshot.copy(cachedAppUpdateSha256 = sha256)
     }.combine(preferencesRepository.cachedAppUpdateReleaseNotes) { snapshot, releaseNotes ->
         snapshot.copy(cachedAppUpdateReleaseNotes = releaseNotes)
     }.combine(preferencesRepository.cachedAppUpdatePublishedAt) { snapshot, publishedAt ->

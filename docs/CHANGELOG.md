@@ -2,6 +2,21 @@
 
 All notable product changes are recorded in this document.
 
+## [1.0.16] - 2026-09-21
+
+### Fixed
+
+- Fixed initial provider onboarding so a provider without confirmed saved content cannot be marked active after a failed first synchronization.
+- Fixed player release lint errors around network permissions, API annotations, testing visibility, and Media3 experimental APIs.
+- Fixed application updates to use the official VOPO portal metadata and permanent Vercel download links instead of GitHub Releases.
+- Added mandatory SHA-256 verification for downloaded application updates before Android opens the package installer.
+
+### Added
+
+- Added secure device-token registration and server-side license status checks for trial, annual, and lifetime licenses.
+- Added administrator and reseller management for multiple IPTV domains.
+- Added separate permanent stable and test APK distribution channels.
+
 ## [1.0.15] - 2026-06-13
 
 ### Fixed

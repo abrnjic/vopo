@@ -116,6 +116,7 @@ internal data class SettingsPreferenceSnapshot(
     val cachedAppUpdateVersionCode: Int?,
     val cachedAppUpdateReleaseUrl: String?,
     val cachedAppUpdateDownloadUrl: String?,
+    val cachedAppUpdateSha256: String?,
     val cachedAppUpdateReleaseNotes: String,
     val cachedAppUpdatePublishedAt: String?
 )

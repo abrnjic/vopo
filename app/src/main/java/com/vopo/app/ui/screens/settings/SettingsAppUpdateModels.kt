@@ -13,6 +13,7 @@ data class AppUpdateUiModel(
     val latestVersionCode: Int? = null,
     val releaseUrl: String? = null,
     val downloadUrl: String? = null,
+    val sha256: String? = null,
     val releaseNotes: String = "",
     val publishedAt: String? = null,
     val isUpdateAvailable: Boolean = false,
@@ -30,6 +31,7 @@ internal fun AppUpdateUiModel.toReleaseInfoOrNull(): GitHubReleaseInfo? {
         versionCode = latestVersionCode,
         releaseUrl = releaseUrl,
         downloadUrl = downloadUrl,
+        sha256 = sha256 ?: return null,
         releaseNotes = releaseNotes,
         publishedAt = publishedAt
     )
@@ -56,6 +58,7 @@ internal fun SettingsPreferenceSnapshot.toCachedAppUpdateUiModel(): AppUpdateUiM
         latestVersionCode = cachedAppUpdateVersionCode,
         releaseUrl = cachedAppUpdateReleaseUrl,
         downloadUrl = cachedAppUpdateDownloadUrl,
+        sha256 = cachedAppUpdateSha256,
         releaseNotes = cachedAppUpdateReleaseNotes,
         publishedAt = cachedAppUpdatePublishedAt,
         isUpdateAvailable = versionName?.let {

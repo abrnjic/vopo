@@ -93,6 +93,7 @@ class AppUpdateInstaller @Inject constructor(
                 if (downloadedVersionName != null) {
                     preferencesRepository.setDownloadedAppUpdateVersionName(null)
                 }
+                preferencesRepository.setAppUpdateDownloadSha256(null)
                 AppUpdateDownloadState()
             }
             _downloadState.value = restoredState
@@ -112,6 +113,7 @@ class AppUpdateInstaller @Inject constructor(
                     )
                 } else {
                     preferencesRepository.setDownloadedAppUpdateVersionName(null)
+                    preferencesRepository.setAppUpdateDownloadSha256(null)
                     AppUpdateDownloadState(status = AppUpdateDownloadStatus.Failed)
                 }
                 _downloadState.value = fallbackState
@@ -156,6 +158,7 @@ class AppUpdateInstaller @Inject constructor(
                     if (trackedVersionName == downloadedVersionName) {
                         preferencesRepository.setDownloadedAppUpdateVersionName(null)
                     }
+                    preferencesRepository.setAppUpdateDownloadSha256(null)
                     AppUpdateDownloadState(
                         status = AppUpdateDownloadStatus.Failed,
                         versionName = trackedVersionName,
@@ -174,6 +177,9 @@ class AppUpdateInstaller @Inject constructor(
             ?: return@withContext Result.error("Update download is unavailable for this release")
         if (!isHttpsUrl(downloadUrl)) {
             return@withContext Result.error("Update download is unavailable because the download URL is not HTTPS")
+        }
+        if (!releaseInfo.sha256.matches(Regex("^[a-fA-F0-9]{64}$"))) {
+            return@withContext Result.error("Update download is unavailable because the release checksum is invalid")
         }
 
         try {
@@ -207,6 +213,7 @@ class AppUpdateInstaller @Inject constructor(
             val downloadId = downloadManager.enqueue(request)
             preferencesRepository.setAppUpdateDownloadId(downloadId)
             preferencesRepository.setAppUpdateDownloadVersionName(releaseInfo.versionName)
+            preferencesRepository.setAppUpdateDownloadSha256(releaseInfo.sha256)
             preferencesRepository.setDownloadedAppUpdateVersionName(null)
             val state = AppUpdateDownloadState(
                 status = AppUpdateDownloadStatus.Downloading,
@@ -223,7 +230,7 @@ class AppUpdateInstaller @Inject constructor(
         }
     }
 
-    suspend fun installDownloadedUpdate(expectedSha256: String? = null): Result<Unit> = withContext(Dispatchers.IO) {
+    suspend fun installDownloadedUpdate(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentState = refreshState()
         if (currentState.status != AppUpdateDownloadStatus.Downloaded || currentState.versionName.isNullOrBlank()) {
             return@withContext Result.error("No downloaded update is ready to install")
@@ -242,30 +249,41 @@ class AppUpdateInstaller @Inject constructor(
         if (!apkFile.exists()) {
             preferencesRepository.setAppUpdateDownloadId(null)
             preferencesRepository.setAppUpdateDownloadVersionName(null)
+            preferencesRepository.setAppUpdateDownloadSha256(null)
             preferencesRepository.setDownloadedAppUpdateVersionName(null)
             return@withContext Result.error("Downloaded update file is missing")
         }
 
-        // SEC-L02: Verify SHA-256 integrity before handing the APK to the package manager.
-        // This guards against a truncated download, a network MITM, or a tampered file in
-        // the external storage directory (which is world-readable on unencrypted devices).
-        if (!expectedSha256.isNullOrBlank()) {
-            val actualHash = computeSha256Hex(apkFile)
-            if (!actualHash.equals(expectedSha256.trim(), ignoreCase = true)) {
-                android.util.Log.e(
-                    "AppUpdateInstaller",
-                    "APK SHA-256 mismatch for ${apkFile.name}: expected=${expectedSha256.trim()} actual=$actualHash"
-                )
-                apkFile.delete()
-                preferencesRepository.setAppUpdateDownloadId(null)
-                preferencesRepository.setAppUpdateDownloadVersionName(null)
-                preferencesRepository.setDownloadedAppUpdateVersionName(null)
-                return@withContext Result.error(
-                    "Downloaded update failed integrity check. The file has been removed; please download again."
-                )
-            }
-            android.util.Log.i("AppUpdateInstaller", "APK SHA-256 verified OK for ${apkFile.name}")
+        // Fail closed: every portal release carries SHA-256 metadata and the exact value
+        // captured when this download started must still match before package installation.
+        val expectedSha256 = preferencesRepository.appUpdateDownloadSha256.first()
+        if (expectedSha256 == null) {
+            apkFile.delete()
+            preferencesRepository.setAppUpdateDownloadId(null)
+            preferencesRepository.setAppUpdateDownloadVersionName(null)
+            preferencesRepository.setAppUpdateDownloadSha256(null)
+            preferencesRepository.setDownloadedAppUpdateVersionName(null)
+            return@withContext Result.error(
+                "Downloaded update has no integrity metadata. The file has been removed; please download again."
+            )
         }
+
+        val actualHash = computeSha256Hex(apkFile)
+        if (!actualHash.equals(expectedSha256, ignoreCase = true)) {
+            android.util.Log.e(
+                "AppUpdateInstaller",
+                "APK SHA-256 mismatch for ${apkFile.name}: expected=$expectedSha256 actual=$actualHash"
+            )
+            apkFile.delete()
+            preferencesRepository.setAppUpdateDownloadId(null)
+            preferencesRepository.setAppUpdateDownloadVersionName(null)
+            preferencesRepository.setAppUpdateDownloadSha256(null)
+            preferencesRepository.setDownloadedAppUpdateVersionName(null)
+            return@withContext Result.error(
+                "Downloaded update failed integrity check. The file has been removed; please download again."
+            )
+        }
+        android.util.Log.i("AppUpdateInstaller", "APK SHA-256 verified OK for ${apkFile.name}")
 
         val apkUri = FileProvider.getUriForFile(
             context,

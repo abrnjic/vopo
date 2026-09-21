@@ -123,6 +123,7 @@ class VopoApp : Application(), SingletonImageLoader.Factory {
                     versionCode = result.data.versionCode,
                     releaseUrl = result.data.releaseUrl,
                     downloadUrl = result.data.downloadUrl,
+                    sha256 = result.data.sha256,
                     releaseNotes = result.data.releaseNotes,
                     publishedAt = result.data.publishedAt
                 )

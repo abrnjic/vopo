@@ -64,6 +64,7 @@ internal class SettingsAppUpdateActions(
                         versionCode = release.versionCode,
                         releaseUrl = release.releaseUrl,
                         downloadUrl = release.downloadUrl,
+                        sha256 = release.sha256,
                         releaseNotes = release.releaseNotes,
                         publishedAt = release.publishedAt
                     )
@@ -88,6 +89,7 @@ internal class SettingsAppUpdateActions(
                                 latestVersionCode = release.versionCode,
                                 releaseUrl = release.releaseUrl,
                                 downloadUrl = release.downloadUrl,
+                                sha256 = release.sha256,
                                 releaseNotes = release.releaseNotes,
                                 publishedAt = release.publishedAt,
                                 isUpdateAvailable = updateAvailable,

@@ -198,11 +198,13 @@ class PreferencesRepository @Inject constructor(
         val LAST_APP_UPDATE_CHECK_TIMESTAMP = longPreferencesKey("last_app_update_check_timestamp")
         val APP_UPDATE_DOWNLOAD_ID = longPreferencesKey("app_update_download_id")
         val APP_UPDATE_DOWNLOAD_VERSION_NAME = stringPreferencesKey("app_update_download_version_name")
+        val APP_UPDATE_DOWNLOAD_SHA256 = stringPreferencesKey("app_update_download_sha256")
         val APP_UPDATE_DOWNLOADED_VERSION_NAME = stringPreferencesKey("app_update_downloaded_version_name")
         val APP_UPDATE_LATEST_VERSION_NAME = stringPreferencesKey("app_update_latest_version_name")
         val APP_UPDATE_LATEST_VERSION_CODE = intPreferencesKey("app_update_latest_version_code")
         val APP_UPDATE_RELEASE_URL = stringPreferencesKey("app_update_release_url")
         val APP_UPDATE_DOWNLOAD_URL = stringPreferencesKey("app_update_download_url")
+        val APP_UPDATE_SHA256 = stringPreferencesKey("app_update_sha256")
         val APP_UPDATE_RELEASE_NOTES = stringPreferencesKey("app_update_release_notes")
         val APP_UPDATE_PUBLISHED_AT = stringPreferencesKey("app_update_published_at")
         val LAST_MAINTENANCE_AT = longPreferencesKey("last_maintenance_at")
@@ -597,6 +599,11 @@ class PreferencesRepository @Inject constructor(
         preferences[PreferencesKeys.APP_UPDATE_DOWNLOAD_VERSION_NAME]?.takeIf { it.isNotBlank() }
     }
 
+    val appUpdateDownloadSha256: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.APP_UPDATE_DOWNLOAD_SHA256]
+            ?.takeIf { it.matches(Regex("^[a-fA-F0-9]{64}$")) }
+    }
+
     val downloadedAppUpdateVersionName: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.APP_UPDATE_DOWNLOADED_VERSION_NAME]?.takeIf { it.isNotBlank() }
     }
@@ -615,6 +622,11 @@ class PreferencesRepository @Inject constructor(
 
     val cachedAppUpdateDownloadUrl: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[PreferencesKeys.APP_UPDATE_DOWNLOAD_URL]?.takeIf { it.isNotBlank() }
+    }
+
+    val cachedAppUpdateSha256: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PreferencesKeys.APP_UPDATE_SHA256]
+            ?.takeIf { it.matches(Regex("^[a-fA-F0-9]{64}$")) }
     }
 
     val cachedAppUpdateReleaseNotes: Flow<String> = context.dataStore.data.map { preferences ->
@@ -769,6 +781,16 @@ class PreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun setAppUpdateDownloadSha256(sha256: String?) {
+        context.dataStore.edit { preferences ->
+            if (sha256.isNullOrBlank()) {
+                preferences.remove(PreferencesKeys.APP_UPDATE_DOWNLOAD_SHA256)
+            } else {
+                preferences[PreferencesKeys.APP_UPDATE_DOWNLOAD_SHA256] = sha256.lowercase()
+            }
+        }
+    }
+
     suspend fun setDownloadedAppUpdateVersionName(versionName: String?) {
         context.dataStore.edit { preferences ->
             if (versionName.isNullOrBlank()) {
@@ -784,6 +806,7 @@ class PreferencesRepository @Inject constructor(
         versionCode: Int?,
         releaseUrl: String?,
         downloadUrl: String?,
+        sha256: String?,
         releaseNotes: String?,
         publishedAt: String?
     ) {
@@ -793,6 +816,7 @@ class PreferencesRepository @Inject constructor(
                 preferences.remove(PreferencesKeys.APP_UPDATE_LATEST_VERSION_CODE)
                 preferences.remove(PreferencesKeys.APP_UPDATE_RELEASE_URL)
                 preferences.remove(PreferencesKeys.APP_UPDATE_DOWNLOAD_URL)
+                preferences.remove(PreferencesKeys.APP_UPDATE_SHA256)
                 preferences.remove(PreferencesKeys.APP_UPDATE_RELEASE_NOTES)
                 preferences.remove(PreferencesKeys.APP_UPDATE_PUBLISHED_AT)
             } else {
@@ -807,6 +831,11 @@ class PreferencesRepository @Inject constructor(
                     preferences.remove(PreferencesKeys.APP_UPDATE_DOWNLOAD_URL)
                 } else {
                     preferences[PreferencesKeys.APP_UPDATE_DOWNLOAD_URL] = downloadUrl
+                }
+                if (sha256.isNullOrBlank()) {
+                    preferences.remove(PreferencesKeys.APP_UPDATE_SHA256)
+                } else {
+                    preferences[PreferencesKeys.APP_UPDATE_SHA256] = sha256.lowercase()
                 }
                 if (releaseNotes.isNullOrBlank()) {
                     preferences.remove(PreferencesKeys.APP_UPDATE_RELEASE_NOTES)

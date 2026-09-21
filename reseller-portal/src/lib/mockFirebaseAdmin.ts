@@ -31,6 +31,10 @@ export const mockAdminDb = {
           if (!dataMap.has(id)) throw new Error('NOT_FOUND');
           dataMap.set(id, { ...dataMap.get(id), ...data });
         },
+        delete: async () => {
+          if (mockState.throwDbError) throw new Error('Mock DB Error');
+          dataMap.delete(id);
+        },
         set: (data: any, options?: any) => {
           if (mockState.throwDbError) throw new Error('Mock DB Error');
           if (options?.merge && dataMap.has(id)) {
@@ -78,7 +82,8 @@ export const mockAdminDb = {
     const transaction = {
       get: async (ref: any) => ref.get(),
       update: (ref: any, data: any) => ref.update(data),
-      set: (ref: any, data: any, opts: any) => ref.set(data, opts)
+      set: (ref: any, data: any, opts: any) => ref.set(data, opts),
+      delete: (ref: any) => ref.delete()
     };
     try {
       return await callback(transaction);

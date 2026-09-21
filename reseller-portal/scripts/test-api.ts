@@ -10,6 +10,7 @@ import { POST as connectRoute } from '../src/app/api/connect/route';
 import { POST as authUsersRoute } from '../src/app/api/admin/users/route';
 import { POST as resellerActivateRoute } from '../src/app/api/reseller/activate/route';
 import { POST as resellerBulkExtendRoute } from '../src/app/api/reseller/bulk-extend/route';
+import { POST as resellerBulkDeleteRoute } from '../src/app/api/reseller/bulk-delete/route';
 import { POST as logRoute } from '../src/app/api/log/route';
 import { POST as adminCreditsRoute } from '../src/app/api/admin/credits/route';
 import { POST as deviceRegisterRoute } from '../src/app/api/device/register/route';
@@ -318,6 +319,76 @@ test('API P0 Tests', async (t) => {
     res = await resellerBulkExtendRoute(createMockReq({ requestId: '44444444-4444-4444-8444-444444444444', licenseIds: ['bulk-lifetime'] }, 'reseller1:reseller:r@test.com'));
     assert.strictEqual(res.status, 400);
     assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+  });
+
+  await t.test('bulk brisanje je atomsko i zapisuje audit', async () => {
+    mockState.licenses.set('delete-1', { resellerId: 'reseller1', status: 'Active' });
+    mockState.licenses.set('delete-2', { resellerId: 'reseller1', status: 'Expired' });
+    const body = { requestId: '55555555-5555-4555-8555-555555555555', licenseIds: ['delete-2', 'delete-1'] };
+    const res = await resellerBulkDeleteRoute(createMockReq(body, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.licenses.has('delete-1'), false);
+    assert.strictEqual(mockState.licenses.has('delete-2'), false);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+    assert.ok(mockState.transactions.has('bulk-delete-reseller1-55555555-5555-4555-8555-555555555555'));
+    assert.deepStrictEqual((await res.json()).deletedIds, ['delete-1', 'delete-2']);
+  });
+
+  await t.test('ponovljeni bulk delete zahtjev je idempotentan', async () => {
+    mockState.licenses.set('delete-idempotent', { resellerId: 'reseller1', status: 'Active' });
+    const body = { requestId: '66666666-6666-4666-8666-666666666666', licenseIds: ['delete-idempotent'] };
+    let res = await resellerBulkDeleteRoute(createMockReq(body, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    res = await resellerBulkDeleteRoute(createMockReq(body, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual((await res.json()).idempotent, true);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+
+    mockState.licenses.set('delete-other', { resellerId: 'reseller1', status: 'Active' });
+    res = await resellerBulkDeleteRoute(createMockReq({ ...body, licenseIds: ['delete-other'] }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 409);
+    assert.strictEqual(mockState.licenses.has('delete-other'), true);
+  });
+
+  await t.test('bulk brisanje odbija tuđe i nepostojeće licence bez djelomičnog brisanja', async () => {
+    mockState.licenses.set('delete-owned', { resellerId: 'reseller1', status: 'Active' });
+    mockState.licenses.set('delete-foreign', { resellerId: 'reseller2', status: 'Active' });
+    let res = await resellerBulkDeleteRoute(createMockReq({
+      requestId: '77777777-7777-4777-8777-777777777777',
+      licenseIds: ['delete-owned', 'delete-foreign']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(mockState.licenses.has('delete-owned'), true);
+    assert.strictEqual(mockState.licenses.has('delete-foreign'), true);
+
+    res = await resellerBulkDeleteRoute(createMockReq({
+      requestId: '88888888-8888-4888-8888-888888888888',
+      licenseIds: ['delete-owned', 'delete-missing']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 404);
+    assert.strictEqual(mockState.licenses.has('delete-owned'), true);
+  });
+
+  await t.test('bulk brisanje zahtijeva aktivnog resellera', async () => {
+    const body = { requestId: '99999999-9999-4999-8999-999999999999', licenseIds: ['delete-1'] };
+    let res = await resellerBulkDeleteRoute(createMockReq(body));
+    assert.strictEqual(res.status, 401);
+    res = await resellerBulkDeleteRoute(createMockReq(body, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 403);
+  });
+
+  await t.test('bulk brisanje odbija duplikate i dodatna polja', async () => {
+    let res = await resellerBulkDeleteRoute(createMockReq({
+      requestId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      licenseIds: ['duplicate', 'duplicate']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 400);
+    res = await resellerBulkDeleteRoute(createMockReq({
+      requestId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      licenseIds: ['delete-1'],
+      resellerId: 'reseller2'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 400);
   });
 
   // Rollback tests

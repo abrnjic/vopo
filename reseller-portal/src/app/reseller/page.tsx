@@ -4,9 +4,8 @@ import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { logActivity } from '../../utils/activityLogger';
 import { format } from 'date-fns';
 import { hr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -231,29 +230,23 @@ export default function ResellerDashboard() {
 
     setIsProcessingBulk(true);
     try {
-      const batch = writeBatch(db);
-      
-      selectedLines.forEach(lineId => {
-        batch.delete(doc(db, 'licenses', lineId));
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/reseller/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ requestId: crypto.randomUUID(), licenseIds: selectedLines })
       });
-
-      await batch.commit();
-
-      await logActivity(
-        user.uid, 
-        user.email || '', 
-        'reseller', 
-        'BULK_DELETE', 
-        `Deleted ${selectedLines.length} lines permanently`
-      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Masovno brisanje nije uspjelo.');
 
       // Local state update
-      setRecentLines(prev => prev.filter(l => !selectedLines.includes(l.id)));
+      const deletedIds = new Set<string>(result.deletedIds);
+      setRecentLines(prev => prev.filter(l => !deletedIds.has(l.id)));
       setSelectedLines([]);
-      alert(`Uspješno obrisano ${selectedLines.length} linija.`);
+      alert(`Uspješno obrisano ${result.deletedIds.length} linija.`);
     } catch (error) {
       console.error(error);
-      alert('Došlo je do greške prilikom masovnog brisanja.');
+      alert(error instanceof Error ? error.message : 'Došlo je do greške prilikom masovnog brisanja.');
     } finally {
       setIsProcessingBulk(false);
     }

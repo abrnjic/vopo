@@ -102,6 +102,25 @@ Provjere:
 - Next.js produkcijski build i TypeScript: prolaze.
 - `git diff --check`: prolazi.
 
-Preostali dio B04 je skupno brisanje licenci koje još koristi izravni
-klijentski Firestore batch i treba zaseban serverski endpoint prije konačnog
-zatvaranja projekta.
+## Peti paket — serversko skupno brisanje licenci
+
+Skupno brisanje reseller licenci premješteno je iz izravnog klijentskog
+Firestore batcha u `/api/reseller/bulk-delete`. Server u jednoj transakciji
+provjerava vlasništvo nad svim odabranim licencama prije bilo kojeg brisanja,
+zapisuje operaciju i audit događaj te koristi UUID zahtjeva za sigurno
+ponavljanje bez dvostrukog izvršenja. Tuđa ili nepostojeća licenca prekida
+cijeli zahtjev bez djelomičnog brisanja.
+
+Time je implementacijski dio B04 za aktivni Next.js reseller portal zatvoren.
+Produkcijski dokaz stvarnog brisanja treba izvesti samo s namjenski izrađenim
+testnim licencama.
+
+Provjere nakon petog paketa:
+
+- Portal API testovi: **43 prolaze**.
+- APK distribucijski testovi: **32 prolaze**.
+- Domenski testovi: **13 prolaze**.
+- Ukupno: **88 testova**, bez neuspjeha.
+- Portal lint: **0 grešaka, 2 postojeća upozorenja**.
+- Next.js produkcijski build i TypeScript: prolaze; build uključuje novu
+  `/api/reseller/bulk-delete` rutu.

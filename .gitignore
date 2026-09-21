@@ -56,3 +56,7 @@ proguard/
 *.log.*
 catch_*.log
 google-services.json
+keystore.properties
+*.jks
+*.keystore
+*.p12

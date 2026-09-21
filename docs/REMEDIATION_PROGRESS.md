@@ -73,3 +73,31 @@ podudaraju se s lokalnim release artefaktom i javnim metadata zapisom. B07 je
 zatvoren za prvi stabilni release; provjera nadogradnje na stvarnom uređaju
 ostaje potrebna kada bude dostupna prethodno instalirana službeno potpisana
 verzija.
+
+## Četvrti paket — admin statusi i serversko skupno produženje
+
+Administracijsko sučelje sada koristi službeni `/api/admin/users` ugovor
+`{ uid, status }`. Suspendiranje, ponovna aktivacija i deaktivacija zato više ne
+šalju zastarjeli payload koji API nije mogao obraditi. Deaktivirani korisnik se
+odjavljuje i nema pristup portalu, a sučelje jasno prikazuje deaktivaciju umjesto
+netočnog trajnog brisanja.
+
+Skupno produženje reseller licenci premješteno je iz izravnih klijentskih
+Firestore upisa u `/api/reseller/bulk-extend`. Server u jednoj transakciji
+provjerava vlasništvo, vrstu licence i kredite, produžuje rok, naplaćuje kredite
+te zapisuje operaciju i audit događaj. UUID zahtjeva omogućuje sigurno
+ponavljanje bez dvostruke naplate.
+
+Provjere:
+
+- Portal API testovi: **38 prolaze**.
+- APK distribucijski testovi: **32 prolaze**.
+- Domenski testovi: **13 prolaze**.
+- Ukupno: **83 testa**, bez neuspjeha.
+- Portal lint: **0 grešaka, 2 postojeća upozorenja**.
+- Next.js produkcijski build i TypeScript: prolaze.
+- `git diff --check`: prolazi.
+
+Preostali dio B04 je skupno brisanje licenci koje još koristi izravni
+klijentski Firestore batch i treba zaseban serverski endpoint prije konačnog
+zatvaranja projekta.

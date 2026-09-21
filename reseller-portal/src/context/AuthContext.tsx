@@ -13,7 +13,7 @@ interface UserData {
   credits: number;
   assignedDomains: string[];
   customDomains: string[];
-  status?: 'active' | 'suspended' | 'deleted';
+  status?: 'active' | 'suspended' | 'deactivated' | 'deleted';
 }
 
 interface AuthContextType {
@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
           if (userDoc.exists()) {
             const data = userDoc.data() as UserData;
-            if (data.status === 'suspended' || data.status === 'deleted') {
+            if (data.status === 'suspended' || data.status === 'deactivated' || data.status === 'deleted') {
               console.warn("User is suspended or deleted. Signing out.");
               alert("Pristup odbijen: Vaš račun je suspendiran ili obrisan.");
               await signOut(auth);

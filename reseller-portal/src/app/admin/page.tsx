@@ -32,7 +32,7 @@ interface ResellerData {
   credits: number;
   assignedDomains: string[];
   customDomains: string[];
-  status?: 'active' | 'suspended' | 'deleted';
+  status?: 'active' | 'suspended' | 'deactivated' | 'deleted';
 }
 
 export default function AdminDashboard() {
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
   };
 
   const handleSuspend = async (uid: string, currentStatus: string | undefined) => {
-    const newStatus = currentStatus === 'suspended' ? 'active' : 'suspended';
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
     if (confirm(`Želite li promijeniti status u ${newStatus}?`)) {
       try {
         const idToken = await user?.getIdToken();
@@ -303,9 +303,8 @@ export default function AdminDashboard() {
             'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
-            action: 'update_status',
-            targetUserId: uid,
-            data: { status: newStatus }
+            uid,
+            status: newStatus
           })
         });
 
@@ -319,8 +318,8 @@ export default function AdminDashboard() {
     setActionMenuOpen(null);
   };
 
-  const handleDelete = async (uid: string) => {
-    if (confirm('Jeste li sigurni da želite izbrisati ovog korisnika? (Ovo će samo označiti korisnika kao obrisanog)')) {
+  const handleDeactivate = async (uid: string) => {
+    if (confirm('Jeste li sigurni da želite deaktivirati ovaj račun? Korisnik se više neće moći prijaviti.')) {
       try {
         const idToken = await user?.getIdToken();
         const res = await fetch('/api/admin/users', {
@@ -330,9 +329,8 @@ export default function AdminDashboard() {
             'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
-            action: 'update_status',
-            targetUserId: uid,
-            data: { status: 'deleted' }
+            uid,
+            status: 'deactivated'
           })
         });
 
@@ -742,25 +740,25 @@ export default function AdminDashboard() {
 
                           <button
                             onClick={() => { handleSuspend(r.uid, r.status); setActionMenuOpen(null); }}
-                            className={`w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold flex items-center transition-colors hover:bg-gray-800 group ${r.status === 'suspended' ? 'text-green-400' : 'text-orange-400'}`}
+                            className={`w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold flex items-center transition-colors hover:bg-gray-800 group ${r.status !== 'active' ? 'text-green-400' : 'text-orange-400'}`}
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 transition-colors ${r.status === 'suspended' ? 'bg-green-500/10 group-hover:bg-green-500/20' : 'bg-orange-500/10 group-hover:bg-orange-500/20'}`}>
-                              {r.status === 'suspended' ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 transition-colors ${r.status !== 'active' ? 'bg-green-500/10 group-hover:bg-green-500/20' : 'bg-orange-500/10 group-hover:bg-orange-500/20'}`}>
+                              {r.status !== 'active' ? <CheckCircle className="w-4 h-4" /> : <Ban className="w-4 h-4" />}
                             </div>
-                            {r.status === 'suspended' ? 'Aktiviraj Račun' : 'Suspendiraj Račun'}
+                            {r.status !== 'active' ? 'Aktiviraj Račun' : 'Suspendiraj Račun'}
                           </button>
 
                           <div className="h-px bg-gray-800 my-4 mx-2" />
 
-                          <button
-                            onClick={() => { handleDelete(r.uid); setActionMenuOpen(null); }}
+                          {r.status !== 'deactivated' && <button
+                            onClick={() => { handleDeactivate(r.uid); setActionMenuOpen(null); }}
                             className="w-full text-left px-5 py-4 rounded-2xl text-sm font-semibold text-red-400 hover:bg-red-500/10 flex items-center transition-colors group"
                           >
                             <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center mr-4 group-hover:bg-red-500/20 transition-colors">
                               <Trash2 className="w-4 h-4" />
                             </div>
-                            Obriši Račun Trajno
-                          </button>
+                            Deaktiviraj račun
+                          </button>}
                         </div>
                       </div>
                     </div>

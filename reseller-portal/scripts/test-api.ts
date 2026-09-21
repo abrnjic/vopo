@@ -9,6 +9,7 @@ import { mockState } from '../src/lib/mockFirebaseAdmin';
 import { POST as connectRoute } from '../src/app/api/connect/route';
 import { POST as authUsersRoute } from '../src/app/api/admin/users/route';
 import { POST as resellerActivateRoute } from '../src/app/api/reseller/activate/route';
+import { POST as resellerBulkExtendRoute } from '../src/app/api/reseller/bulk-extend/route';
 import { POST as logRoute } from '../src/app/api/log/route';
 import { POST as adminCreditsRoute } from '../src/app/api/admin/credits/route';
 import { POST as deviceRegisterRoute } from '../src/app/api/device/register/route';
@@ -264,6 +265,59 @@ test('API P0 Tests', async (t) => {
     const req = createMockReq({ uid: 'admin1', status: 'suspended' }, 'admin1:admin:a@test.com');
     const res = await authUsersRoute(req);
     assert.strictEqual(res.status, 400);
+  });
+
+  await t.test('admin suspendira i deaktivira resellera kroz službeni payload', async () => {
+    let res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'suspended' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'suspended');
+    assert.strictEqual(mockState.users.get('reseller1').disabled, true);
+
+    res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'deactivated' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'deactivated');
+  });
+
+  await t.test('bulk produženje je transakcijsko i produžuje budući rok', async () => {
+    const future = new Date();
+    future.setMonth(future.getMonth() + 4);
+    mockState.licenses.set('bulk-1', { resellerId: 'reseller1', status: 'Active', isLifetime: false, expiresAt: future });
+    mockState.licenses.set('bulk-2', { resellerId: 'reseller1', status: 'Expired', isLifetime: false, expiresAt: new Date(Date.now() - 1000) });
+    const req = createMockReq({ requestId: '11111111-1111-4111-8111-111111111111', licenseIds: ['bulk-1', 'bulk-2'] }, 'reseller1:reseller:r@test.com');
+    const res = await resellerBulkExtendRoute(req);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 8);
+    assert.ok(mockState.licenses.get('bulk-1').expiresAt.getTime() > future.getTime() + 364 * 24 * 60 * 60 * 1000);
+    assert.ok(mockState.licenses.get('bulk-2').expiresAt.getTime() > Date.now() + 364 * 24 * 60 * 60 * 1000);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+  });
+
+  await t.test('ponovljeni bulk zahtjev ne naplaćuje kredite dvaput', async () => {
+    mockState.licenses.set('bulk-idempotent', { resellerId: 'reseller1', status: 'Active', isLifetime: false, expiresAt: new Date() });
+    const body = { requestId: '22222222-2222-4222-8222-222222222222', licenseIds: ['bulk-idempotent'] };
+    let res = await resellerBulkExtendRoute(createMockReq(body, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    res = await resellerBulkExtendRoute(createMockReq(body, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 9);
+    assert.strictEqual((await res.json()).idempotent, true);
+
+    mockState.licenses.set('bulk-other', { resellerId: 'reseller1', status: 'Active', isLifetime: false, expiresAt: new Date() });
+    res = await resellerBulkExtendRoute(createMockReq({ ...body, licenseIds: ['bulk-other'] }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 409);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 9);
+  });
+
+  await t.test('bulk produženje odbija tuđu i lifetime licencu bez naplate', async () => {
+    mockState.licenses.set('bulk-foreign', { resellerId: 'reseller2', status: 'Active', isLifetime: false });
+    let res = await resellerBulkExtendRoute(createMockReq({ requestId: '33333333-3333-4333-8333-333333333333', licenseIds: ['bulk-foreign'] }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 403);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+
+    mockState.licenses.set('bulk-lifetime', { resellerId: 'reseller1', status: 'Active', isLifetime: true });
+    res = await resellerBulkExtendRoute(createMockReq({ requestId: '44444444-4444-4444-8444-444444444444', licenseIds: ['bulk-lifetime'] }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
   });
 
   // Rollback tests

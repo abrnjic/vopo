@@ -4,7 +4,7 @@ import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc, serverTimestamp, collection, query, where, getDocs, increment, addDoc, orderBy, limit, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, orderBy, limit, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { logActivity } from '../../utils/activityLogger';
 import { format } from 'date-fns';
@@ -192,63 +192,23 @@ export default function ResellerDashboard() {
 
     setIsProcessingBulk(true);
     try {
-      const batch = writeBatch(db);
-      
-      selectedLines.forEach(lineId => {
-        const lineRef = doc(db, 'licenses', lineId);
-        
-        // Find current line to get expiration
-        const currentLine = recentLines.find(l => l.id === lineId);
-        let newExpiration = new Date();
-        
-        if (currentLine && currentLine.expiresAt && currentLine.status !== 'Expired') {
-            // Add 1 year to existing expiration
-            newExpiration = currentLine.expiresAt.toDate();
-            newExpiration.setFullYear(newExpiration.getFullYear() + 1);
-        } else {
-            // Start from today
-            newExpiration.setFullYear(newExpiration.getFullYear() + 1);
-        }
-
-        batch.update(lineRef, {
-          status: 'Active',
-          expiresAt: newExpiration,
-          updatedAt: serverTimestamp()
-        });
+      const idToken = await user.getIdToken();
+      const res = await fetch('/api/reseller/bulk-extend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ requestId: crypto.randomUUID(), licenseIds: selectedLines })
       });
-
-      // Deduct credits
-      batch.update(doc(db, 'users', user.uid), {
-        credits: increment(-totalCreditsNeeded)
-      });
-
-      await batch.commit();
-
-      // Log transaction and activity
-      await addDoc(collection(db, 'transactions'), {
-        resellerId: user.uid,
-        type: 'bulk_extension',
-        linesCount: selectedLines.length,
-        creditsDeducted: totalCreditsNeeded,
-        timestamp: serverTimestamp()
-      });
-
-      await logActivity(
-        user.uid, 
-        user.email || '', 
-        'reseller', 
-        'BULK_EXTEND', 
-        `Extended ${selectedLines.length} lines for 1 year`
-      );
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Masovno produženje nije uspjelo.');
 
       // Local state update
-      setCredits(prev => prev - totalCreditsNeeded);
+      setCredits(result.creditsRemaining);
+      const expiryById = new Map<string, string>(result.extensions.map((item: { licenseId: string; expiresAt: string }) => [item.licenseId, item.expiresAt]));
       setRecentLines(prev => prev.map(l => {
-          if (selectedLines.includes(l.id)) {
-              let exp = l.expiresAt ? l.expiresAt.toDate() : new Date();
-              if(l.status === 'Expired' || !l.expiresAt) exp = new Date();
-              exp.setFullYear(exp.getFullYear() + 1);
-              return { ...l, status: 'Active', expiresAt: { toDate: () => exp } };
+          const nextExpiry = expiryById.get(l.id);
+          if (nextExpiry) {
+              const exp = new Date(nextExpiry);
+              return { ...l, status: 'Active', isLifetime: false, expiresAt: { toDate: () => exp } };
           }
           return l;
       }));
@@ -256,7 +216,7 @@ export default function ResellerDashboard() {
       alert(`Uspješno produženo ${selectedLines.length} linija.`);
     } catch (error) {
       console.error(error);
-      alert('Došlo je do greške prilikom masovnog produženja.');
+      alert(error instanceof Error ? error.message : 'Došlo je do greške prilikom masovnog produženja.');
     } finally {
       setIsProcessingBulk(false);
     }

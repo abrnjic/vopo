@@ -6,5 +6,5 @@ export const Config = {
   PRIVACY_URL: process.env.NEXT_PUBLIC_PRIVACY_URL || 'https://vopoapp.com/legal/privacy',
   TERMS_URL: process.env.NEXT_PUBLIC_TERMS_URL || 'https://vopoapp.com/legal/terms',
   SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@vopoapp.com',
-  LATEST_APK_URL: process.env.NEXT_PUBLIC_LATEST_APK_URL || 'https://vopoapp.com/api/download/latest.apk',
+  LATEST_APK_URL: process.env.NEXT_PUBLIC_LATEST_APK_URL || 'https://www.vopoapp.com/download',
 };

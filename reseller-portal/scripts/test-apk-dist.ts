@@ -12,6 +12,7 @@ import { mockState, mockAdminDb } from '../src/lib/mockFirebaseAdmin';
 import { POST as adminApkRoute, onBeforeGenerateToken, onUploadCompleted } from '../src/app/api/admin/apk/route';
 import { GET as latestApkRoute } from '../src/app/api/apk/latest/route';
 import { GET as testApkRoute } from '../src/app/api/apk/test/route';
+import { GET as versionRoute } from '../src/app/api/version/route';
 import { GET as downloadRoute } from '../src/app/download/route';
 import { GET as testDownloadRoute } from '../src/app/download/test/route';
 import { validateBlobUrl } from '../src/utils/blobValidator';
@@ -181,6 +182,22 @@ test('APK Distribution Tests', async (t) => {
      assert.strictEqual(res.status, 200);
      const data = await res.json();
      assert.strictEqual(data.versionCode, 100);
+  });
+
+  await t.test('9b. /api/version koristi iste stabilne metapodatke i stalni download link', async () => {
+     (mockState as any).system.set('apk_metadata', {
+       versionCode: '100',
+       versionName: '1.0',
+       checksum: validChecksum,
+       latestUrl: 'https://foo.public.blob.vercel-storage.com/apk/releases/vopoapp-1.0-100.apk'
+     });
+     const res = await versionRoute();
+     assert.strictEqual(res.status, 200);
+     const data = await res.json();
+     assert.strictEqual(data.latestVersionCode, 100);
+     assert.strictEqual(data.latestVersionName, '1.0');
+     assert.strictEqual(data.downloadUrl, 'https://www.vopoapp.com/download');
+     assert.strictEqual(data.checksum, validChecksum);
   });
 
   // Download API tests

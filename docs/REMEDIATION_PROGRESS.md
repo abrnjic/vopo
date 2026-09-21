@@ -32,3 +32,34 @@ Privremeni logovi: `/private/tmp/vopo-fixes-validation.log` i `/private/tmp/vopo
 Pripremljen je sigurni serverski ugovor za Android licence. Aplikacija koristi nasumični token po instalaciji, a Firestore pohranjuje samo njegov hash. Izravan Android read/write licenci uklonjen je. Server provodi trial, godišnji i lifetime istek, uklanja konfiguraciju iz isteklih odgovora te obnavlja godišnju licencu od postojećeg budućeg roka. Produkcijski rate limit više ne ovisi obvezno o nepostavljenom Upstash servisu, nego ima distribuirani Firestore fallback.
 
 Detalji, provjere i preostali stvarni uređajski dokaz: `docs/DEVICE_LICENSE_SECURITY_2026-09-20.md`.
+
+## Treći paket — jedinstveni Vercel kanal za nadogradnje
+
+Android updater više ne ovisi o GitHub Releasesu. Stabilni build čita
+`https://www.vopoapp.com/api/apk/latest` i preuzima preko stalne poveznice
+`https://www.vopoapp.com/download`; beta build koristi odvojene `/api/apk/test`
+i `/download/test` rute. Metadata se odbija ako nema valjan versionName,
+pozitivan versionCode ili SHA-256 checksum.
+
+Legacy `/api/version` više nema hardkodiranu verziju 1.0.5/code 105, nego čita
+isti Firestore `system/apk_metadata` zapis kao službeni endpoint. README i
+zadana portal download konfiguracija također vode na stalni Vercel kanal.
+
+Provjere:
+
+- Portal API testovi: **34 prolaze**.
+- APK distribucijski testovi: **32 prolaze**.
+- Domenski testovi: **13 prolaze**.
+- Portal lint: **0 grešaka, 2 upozorenja**.
+- Next.js produkcijski build i TypeScript: prolaze.
+- Android app unit testovi prolaze, uključujući nove testove stabilnog, beta i
+  nevaljanog checksum metadata odgovora.
+- Player release lint, data testovi i app testovi: BUILD SUCCESSFUL u prethodnom
+  zajedničkom pozivu.
+
+Stabilni metadata zapis još nije objavljen, pa `/api/apk/latest` i `/download`
+ispravno vraćaju 404. Produkcijski `keystore.properties` nije prisutan u
+checkoutu; službeni stabilni APK ne smije se potpisati novim ili nasumično
+pronađenim ključem. B07 se može potpuno zatvoriti tek nakon release builda s
+postojećim službenim ključem, objave kroz admin portal i provjere nadogradnje
+preko ranije instalirane verzije.

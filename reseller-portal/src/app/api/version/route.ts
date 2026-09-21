@@ -1,16 +1,30 @@
 import { NextResponse } from 'next/server';
 import { Config } from '@/config/urls';
+import { adminDb } from '@/lib/firebaseAdmin';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // In a real application, this might be fetched from Firestore or environment variables
-  const versionInfo = {
-    latestVersionCode: 105,
-    latestVersionName: "1.0.5",
-    // This will point to the actual APK download route
-    downloadUrl: Config.LATEST_APK_URL,
-    releaseNotes: "Dodana podrška za VOD i serije. Ispravci grešaka u playeru.",
-    forceUpdate: false
-  };
+  try {
+    const doc = await adminDb.collection('system').doc('apk_metadata').get();
+    const data = doc.exists ? doc.data() : null;
+    if (!data?.versionName || !data?.versionCode || !data?.checksum) {
+      return NextResponse.json({ error: 'Metadata not found' }, { status: 404 });
+    }
 
-  return NextResponse.json(versionInfo);
+    return NextResponse.json({
+      latestVersionCode: Number(data.versionCode),
+      latestVersionName: data.versionName,
+      downloadUrl: Config.LATEST_APK_URL,
+      checksum: data.checksum,
+      releaseNotes: data.releaseNotes || '',
+      updatedAt: data.updatedAt || null,
+      forceUpdate: false
+    }, {
+      headers: { 'Cache-Control': 'no-store, max-age=0' }
+    });
+  } catch (error) {
+    console.error('Error fetching version metadata:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }

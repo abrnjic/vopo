@@ -10,12 +10,13 @@ import okhttp3.ResponseBody
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
-import java.net.URI
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private const val GITHUB_RELEASES_LATEST_URL = "https://api.github.com/repos/abrnjic/vopo/releases/latest"
-private const val GITHUB_RELEASES_LIST_URL = "https://api.github.com/repos/abrnjic/vopo/releases?per_page=20"
+private const val STABLE_RELEASE_API_URL = "https://www.vopoapp.com/api/apk/latest"
+private const val TEST_RELEASE_API_URL = "https://www.vopoapp.com/api/apk/test"
+private const val STABLE_DOWNLOAD_URL = "https://www.vopoapp.com/download"
+private const val TEST_DOWNLOAD_URL = "https://www.vopoapp.com/download/test"
 
 data class GitHubReleaseInfo(
     val versionName: String,
@@ -32,15 +33,15 @@ class GitHubReleaseChecker @Inject constructor(
 ) {
     private companion object {
         private const val MAX_RESPONSE_BYTES = 512 * 1024L
-        private val STRUCTURED_TAG_REGEX = Regex("""^v?(.+?)\+(\d+)$""", RegexOption.IGNORE_CASE)
     }
 
-    suspend fun fetchLatestRelease(): Result<GitHubReleaseInfo> = withContext(Dispatchers.IO) {
+    suspend fun fetchLatestRelease(
+        updateChannel: AppUpdateChannel = AppUpdateChannel.fromCurrentBuild()
+    ): Result<GitHubReleaseInfo> = withContext(Dispatchers.IO) {
         try {
-            val updateChannel = AppUpdateChannel.fromCurrentBuild()
             val request = Request.Builder()
                 .url(updateChannel.releaseApiUrl)
-                .header("Accept", "application/vnd.github+json")
+                .header("Accept", "application/json")
                 .header("User-Agent", "Vopo-Update-Checker")
                 .build()
 
@@ -56,38 +57,28 @@ class GitHubReleaseChecker @Inject constructor(
                     Result.Loading -> ""
                 }
                 if (body.isBlank()) {
-                    return@withContext Result.error("Update check failed: empty GitHub release response")
+                    return@withContext Result.error("Update check failed: empty release response")
                 }
 
-                val json = selectReleaseJson(body, updateChannel)
-                    ?: return@withContext Result.error(
-                        if (updateChannel == AppUpdateChannel.Beta) {
-                            "Update check failed: no beta release found"
-                        } else {
-                            "Update check failed: latest release response was invalid"
-                        }
-                    )
-                val parsedTag = parseTagVersionInfo(json.optString("tag_name"))
-                if (parsedTag.versionName.isBlank()) {
-                    return@withContext Result.error("Update check failed: latest release tag is missing")
+                val json = JSONObject(body)
+                val versionName = json.optString("versionName").trim()
+                val versionCode = json.opt("versionCode")?.toString()?.toIntOrNull()
+                val checksum = json.optString("checksum").trim()
+                if (versionName.isBlank() || versionCode == null || versionCode <= 0) {
+                    return@withContext Result.error("Update check failed: release metadata is invalid")
                 }
-
-                val notes = json.optString("body").trim()
-                val assets = json.optJSONArray("assets")
-                val releaseUrl = json.optString("html_url").takeIf(::isHttpsUrl).orEmpty()
-                if (releaseUrl.isBlank()) {
-                    return@withContext Result.error("Update check failed: latest release URL is not HTTPS")
+                if (!checksum.matches(Regex("^[a-fA-F0-9]{64}$"))) {
+                    return@withContext Result.error("Update check failed: release checksum is invalid")
                 }
-                val downloadUrl = findApkAssetUrl(assets, updateChannel)
 
                 return@withContext Result.success(
                     GitHubReleaseInfo(
-                        versionName = parsedTag.versionName,
-                        versionCode = parsedTag.versionCode,
-                        releaseUrl = releaseUrl,
-                        downloadUrl = downloadUrl,
-                        releaseNotes = notes,
-                        publishedAt = json.optString("published_at").takeIf { it.isNotBlank() }
+                        versionName = versionName,
+                        versionCode = versionCode,
+                        releaseUrl = updateChannel.downloadUrl,
+                        downloadUrl = updateChannel.downloadUrl,
+                        releaseNotes = json.optString("releaseNotes").trim(),
+                        publishedAt = json.optString("updatedAt").takeIf { it.isNotBlank() }
                     )
                 )
             }
@@ -98,31 +89,10 @@ class GitHubReleaseChecker @Inject constructor(
         }
     }
 
-    private fun selectReleaseJson(body: String, updateChannel: AppUpdateChannel): JSONObject? {
-        return when (updateChannel) {
-            AppUpdateChannel.Stable -> JSONObject(body)
-            AppUpdateChannel.Beta -> {
-                val releases = org.json.JSONArray(body)
-                for (index in 0 until releases.length()) {
-                    val release = releases.optJSONObject(index) ?: continue
-                    if (release.optBoolean("draft")) continue
-                    if (!release.optBoolean("prerelease")) continue
-                    val tagName = release.optString("tag_name")
-                    if (!tagName.contains("-beta", ignoreCase = true)) continue
-                    val downloadUrl = findApkAssetUrl(release.optJSONArray("assets"), updateChannel)
-                    if (downloadUrl != null) {
-                        return release
-                    }
-                }
-                null
-            }
-        }
-    }
-
     private fun readResponseBodyCapped(body: ResponseBody): Result<String> {
         val contentLength = body.contentLength()
         if (contentLength > MAX_RESPONSE_BYTES) {
-            return Result.error("Update check failed: GitHub release response exceeded 512 KB")
+            return Result.error("Update check failed: release response exceeded 512 KB")
         }
 
         val charset = body.contentType()?.charset(Charsets.UTF_8) ?: Charsets.UTF_8
@@ -137,7 +107,7 @@ class GitHubReleaseChecker @Inject constructor(
 
                 totalBytesRead += bytesRead
                 if (totalBytesRead > MAX_RESPONSE_BYTES) {
-                    return Result.error("Update check failed: GitHub release response exceeded 512 KB")
+                    return Result.error("Update check failed: release response exceeded 512 KB")
                 }
 
                 output.write(buffer, 0, bytesRead)
@@ -146,72 +116,15 @@ class GitHubReleaseChecker @Inject constructor(
 
         return Result.success(output.toString(charset.name()))
     }
-
-    private fun findApkAssetUrl(assets: org.json.JSONArray?, updateChannel: AppUpdateChannel): String? {
-        if (assets == null) return null
-        var fallback: String? = null
-        for (index in 0 until assets.length()) {
-            val asset = assets.optJSONObject(index) ?: continue
-            val name = asset.optString("name")
-            val url = asset.optString("browser_download_url").takeIf { it.isNotBlank() } ?: continue
-            if (!isHttpsUrl(url)) continue
-            when (updateChannel) {
-                AppUpdateChannel.Stable -> {
-                    if (name.equals("Vopo.apk", ignoreCase = true)) {
-                        return url
-                    }
-                    if (fallback == null &&
-                        name.endsWith(".apk", ignoreCase = true) &&
-                        !name.contains("beta", ignoreCase = true)
-                    ) {
-                        fallback = url
-                    }
-                }
-                AppUpdateChannel.Beta -> {
-                    if (name.equals("Vopo-beta.apk", ignoreCase = true)) {
-                        return url
-                    }
-                    if (fallback == null &&
-                        name.endsWith(".apk", ignoreCase = true) &&
-                        name.contains("beta", ignoreCase = true)
-                    ) {
-                        fallback = url
-                    }
-                }
-            }
-        }
-        return fallback
-    }
-
-    private fun parseTagVersionInfo(rawTagName: String): ParsedTagVersion {
-        val normalizedTag = rawTagName.trim()
-        val structuredMatch = STRUCTURED_TAG_REGEX.matchEntire(normalizedTag)
-        if (structuredMatch != null) {
-            return ParsedTagVersion(
-                versionName = structuredMatch.groupValues[1].trim(),
-                versionCode = structuredMatch.groupValues[2].toIntOrNull()
-            )
-        }
-
-        return ParsedTagVersion(
-            versionName = normalizedTag.removePrefix("v").trim(),
-            versionCode = null
-        )
-    }
-
-    private fun isHttpsUrl(url: String): Boolean {
-        val normalized = url.trim()
-        if (normalized.isBlank()) return false
-        return runCatching {
-            val parsed = URI(normalized)
-            parsed.scheme.equals("https", ignoreCase = true) && !parsed.host.isNullOrBlank()
-        }.getOrDefault(false)
-    }
 }
 
-enum class AppUpdateChannel(val id: String, val releaseApiUrl: String) {
-    Stable(id = "stable", releaseApiUrl = GITHUB_RELEASES_LATEST_URL),
-    Beta(id = "beta", releaseApiUrl = GITHUB_RELEASES_LIST_URL);
+enum class AppUpdateChannel(
+    val id: String,
+    val releaseApiUrl: String,
+    val downloadUrl: String
+) {
+    Stable(id = "stable", releaseApiUrl = STABLE_RELEASE_API_URL, downloadUrl = STABLE_DOWNLOAD_URL),
+    Beta(id = "beta", releaseApiUrl = TEST_RELEASE_API_URL, downloadUrl = TEST_DOWNLOAD_URL);
 
     companion object {
         fun fromCurrentBuild(): AppUpdateChannel {
@@ -227,8 +140,3 @@ enum class AppUpdateChannel(val id: String, val releaseApiUrl: String) {
         }
     }
 }
-
-private data class ParsedTagVersion(
-    val versionName: String,
-    val versionCode: Int?
-)

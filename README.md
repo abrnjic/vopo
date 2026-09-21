@@ -1,12 +1,10 @@
 # VOPO
 
 <p align="center">
-	<a href="https://github.com/Davidona/VOPO-IPTV/releases/latest/download/VOPO.apk"><img src="https://img.shields.io/badge/Download-VOPO.apk-2ea44f?style=for-the-badge&logo=android" alt="Download VOPO APK" /></a>
-	<a href="https://github.com/Davidona/VOPO-IPTV/releases/latest"><img src="https://img.shields.io/github/v/release/Davidona/VOPO-IPTV?display_name=tag&style=for-the-badge&color=0f766e" alt="Latest VOPO release" /></a>
-	<a href="https://github.com/Davidona/VOPO-IPTV/releases"><img src="https://img.shields.io/github/downloads/Davidona/VOPO-IPTV/total?style=for-the-badge&color=8b5cf6" alt="Total Downloads" /></a>
+	<a href="https://www.vopoapp.com/download"><img src="https://img.shields.io/badge/Download-VOPO.apk-2ea44f?style=for-the-badge&logo=android" alt="Download VOPO APK" /></a>
 	<a href="https://discord.gg/eGPBMygcb"><img src="https://img.shields.io/badge/Discord-Join%20Server-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Join the VOPO Discord" /></a>
 	<a href="docs/CHANGELOG.md"><img src="https://img.shields.io/badge/Changelog-View-2563eb?style=for-the-badge" alt="View changelog" /></a>
-	<a href="https://github.com/Davidona/VOPO-IPTV/actions/workflows/release.yml"><img src="https://img.shields.io/github/actions/workflow/status/Davidona/VOPO-IPTV/release.yml?branch=master&style=for-the-badge&label=CI" alt="GitHub Actions status" /></a>
+	<a href="https://github.com/abrnjic/vopo/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/abrnjic/vopo/ci.yml?branch=main&style=for-the-badge&label=CI" alt="GitHub Actions status" /></a>
 	<a href="LICENSE"><img src="https://img.shields.io/badge/License-VOPO_OSL-0284c7?style=for-the-badge" alt="License" /></a>
 </p>
 
@@ -161,10 +159,11 @@ Built for Android TV first, VOPO focuses on the things generic IPTV apps usually
 
 ## Download
 
-- [Download latest VOPO.apk](https://github.com/Davidona/VOPO-IPTV/releases/latest/download/VOPO.apk)
-- The app can also detect and download newer releases in-app through GitHub Releases.
+- [Download the latest stable VOPO.apk](https://www.vopoapp.com/download)
+- [Download the current test VOPO.apk](https://www.vopoapp.com/download/test)
+- The app detects and downloads newer releases through the official VOPO portal metadata and permanent download links.
 - GitHub Actions still runs build and test validation on pushes and pull requests.
-- GitHub Releases are now published only when the workflow is started manually with `workflow_dispatch`, so versioned releases do not get created by mistake on every push.
+- APK publication is handled from the authenticated administrator portal.
 
 ## Project Structure
 

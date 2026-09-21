@@ -57,9 +57,19 @@ Provjere:
 - Player release lint, data testovi i app testovi: BUILD SUCCESSFUL u prethodnom
   zajedničkom pozivu.
 
-Stabilni metadata zapis još nije objavljen, pa `/api/apk/latest` i `/download`
-ispravno vraćaju 404. Produkcijski `keystore.properties` nije prisutan u
-checkoutu; službeni stabilni APK ne smije se potpisati novim ili nasumično
-pronađenim ključem. B07 se može potpuno zatvoriti tek nakon release builda s
-postojećim službenim ključem, objave kroz admin portal i provjere nadogradnje
-preko ranije instalirane verzije.
+Prvi službeni VOPO release ključ izrađen je 21. rujna 2026. jer prije toga nije
+bio distribuiran stabilni APK. Ključ se čuva izvan repozitorija u privatnoj
+lokalnoj mapi, a `.gitignore` štiti konfiguraciju i sve uobičajene Android
+keystore formate od slučajnog commita. Certifikat ima SHA-256 otisak
+`D8:7A:B8:A6:39:92:32:C1:B5:53:13:E1:A7:D9:5E:49:C2:32:0B:DC:C8:2F:09:44:26:B0:38:72:F0:F5:3E:DA`.
+
+Potpisani stabilni APK `1.0.16`/code `17` objavljen je na
+`https://www.vopoapp.com/download`. Javni `/api/apk/latest` i legacy
+`/api/version` vraćaju isti versionCode, versionName, download URL i SHA-256.
+Objavljeni APK ponovno je preuzet, potpis je provjeren `apksigner` alatom, a
+veličina `16159486` i SHA-256
+`99579749360ed146c881554eab86e637803036caccc294d9faff0c22c4b07b73`
+podudaraju se s lokalnim release artefaktom i javnim metadata zapisom. B07 je
+zatvoren za prvi stabilni release; provjera nadogradnje na stvarnom uređaju
+ostaje potrebna kada bude dostupna prethodno instalirana službeno potpisana
+verzija.

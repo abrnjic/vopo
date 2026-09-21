@@ -1,4 +1,4 @@
-/* eslint-disable prefer-const, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { setGlobalDispatcher, MockAgent } from 'undici';
 import test from 'node:test';
 import assert from 'node:assert';

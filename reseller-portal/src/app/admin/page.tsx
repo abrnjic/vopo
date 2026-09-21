@@ -35,6 +35,20 @@ interface ResellerData {
   status?: 'active' | 'suspended' | 'deactivated' | 'deleted';
 }
 
+function formatActivityDetails(details: unknown): string {
+  if (typeof details === 'string') return details;
+  if (details && typeof details === 'object') {
+    const message = (details as { message?: unknown }).message;
+    if (typeof message === 'string') return message;
+    try {
+      return JSON.stringify(details);
+    } catch {
+      return 'Dodatni detalji nisu dostupni.';
+    }
+  }
+  return details == null ? 'Bez dodatnih detalja.' : String(details);
+}
+
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'logs' | 'settings'>('home');
@@ -877,7 +891,7 @@ export default function AdminDashboard() {
                             {log.role}
                           </span>
                         </div>
-                        <p className="text-gray-300 text-base mt-2 leading-relaxed bg-gray-950/50 p-3 rounded-xl border border-gray-800/50">{log.details}</p>
+                        <p className="text-gray-300 text-base mt-2 leading-relaxed bg-gray-950/50 p-3 rounded-xl border border-gray-800/50">{formatActivityDetails(log.details)}</p>
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 pt-4 border-t border-gray-800/60">
                           <p className="text-gray-500 text-sm font-medium flex items-center">
                             <User className="w-4 h-4 mr-2 text-gray-600" />

@@ -82,6 +82,10 @@ Administracijsko sučelje sada koristi službeni `/api/admin/users` ugovor
 odjavljuje i nema pristup portalu, a sučelje jasno prikazuje deaktivaciju umjesto
 netočnog trajnog brisanja.
 
+Admin revizorski zapis sigurno prikazuje i stare tekstualne i nove strukturirane
+`details` vrijednosti. APK audit događaj zato više ne može srušiti cijeli admin
+portal pri ponovnom učitavanju stranice.
+
 Skupno produženje reseller licenci premješteno je iz izravnih klijentskih
 Firestore upisa u `/api/reseller/bulk-extend`. Server u jednoj transakciji
 provjerava vlasništvo, vrstu licence i kredite, produžuje rok, naplaćuje kredite

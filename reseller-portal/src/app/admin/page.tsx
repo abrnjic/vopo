@@ -532,7 +532,7 @@ export default function AdminDashboard() {
                             <div className={`w-2 h-2 rounded-full mr-4 ${log.role === 'admin' ? 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]' : 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]'}`} />
                             <div>
                               <p className="text-gray-200 font-medium">{log.action}</p>
-                              <p className="text-sm text-gray-500">{log.details}</p>
+                              <p className="text-sm text-gray-500">{formatActivityDetails(log.details)}</p>
                             </div>
                           </div>
                           <span className="text-xs text-gray-500 bg-gray-900/50 px-3 py-1.5 rounded-full border border-gray-800">

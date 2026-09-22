@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import { mockState } from '../src/lib/mockFirebaseAdmin';
 import { createExpiryNotifications, migrateProserversDomainToHttp, migrateProserversUrl } from '../src/lib/operations';
-import { GET as lines } from '../src/app/api/lines/route';
+import { GET as lines, PATCH as editLine } from '../src/app/api/lines/route';
+import { hashLinePin } from '../src/lib/lineSecurity';
 import { GET as reports } from '../src/app/api/reports/route';
 import { POST as createTicket, PATCH as updateTicket } from '../src/app/api/support/tickets/route';
 
@@ -54,6 +55,41 @@ test('Operational portal features', async t => {
     const own = await lines(request('http://localhost/api/lines?id=device-1', 'reseller1:reseller'));
     assert.equal(own.status, 200); assert.equal((await own.json()).history.length, 1);
     assert.equal((await lines(request('http://localhost/api/lines?id=private-2', 'reseller1:reseller'))).status, 404);
+  });
+
+  await t.test('line editing preserves licence and credits, enforces PIN and owner domains, and hides secrets', async () => {
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), credits: 10, assignedDomains: ['http://proservers.club'], customDomains: [] });
+    const expiry = new Date('2027-05-01T10:00:00Z');
+    mockState.licenses.set('device-edit', {
+      deviceId: 'device-edit', resellerId: 'reseller1', status: 'Active', isLifetime: false,
+      expiresAt: expiry, accessTokenHash: 'device-token-hash', linePinHash: hashLinePin('Pin12345'),
+      selectedDomain: 'http://proservers.club', customerName: 'Prije',
+      xtreamConfig: { url: 'http://proservers.club', username: 'olduser', password: 'old-secret' }
+    });
+    const payload = { id: 'device-edit', customerName: 'Poslije', customerContact: 'Kupac', selectedDomain: 'http://proservers.club', username: 'newuser', password: '', currentPin: 'Pin12345' };
+    const wrongPin = await editLine(request('http://localhost/api/lines', 'reseller1:reseller', 'PATCH', { ...payload, currentPin: 'bad-pin' }));
+    assert.equal(wrongPin.status, 403);
+    assert.equal(mockState.licenses.get('device-edit').customerName, 'Prije');
+    assert.equal((await editLine(request('http://localhost/api/lines', 'reseller2:reseller', 'PATCH', payload))).status, 403);
+    assert.equal((await editLine(request('http://localhost/api/lines', 'reseller1:reseller', 'PATCH', { ...payload, selectedDomain: 'https://other.example' }))).status, 403);
+
+    const saved = await editLine(request('http://localhost/api/lines', 'reseller1:reseller', 'PATCH', payload));
+    assert.equal(saved.status, 200);
+    const body = await saved.json();
+    assert.equal(body.line.customerName, 'Poslije');
+    assert.equal(body.line.xtreamConfig.password, undefined);
+    const stored = mockState.licenses.get('device-edit');
+    assert.equal(stored.xtreamConfig.username, 'newuser');
+    assert.equal(stored.xtreamConfig.password, 'old-secret');
+    assert.equal(stored.expiresAt, expiry);
+    assert.equal(stored.status, 'Active');
+    assert.equal(stored.accessTokenHash, 'device-token-hash');
+    assert.equal(mockState.users.get('reseller1').credits, 10);
+    const detail = await (await lines(request('http://localhost/api/lines?id=device-edit', 'reseller1:reseller'))).json();
+    assert.equal(detail.line.xtreamConfig.password, undefined);
+    assert.equal(detail.line.linePinHash, undefined);
+    assert.equal(detail.history.some((entry: any) => entry.action === 'EDIT_LINE'), true);
+    assert.equal(JSON.stringify(detail.history).includes('old-secret'), false);
   });
 
   await t.test('reports only aggregate owned activations', async () => {

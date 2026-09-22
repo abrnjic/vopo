@@ -28,6 +28,7 @@ export default function ResellerDashboard() {
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
   
   const [recentLines, setRecentLines] = useState<any[]>([]);
+  const [lineToEdit, setLineToEdit] = useState<string | null>(null);
 
   // Activate Form State
   const [deviceId, setDeviceId] = useState('');
@@ -314,7 +315,7 @@ export default function ResellerDashboard() {
         >
           <Users className="w-4 h-4 mr-2" />Subselleri
         </button>}
-        <button onClick={() => setActiveTab('lines')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'lines' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><List className="w-4 h-4 mr-2" />Linije</button>
+        <button onClick={() => { setLineToEdit(null); setActiveTab('lines'); }} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'lines' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><List className="w-4 h-4 mr-2" />Linije</button>
         <button
           onClick={() => setActiveTab('migration')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'migration' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -556,14 +557,14 @@ export default function ResellerDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
+                  <div className="flex items-center gap-2"><button type="button" onClick={event => { event.stopPropagation(); setLineToEdit(line.id); setActiveTab('lines'); }} className="rounded-lg border border-blue-500/50 px-3 py-1.5 text-sm font-semibold text-blue-300 hover:bg-blue-900/30">Uredi</button><div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
                     line.status === 'Active' ? 'text-green-500 bg-green-900/20 border-green-900/50' : 
                     line.status === 'Trial' ? 'text-yellow-500 bg-yellow-900/20 border-yellow-900/50' : 
                     'text-red-500 bg-red-900/20 border-red-900/50'
                   }`}>
                     <Check className="w-4 h-4 mr-1" />
                     {line.status}
-                  </div>
+                  </div></div>
                 </div>
               ))}
               {recentLines.length === 0 && (
@@ -578,7 +579,7 @@ export default function ResellerDashboard() {
 
       {activeTab === 'security' && <SecurityPanel />}
 
-      {activeTab === 'lines' && <LineDirectoryPanel />}
+      {activeTab === 'lines' && <LineDirectoryPanel initialEditId={lineToEdit} onLineUpdated={line => setRecentLines(previous => previous.map(item => item.id === line.id ? { ...item, customerName: line.customerName, customerContact: line.customerContact, selectedDomain: line.selectedDomain } : item))} />}
 
       {activeTab === 'reports' && <ReportsPanel />}
 

@@ -987,15 +987,12 @@ export default function AdminDashboard() {
                       </label>
                     </div>
 
-                    <div className="group flex items-center justify-between p-5 bg-gray-800/40 hover:bg-gray-800/60 rounded-2xl border border-gray-700/50 transition-all shadow-sm">
+                    <div className="flex items-center justify-between p-5 bg-gray-800/40 rounded-2xl border border-emerald-700/40 shadow-sm">
                       <div className="pr-4">
-                        <p className="text-white font-bold text-base">Javna Registracija Trial Korisnika</p>
-                        <p className="text-gray-400 text-sm mt-1.5 leading-relaxed">Dopustite anonimnim korisnicima da putem `/connect` rute zatraže besplatan trial na temelju Device ID-a.</p>
+                        <p className="text-white font-bold text-base">Javna aktivacija uređaja</p>
+                        <p className="text-gray-400 text-sm mt-1.5 leading-relaxed">Anonimna aktivacija je isključena. Uređaje mogu povezivati samo prijavljeni administratori, reselleri i subselleri.</p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                        <input type="checkbox" className="sr-only peer" defaultChecked />
-                        <div className="w-14 h-7 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 shadow-inner"></div>
-                      </label>
+                      <span className="rounded-full border border-emerald-600/50 bg-emerald-950/50 px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-emerald-300">Isključena</span>
                     </div>
                     </div>
                   </div>

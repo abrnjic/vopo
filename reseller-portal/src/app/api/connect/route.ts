@@ -3,17 +3,28 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { verifyAuthToken } from '@/lib/auth';
+import { DomainSchema, domainsForUser } from '@/lib/domains';
 import crypto from 'crypto';
 
 const ConnectSchema = z.object({
   deviceId: z.string().min(1).max(50),
-  portalUrl: z.string().optional(),
+  portalUrl: DomainSchema.optional(),
   username: z.string().optional(),
   password: z.string().optional()
 }).strict();
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await verifyAuthToken(req);
+    if (auth.status !== 'authenticated') {
+      const status = auth.status === 'error' ? 500 : ['invalid', 'unauthenticated'].includes(auth.status) ? 401 : 403;
+      return NextResponse.json({ error: auth.error || 'Pristup odbijen.' }, { status });
+    }
+    if (!['admin', 'reseller', 'subseller'].includes(auth.context.role)) {
+      return NextResponse.json({ error: 'Pristup odbijen.' }, { status: 403 });
+    }
+
     const body = await req.json();
     const parsed = ConnectSchema.safeParse(body);
     if (!parsed.success) {
@@ -27,6 +38,13 @@ export async function POST(req: NextRequest) {
     const hasCompleteConfig = configValues.every(value => Boolean(value?.trim()));
     if (hasAnyConfig && !hasCompleteConfig) {
       return NextResponse.json({ error: 'Portal URL, username and password must be provided together.' }, { status: 400 });
+    }
+    if (
+      hasCompleteConfig
+      && auth.context.role !== 'admin'
+      && !domainsForUser(auth.context.dbUser || {}).includes(portalUrl!.trim())
+    ) {
+      return NextResponse.json({ error: 'Domena nije dodijeljena vašem računu.' }, { status: 403 });
     }
 
     // 1. IP Rate Limiting
@@ -60,21 +78,45 @@ export async function POST(req: NextRequest) {
 
       if (licenseSnap.exists) {
         const data = licenseSnap.data();
-        if (data?.status === 'Active' || data?.status === 'Expired') {
-          return { error: 'Ovaj uređaj već ima aktivnu ili isteklu licencu.', status: 409 };
+        if (data?.status === 'Active' || data?.status === 'Expired' || data?.status === 'Transferred') {
+          return { error: 'Ovaj uređaj već ima aktivnu, isteklu ili prenesenu licencu.', status: 409 };
         }
         if (data?.status === 'Trial') {
+          if (
+            auth.context.role !== 'admin'
+            && data.resellerId
+            && data.resellerId !== 'self_registered'
+            && data.resellerId !== auth.context.uid
+          ) {
+            return { error: 'Ovaj uređaj pripada drugom korisničkom računu.', status: 403 };
+          }
+          const ownerId = data.resellerId && data.resellerId !== 'self_registered'
+            ? data.resellerId
+            : auth.context.uid;
+          const trialUpdate: Record<string, unknown> = {
+            resellerId: ownerId,
+            updatedAt: FieldValue.serverTimestamp()
+          };
           if (hasCompleteConfig) {
-            transaction.set(licenseRef, {
-              xtreamConfig: {
+            trialUpdate.xtreamConfig = {
                 url: portalUrl!.trim(),
                 username: username!.trim(),
                 password: password!.trim(),
-              },
-              selectedDomain: portalUrl!.trim(),
-              updatedAt: FieldValue.serverTimestamp()
-            }, { merge: true });
+            };
+            trialUpdate.selectedDomain = portalUrl!.trim();
           }
+          transaction.set(licenseRef, trialUpdate, { merge: true });
+          const logRef = adminDb.collection('activity_logs').doc();
+          transaction.set(logRef, {
+            userId: auth.context.uid,
+            userEmail: auth.context.email || '',
+            role: auth.context.role,
+            action: 'CONNECT_DEVICE',
+            details: `Povezan postojeći probni uređaj ${safeDeviceId}`,
+            deviceId: safeDeviceId,
+            targetResellerId: ownerId,
+            timestamp: FieldValue.serverTimestamp()
+          });
           return {
             success: true,
             message: hasCompleteConfig ? 'Trial already exists; configuration updated' : 'Trial already exists'
@@ -87,7 +129,7 @@ export async function POST(req: NextRequest) {
 
       transaction.set(licenseRef, {
         deviceId: safeDeviceId,
-        resellerId: 'self_registered',
+        resellerId: auth.context.uid,
         status: 'Trial',
         trialStartedAt: FieldValue.serverTimestamp(),
         expiresAt: expirationDate,
@@ -100,6 +142,18 @@ export async function POST(req: NextRequest) {
         selectedDomain: portalUrl ? portalUrl.trim() : '',
         updatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
+
+      const logRef = adminDb.collection('activity_logs').doc();
+      transaction.set(logRef, {
+        userId: auth.context.uid,
+        userEmail: auth.context.email || '',
+        role: auth.context.role,
+        action: 'CONNECT_DEVICE',
+        details: `Kreiran probni uređaj ${safeDeviceId}`,
+        deviceId: safeDeviceId,
+        targetResellerId: auth.context.uid,
+        timestamp: FieldValue.serverTimestamp()
+      });
 
       return { success: true };
     });

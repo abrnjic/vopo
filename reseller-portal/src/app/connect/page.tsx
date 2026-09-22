@@ -2,8 +2,22 @@
 
 import { useState } from 'react';
 import { Tv, Upload, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import ProtectedRoute from '../../components/ProtectedRoute';
+import AdminLayout from '../../components/AdminLayout';
 
 export default function ConnectPage() {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'reseller', 'subseller']}>
+      <AdminLayout>
+        <ConnectForm />
+      </AdminLayout>
+    </ProtectedRoute>
+  );
+}
+
+function ConnectForm() {
+  const { user, userData } = useAuth();
   const [deviceId, setDeviceId] = useState('');
   const [portalUrl, setPortalUrl] = useState('');
   const [username, setUsername] = useState('');
@@ -11,17 +25,24 @@ export default function ConnectPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const availableDomains = Array.from(new Set([
+    ...(userData?.assignedDomains || []),
+    ...(userData?.customDomains || []),
+  ]));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     setLoading(true);
     setError('');
 
     try {
+      const token = await user.getIdToken();
       const response = await fetch('/api/connect', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           deviceId,
@@ -50,7 +71,7 @@ export default function ConnectPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gray-900 flex flex-col justify-center items-center p-4 text-white">
+      <div className="min-h-[calc(100vh-8rem)] bg-gray-900 flex flex-col justify-center items-center p-4 text-white rounded-2xl border border-gray-800">
         <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
         <h1 className="text-3xl font-bold mb-2">Linija uspješno poslana!</h1>
         <p className="text-gray-400 text-center max-w-md">
@@ -73,7 +94,7 @@ export default function ConnectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white">
+    <div className="min-h-[calc(100vh-8rem)] bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8 text-white rounded-2xl border border-gray-800">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30">
@@ -123,18 +144,36 @@ export default function ConnectPage() {
                 Xtream Portal URL
               </label>
               <div className="mt-1">
-                <input
-                  id="portalUrl"
-                  name="portalUrl"
-                  type="url"
-                  required
-                  placeholder="http://portal.com:8080"
-                  className="appearance-none block w-full px-3 py-2 border border-gray-600 bg-gray-700/50 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white transition-all"
-                  value={portalUrl}
-                  onChange={(e) => setPortalUrl(e.target.value)}
-                  disabled={loading}
-                />
+                {userData?.role === 'admin' ? (
+                  <input
+                    id="portalUrl"
+                    name="portalUrl"
+                    type="url"
+                    required
+                    placeholder="https://portal.example"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-600 bg-gray-700/50 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white transition-all"
+                    value={portalUrl}
+                    onChange={(e) => setPortalUrl(e.target.value)}
+                    disabled={loading}
+                  />
+                ) : (
+                  <select
+                    id="portalUrl"
+                    name="portalUrl"
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-600 bg-gray-700/50 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm text-white transition-all"
+                    value={portalUrl}
+                    onChange={(e) => setPortalUrl(e.target.value)}
+                    disabled={loading}
+                  >
+                    <option value="" disabled>Odaberite dodijeljenu domenu</option>
+                    {availableDomains.map(domain => <option key={domain} value={domain}>{domain}</option>)}
+                  </select>
+                )}
               </div>
+              {userData?.role !== 'admin' && availableDomains.length === 0 && (
+                <p className="mt-2 text-xs text-amber-300">Vašem računu još nije dodijeljena domena. Obratite se nadređenom reselleru ili administratoru.</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

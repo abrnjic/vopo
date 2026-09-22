@@ -103,15 +103,6 @@ export default function Home() {
             </span>
           </button>
 
-          <button 
-            onClick={() => router.push('/connect')}
-            className="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold text-gray-300 transition-all duration-200 bg-gray-800/50 hover:bg-gray-700/50 hover:text-white border border-gray-700 rounded-full hover:scale-105"
-          >
-            <span className="relative flex items-center">
-              Aktivacija Uređaja
-              <Tv className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform" />
-            </span>
-          </button>
         </motion.div>
 
         {/* Feature Highlights */}

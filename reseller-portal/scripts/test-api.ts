@@ -73,7 +73,7 @@ test('API P0 Tests', async (t) => {
   });
 
   await t.test('valjan prvi /api/connect', async () => {
-    const req = createMockReq({ deviceId: 'dev1' });
+    const req = createMockReq({ deviceId: 'dev1' }, 'reseller1:reseller:r@test.com');
     const res = await connectRoute(req);
     assert.strictEqual(res.status, 201);
     const lic = mockState.licenses.get('dev1');
@@ -89,7 +89,7 @@ test('API P0 Tests', async (t) => {
     assert.ok(registeredLicense.expiresAt instanceof Date);
     const originalExpiry = registeredLicense.expiresAt.getTime();
 
-    await connectRoute(createMockReq({ deviceId: 'SEC-URE-001', portalUrl: 'https://tv.example', username: 'u', password: 'p' }));
+    await connectRoute(createMockReq({ deviceId: 'SEC-URE-001', portalUrl: 'https://tv.example', username: 'u', password: 'p' }, 'admin1:admin:a@test.com'));
     assert.strictEqual(mockState.licenses.get('SEC-URE-001').expiresAt.getTime(), originalExpiry);
     const response = await deviceLicenseRoute(createDeviceGet('SEC-URE-001'));
     assert.strictEqual(response.status, 200);
@@ -180,9 +180,65 @@ test('API P0 Tests', async (t) => {
   });
 
   await t.test('nevaljan format aktivacijskog koda', async () => {
-    const req = createMockReq({ deviceId: 'dev1', badField: true });
+    const req = createMockReq({ deviceId: 'dev1', badField: true }, 'reseller1:reseller:r@test.com');
     const res = await connectRoute(req);
     assert.strictEqual(res.status, 400);
+  });
+
+  await t.test('javna aktivacija uređaja je zatvorena, a dopuštene su samo registrirane portal uloge', async () => {
+    let response = await connectRoute(createMockReq({ deviceId: 'public-denied' }));
+    assert.strictEqual(response.status, 401);
+    assert.strictEqual(mockState.licenses.has('public-denied'), false);
+
+    mockState.users.set('ordinary1', { role: 'user', status: 'active', disabled: false });
+    response = await connectRoute(createMockReq({ deviceId: 'role-denied' }, 'ordinary1:user:u@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.has('role-denied'), false);
+
+    mockState.users.set('sub-connect', { role: 'subseller', status: 'active', disabled: false, assignedDomains: [] });
+    for (const [deviceId, token] of [
+      ['admin-connect', 'admin1:admin:a@test.com'],
+      ['reseller-connect', 'reseller1:reseller:r@test.com'],
+      ['subseller-connect', 'sub-connect:subseller:s@test.com'],
+    ]) {
+      response = await connectRoute(createMockReq({ deviceId }, token));
+      assert.strictEqual(response.status, 201);
+      assert.strictEqual(mockState.licenses.get(deviceId).resellerId, token.split(':')[0]);
+    }
+  });
+
+  await t.test('reseller i subseller kroz zaštićeno povezivanje koriste samo dodijeljene domene', async () => {
+    mockState.users.set('reseller1', {
+      ...mockState.users.get('reseller1'), assignedDomains: ['https://tv.example'], customDomains: []
+    });
+    let response = await connectRoute(createMockReq({
+      deviceId: 'assigned-domain', portalUrl: 'https://tv.example', username: 'user', password: 'pass'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 201);
+    assert.strictEqual(mockState.licenses.get('assigned-domain').selectedDomain, 'https://tv.example');
+
+    response = await connectRoute(createMockReq({
+      deviceId: 'foreign-domain', portalUrl: 'https://foreign.example', username: 'user', password: 'pass'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.has('foreign-domain'), false);
+  });
+
+  await t.test('zaštićeno povezivanje ne može preuzeti tuđi trial niti ponovno koristiti preneseni uređaj', async () => {
+    const future = new Date(Date.now() + 86_400_000);
+    mockState.licenses.set('foreign-trial-connect', {
+      resellerId: 'reseller2', status: 'Trial', isLifetime: false, expiresAt: future
+    });
+    let response = await connectRoute(createMockReq({ deviceId: 'foreign-trial-connect' }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.get('foreign-trial-connect').resellerId, 'reseller2');
+
+    mockState.licenses.set('transferred-connect', {
+      resellerId: 'reseller1', status: 'Transferred', transferredTo: 'new-device'
+    });
+    response = await connectRoute(createMockReq({ deviceId: 'transferred-connect' }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 409);
+    assert.strictEqual(mockState.licenses.get('transferred-connect').status, 'Transferred');
   });
 
   await t.test('admin endpoint bez tokena', async () => {
@@ -330,7 +386,7 @@ test('API P0 Tests', async (t) => {
   });
 
   await t.test('ponovno stvaranje triala (overwrite zaštita)', async () => {
-    const req = createMockReq({ deviceId: 'dev_trial_rep' });
+    const req = createMockReq({ deviceId: 'dev_trial_rep' }, 'reseller1:reseller:r@test.com');
     await connectRoute(req);
     const res = await connectRoute(req);
     assert.strictEqual(res.status, 201);
@@ -353,7 +409,7 @@ test('API P0 Tests', async (t) => {
   });
 
   await t.test('/api/connect odbija nepotpune pristupne podatke', async () => {
-    const res = await connectRoute(createMockReq({ deviceId: 'partial-config', portalUrl: 'https://tv.example' }));
+    const res = await connectRoute(createMockReq({ deviceId: 'partial-config', portalUrl: 'https://tv.example' }, 'reseller1:reseller:r@test.com'));
     assert.strictEqual(res.status, 400);
     assert.strictEqual(mockState.licenses.has('partial-config'), false);
   });
@@ -786,8 +842,8 @@ test('API P0 Tests', async (t) => {
     assert.ok(Number(lastRes!.headers.get('Retry-After')) > 0);
   });
 
-  await t.test('Rate limit public 429 i ispravan Retry-After', async () => {
-    const req = createMockReq({ deviceId: 'dev_ratelimit' }, undefined, '10.0.0.1');
+  await t.test('Rate limit za registriranu aktivaciju vraća 429 i ispravan Retry-After', async () => {
+    const req = createMockReq({ deviceId: 'dev_ratelimit' }, 'reseller1:reseller:r@test.com', '10.0.0.1');
     let lastRes;
     for (let i = 0; i < 11; i++) {
       lastRes = await connectRoute(req);
@@ -800,7 +856,7 @@ test('API P0 Tests', async (t) => {
     // If x-real-ip is missing but x-forwarded-for is spoofed, Vercel overwrites x-forwarded-for.
     // We already use x-real-ip first. In this test environment, createMockReq returns the passed ip for x-forwarded-for and x-real-ip.
     const req1 = {
-      headers: { get: (k: string) => k === 'x-real-ip' ? '1.1.1.1' : (k === 'x-forwarded-for' ? 'spoof, 1.1.1.1' : null) },
+      headers: { get: (k: string) => k.toLowerCase() === 'authorization' ? 'Bearer reseller1:reseller:r@test.com' : (k === 'x-real-ip' ? '1.1.1.1' : (k === 'x-forwarded-for' ? 'spoof, 1.1.1.1' : null)) },
       json: async () => ({ deviceId: 'dev_sp1' })
     };
     for (let i = 0; i < 11; i++) await connectRoute(req1 as any);
@@ -811,7 +867,7 @@ test('API P0 Tests', async (t) => {
   await t.test('Rate limit produkcija bez Redisa koristi distribuirani Firestore fallback', async () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
-    const req = createMockReq({ deviceId: 'dev_prod_test' });
+    const req = createMockReq({ deviceId: 'dev_prod_test' }, 'reseller1:reseller:r@test.com');
     const res = await connectRoute(req);
     assert.strictEqual(res.status, 201);
     assert.strictEqual(mockState.rate_limits.size, 2);
@@ -822,11 +878,11 @@ test('API P0 Tests', async (t) => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     mockState.throwDbError = true;
-    const req = createMockReq({ deviceId: 'dev_prod_test' });
+    const req = createMockReq({ deviceId: 'dev_prod_test' }, 'reseller1:reseller:r@test.com');
     const res = await connectRoute(req);
     const body = await res.json();
     assert.ok(!JSON.stringify(body).includes('redis'));
-    assert.strictEqual(res.status, 503);
+    assert.strictEqual(res.status, 500);
     mockState.throwDbError = false;
     process.env.NODE_ENV = originalEnv;
   });

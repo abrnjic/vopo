@@ -23,14 +23,28 @@ export async function POST(req: NextRequest) {
       await writeSecurityLog({ eventType: 'INVALID_USER_AGENT', deviceId, ip, userAgent, details: 'Odbijena registracija iz neslužbenog klijenta.' });
       return NextResponse.json({ error: 'Official VOPO app required.' }, { status: 403 });
     }
+
+    const ref = adminDb.collection('licenses').doc(deviceId);
+    const accessTokenHash = hashDeviceToken(deviceToken);
+    const current = await ref.get();
+    const currentData = current.exists ? current.data() : null;
+    // Re-registering the same verified installation is a harmless idempotent
+    // heartbeat. It must not consume the new-device rate limit, otherwise a TV
+    // with multiple observers can lock itself into a permanent 429 loop.
+    if (currentData?.accessTokenHash === accessTokenHash) {
+      return NextResponse.json({ success: true, status: String(currentData.status || 'unregistered').toLowerCase() });
+    }
+    if (currentData?.accessTokenHash && currentData.accessTokenHash !== accessTokenHash) {
+      await writeSecurityLog({ eventType: 'DEVICE_BINDING_MISMATCH', deviceId, resellerId: currentData.resellerId, ip, userAgent, details: 'Druga instalacija pokušala je preuzeti postojeći Device ID.' });
+      return NextResponse.json({ error: 'Device is already registered.' }, { status: 409 });
+    }
+
     const limit = await checkRateLimit(`device_register_${ip}`, 20, 60_000);
     if (!limit.success) {
       await writeSecurityLog({ eventType: 'RATE_LIMIT_EXCEEDED', deviceId, ip, userAgent, details: 'Previše registracijskih zahtjeva.' });
       return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: limit.headers });
     }
 
-    const ref = adminDb.collection('licenses').doc(deviceId);
-    const accessTokenHash = hashDeviceToken(deviceToken);
     const trialExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const result = await adminDb.runTransaction(async (transaction: any) => {
       const snapshot = await transaction.get(ref);

@@ -133,6 +133,16 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(license.trialStartedAt, firstStart);
   });
 
+  await t.test('kratki val ponovnih registracija službene aplikacije ne zaključava uređaj', async () => {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const response = await deviceRegisterRoute(createMockReq({
+        deviceId: 'SEC-URE-BURST', deviceToken: DEVICE_TOKEN
+      }, undefined, '198.51.100.77') as any);
+      assert.strictEqual(response.status, 200);
+    }
+    assert.strictEqual(mockState.licenses.get('SEC-URE-BURST').status, 'Trial');
+  });
+
   await t.test('drugi token ne može preuzeti već registrirani uređaj', async () => {
     await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: DEVICE_TOKEN }) as any);
     const takeover = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: OTHER_DEVICE_TOKEN }) as any);

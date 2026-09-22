@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload } from 'lucide-react';
+import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload, Network } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
@@ -15,6 +15,7 @@ import { upload } from '@vercel/blob/client';
 import DomainManager from '../../components/DomainManager';
 import { hr } from 'date-fns/locale';
 import { apkPathname, type ApkChannel } from '../../lib/apkChannel';
+import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -51,7 +52,7 @@ function formatActivityDetails(details: unknown): string {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'logs' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'diagnostics' | 'logs' | 'settings'>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -458,6 +459,9 @@ export default function AdminDashboard() {
               <button onClick={() => setActiveTab('domains')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'domains' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
                 <Globe className="w-4 h-4 mr-2" /> Domene
               </button>
+              <button onClick={() => setActiveTab('diagnostics')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'diagnostics' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                <Network className="w-4 h-4 mr-2" /> Dijagnostika
+              </button>
               <button
                 onClick={() => setActiveTab('logs')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
@@ -840,6 +844,9 @@ export default function AdminDashboard() {
               )}
             </div>
           )}
+
+          {/* Logs Tab */}
+          {activeTab === 'diagnostics' && <DiagnosticsPanel showReseller />}
 
           {/* Logs Tab */}
           {activeTab === 'logs' && (

@@ -63,6 +63,7 @@ import com.vopo.domain.model.RemoteShortcutSelection
 import com.vopo.domain.model.EpgResolutionSummary
 import com.vopo.domain.model.Result
 import com.vopo.domain.model.VirtualCategoryIds
+import com.vopo.domain.model.DeviceDiagnosticsReport
 import com.vopo.domain.model.VodVariantPreferenceMode
 import com.vopo.domain.usecase.ExportBackup
 import com.vopo.domain.usecase.ExportBackupCommand
@@ -73,6 +74,7 @@ import com.vopo.domain.usecase.ImportBackupResult
 import com.vopo.domain.usecase.InspectBackupCommand
 import com.vopo.domain.usecase.InspectBackupResult
 import com.vopo.domain.repository.ProviderRepository
+import com.vopo.domain.repository.LicenseRepository
 import com.vopo.domain.repository.CombinedM3uRepository
 import com.vopo.domain.repository.CategoryRepository
 import com.vopo.domain.repository.ChannelRepository
@@ -106,6 +108,7 @@ class SettingsViewModel @Inject constructor(
     private val programDao: ProgramDao,
     private val preferencesRepository: PreferencesRepository,
     private val internetSpeedTestRunner: InternetSpeedTestRunner,
+    private val licenseRepository: LicenseRepository,
     private val backupManager: BackupManager,
     private val driveBackupSyncManager: DriveBackupSyncManager,
     private val recordingManager: RecordingManager,
@@ -921,6 +924,14 @@ class SettingsViewModel @Inject constructor(
                         transport = snapshot.transport.name,
                         recommendedMaxHeight = snapshot.recommendedMaxVideoHeight,
                         estimated = snapshot.isEstimated
+                    )
+                    licenseRepository.reportDiagnostics(
+                        DeviceDiagnosticsReport(
+                            licenseStatus = "unknown",
+                            downloadMbps = snapshot.megabitsPerSecond,
+                            speedMeasuredAtMs = snapshot.measuredAtMs,
+                            connectionType = snapshot.transport.name,
+                        )
                     )
                     _uiState.update {
                         it.copy(

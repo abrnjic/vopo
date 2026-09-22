@@ -3,6 +3,7 @@ package com.vopo.data.repository
 import com.google.gson.Gson
 import com.vopo.domain.model.LicenseStatus
 import com.vopo.domain.model.RemoteProviderConfig
+import com.vopo.domain.model.DeviceDiagnosticsReport
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
@@ -63,6 +64,30 @@ class DeviceLicenseApiClient @Inject constructor(
                 "expired" -> LicenseStatus.Expired
                 else -> LicenseStatus.Unregistered
             }
+        }
+    }
+
+    fun reportDiagnostics(
+        deviceId: String,
+        deviceToken: String,
+        report: DeviceDiagnosticsReport,
+        deviceInfo: Map<String, Any>,
+    ) {
+        val payload = deviceInfo.toMutableMap().apply {
+            put("deviceId", deviceId)
+            put("licenseStatus", report.licenseStatus)
+            put("connectionType", report.connectionType ?: deviceInfo["connectionType"] ?: "UNKNOWN")
+            report.downloadMbps?.let { put("downloadMbps", it) }
+            report.speedMeasuredAtMs?.let { put("speedMeasuredAtMs", it) }
+        }
+        val body = gson.toJson(payload).toRequestBody(JSON_MEDIA_TYPE)
+        val request = Request.Builder()
+            .url("$apiBaseUrl/api/device/diagnostics")
+            .header("Authorization", "Device $deviceToken")
+            .post(body)
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw IOException("Diagnostics upload failed (${response.code})")
         }
     }
 

@@ -52,6 +52,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Dijagnostika se čita i zapisuje isključivo kroz autorizirani server API.
+    match /device_diagnostics/{deviceId} {
+      allow read, write: if false;
+    }
+
     // TRANSACTIONS kolekcija
     match /transactions/{transactionId} {
       allow read: if isAdmin() || (isReseller() && resource.data.resellerId == request.auth.uid);

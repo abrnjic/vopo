@@ -30,6 +30,7 @@ test('Firestore Security Rules', async (t) => {
       await setDoc(doc(db, 'users', 'admin1'), { role: 'admin', status: 'active' });
       await setDoc(doc(db, 'users', 'reseller1'), { role: 'reseller', status: 'active', credits: 10 });
       await setDoc(doc(db, 'licenses', 'lic1'), { resellerId: 'reseller1', status: 'Active' });
+      await setDoc(doc(db, 'device_diagnostics', 'lic1'), { resellerId: 'reseller1', publicIp: '203.0.113.1' });
     });
   });
 
@@ -94,6 +95,14 @@ test('Firestore Security Rules', async (t) => {
     await assertFails(setDoc(doc(db, 'transactions', 'newT'), { test: 1 }));
     await assertFails(updateDoc(doc(db, 'transactions', 'newT'), { test: 2 }));
     await assertFails(deleteDoc(doc(db, 'transactions', 'newT')));
+  });
+
+  await t.test('dijagnostika uređaja dostupna je samo kroz server API', async () => {
+    const resellerDb = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
+    const adminDb = testEnv.authenticatedContext('admin1', { role: 'admin' }).firestore();
+    await assertFails(getDoc(doc(resellerDb, 'device_diagnostics', 'lic1')));
+    await assertFails(getDoc(doc(adminDb, 'device_diagnostics', 'lic1')));
+    await assertFails(setDoc(doc(resellerDb, 'device_diagnostics', 'new'), { publicIp: 'spoofed' }));
   });
 
   await t.test('klijentski write u activity_logs je zabranjen', async () => {

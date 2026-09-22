@@ -2,6 +2,19 @@
 
 All notable product changes are recorded in this document.
 
+## [1.0.18] - 2026-09-22
+
+### Added
+
+- Added authenticated device diagnostics with server-observed public IPv4/IPv6 address, last-seen status, application and Android versions, device model, connection type, available memory and storage.
+- Connected the existing in-app internet download speed test to the diagnostics service.
+- Added administrator fleet diagnostics and reseller diagnostics restricted to the reseller's own subscribers, including full public IP address visibility.
+
+### Security
+
+- Device diagnostics use the existing per-installation secret token, derive reseller ownership from the server-side license, apply rate limits, and deny direct Firestore client access.
+- Updated the privacy policy to describe diagnostic data and role-based access.
+
 ## [1.0.16] - 2026-09-21
 
 ### Fixed

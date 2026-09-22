@@ -15,6 +15,8 @@ import { POST as logRoute } from '../src/app/api/log/route';
 import { POST as adminCreditsRoute } from '../src/app/api/admin/credits/route';
 import { POST as deviceRegisterRoute } from '../src/app/api/device/register/route';
 import { GET as deviceLicenseRoute } from '../src/app/api/device/license/route';
+import { POST as deviceDiagnosticsRoute } from '../src/app/api/device/diagnostics/route';
+import { GET as portalDiagnosticsRoute } from '../src/app/api/diagnostics/route';
 
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
 
@@ -37,6 +39,16 @@ const createDeviceGet = (deviceId: string, token = DEVICE_TOKEN) => new NextRequ
   `http://localhost/api/device/license?deviceId=${encodeURIComponent(deviceId)}`,
   { headers: { Authorization: `Device ${token}` } }
 ) as any;
+const createDevicePost = (body: any, token = DEVICE_TOKEN, ip = '203.0.113.42') => ({
+  headers: {
+    get: (key: string) => {
+      if (key.toLowerCase() === 'authorization') return `Device ${token}`;
+      if (key.toLowerCase() === 'x-real-ip') return ip;
+      return null;
+    }
+  },
+  json: async () => body
+}) as any;
 
 test('API P0 Tests', async (t) => {
   t.beforeEach(() => {
@@ -45,6 +57,7 @@ test('API P0 Tests', async (t) => {
     mockState.licenses.clear();
     mockState.transactions.clear();
     mockState.activity_logs.clear();
+    mockState.device_diagnostics.clear();
     mockState.rate_limits.clear();
     mockState.throwAuthError = false;
     mockState.throwDbError = false;
@@ -98,6 +111,53 @@ test('API P0 Tests', async (t) => {
     await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: DEVICE_TOKEN }) as any);
     const takeover = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: OTHER_DEVICE_TOKEN }) as any);
     assert.strictEqual(takeover.status, 409);
+  });
+
+  await t.test('uređaj sigurno šalje dijagnostiku, a IP određuje server', async () => {
+    await deviceRegisterRoute(createMockReq({ deviceId: 'DIAG-001', deviceToken: DEVICE_TOKEN }) as any);
+    mockState.licenses.set('DIAG-001', {
+      ...mockState.licenses.get('DIAG-001'),
+      resellerId: 'reseller1',
+      customerName: 'Pretplatnik',
+      status: 'Active',
+      isLifetime: true,
+    });
+    const response = await deviceDiagnosticsRoute(createDevicePost({
+      deviceId: 'DIAG-001',
+      appVersion: '1.0.18',
+      appVersionCode: 19,
+      androidVersion: '14',
+      deviceModel: 'Test TV',
+      connectionType: 'ETHERNET',
+      availableStorageBytes: 123456,
+      availableMemoryBytes: 654321,
+      licenseStatus: 'unknown',
+      downloadMbps: 84.64,
+      speedMeasuredAtMs: Date.now(),
+    }, DEVICE_TOKEN, '2001:db8::42'));
+    assert.strictEqual(response.status, 200);
+    const saved = mockState.device_diagnostics.get('DIAG-001');
+    assert.strictEqual(saved.publicIp, '2001:db8::42');
+    assert.strictEqual(saved.resellerId, 'reseller1');
+    assert.strictEqual(saved.downloadMbps, 84.6);
+    assert.strictEqual(saved.licenseStatus, 'active');
+  });
+
+  await t.test('dijagnostika odbija pogrešan token i reseller vidi samo svoje uređaje', async () => {
+    await deviceRegisterRoute(createMockReq({ deviceId: 'DIAG-002', deviceToken: DEVICE_TOKEN }) as any);
+    const denied = await deviceDiagnosticsRoute(createDevicePost({
+      deviceId: 'DIAG-002', appVersion: '1', appVersionCode: 1, androidVersion: '14',
+      deviceModel: 'TV', connectionType: 'WIFI', licenseStatus: 'trial'
+    }, OTHER_DEVICE_TOKEN));
+    assert.strictEqual(denied.status, 401);
+
+    mockState.device_diagnostics.set('own', { resellerId: 'reseller1', publicIp: '198.51.100.1', lastSeenAt: new Date() });
+    mockState.device_diagnostics.set('foreign', { resellerId: 'reseller2', publicIp: '198.51.100.2', lastSeenAt: new Date() });
+    const portalResponse = await portalDiagnosticsRoute(createMockReq({}, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(portalResponse.status, 200);
+    const payload = await portalResponse.json();
+    assert.deepStrictEqual(payload.diagnostics.map((item: any) => item.deviceId), ['own']);
+    assert.strictEqual(payload.diagnostics[0].publicIp, '198.51.100.1');
   });
 
   await t.test('istekla godišnja i opozvana lifetime licenca nisu aktivne', async () => {

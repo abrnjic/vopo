@@ -5,6 +5,7 @@ export const mockState = {
   licenses: new Map(),
   transactions: new Map(),
   activity_logs: new Map(),
+  device_diagnostics: new Map(),
   rate_limits: new Map(),
   throwAuthError: false,
   throwDbError: false
@@ -18,6 +19,12 @@ const createMockDoc = (id: string, dataMap: Map<string, any>) => ({
 
 export const mockAdminDb = {
   collection: (colName: string) => ({
+    get: async () => {
+      if (mockState.throwDbError) throw new Error('Mock DB Error');
+      const dataMap = (mockState as any)[colName];
+      const docs = [...dataMap.entries()].map(([id]) => createMockDoc(id as string, dataMap));
+      return { size: docs.length, docs, forEach: (cb: any) => docs.forEach(cb) };
+    },
     doc: (docId?: string) => {
       const id = docId || `auto-id-${Math.random()}`;
       const dataMap = (mockState as any)[colName];

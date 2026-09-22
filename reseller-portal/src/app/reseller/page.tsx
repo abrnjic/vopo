@@ -2,7 +2,7 @@
 
 import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2 } from 'lucide-react';
+import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -11,10 +11,11 @@ import { hr } from 'date-fns/locale';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
+import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'analytics' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<'activate' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -298,8 +299,14 @@ export default function ResellerDashboard() {
           <BarChart2 className="w-4 h-4 mr-2" />
           Moja Analitika
         </button>
-        <button 
-          onClick={() => setActiveTab('logs')}
+          <button
+            onClick={() => setActiveTab('diagnostics')}
+            className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'diagnostics' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+          >
+            <Network className="w-4 h-4 mr-2" /> Dijagnostika
+          </button>
+          <button
+            onClick={() => setActiveTab('logs')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'logs' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
         >
           <Activity className="w-4 h-4 mr-2" />
@@ -523,6 +530,8 @@ export default function ResellerDashboard() {
           </div>
         </div>
       )}
+
+      {activeTab === 'diagnostics' && <DiagnosticsPanel />}
 
       {activeTab === 'settings' && (
         <div className="space-y-6">

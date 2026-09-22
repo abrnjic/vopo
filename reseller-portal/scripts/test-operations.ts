@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NextRequest } from 'next/server';
 import { mockState } from '../src/lib/mockFirebaseAdmin';
-import { createExpiryNotifications } from '../src/lib/operations';
+import { createExpiryNotifications, migrateProserversDomainToHttp, migrateProserversUrl } from '../src/lib/operations';
 import { GET as lines } from '../src/app/api/lines/route';
 import { GET as reports } from '../src/app/api/reports/route';
 import { POST as createTicket, PATCH as updateTicket } from '../src/app/api/support/tickets/route';
@@ -26,6 +26,25 @@ test('Operational portal features', async t => {
     assert.deepEqual(await createExpiryNotifications(now), { scanned: 1, created: 1 });
     assert.deepEqual(await createExpiryNotifications(now), { scanned: 1, created: 0 });
     assert.equal(mockState.notifications.size, 1);
+  });
+
+  await t.test('proservers protocol migration repairs catalog, every account and existing lines', async () => {
+    mockState.settings.set('domainCatalog', { assignedDomains: ['https://proservers.club', 'https://other.example'] });
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), assignedDomains: ['https://proservers.club'], customDomains: [] });
+    mockState.users.set('sub1', { role: 'subseller', parentResellerId: 'reseller1', assignedDomains: ['https://proservers.club/path'], customDomains: [] });
+    mockState.licenses.set('device-http', {
+      resellerId: 'reseller1', selectedDomain: 'https://proservers.club',
+      xtreamConfig: { url: 'https://proservers.club', username: 'user', password: 'pass' }
+    });
+
+    assert.equal(migrateProserversUrl('https://other.example'), 'https://other.example');
+    assert.deepEqual(await migrateProserversDomainToHttp(), { settings: 1, users: 2, licenses: 1 });
+    assert.deepEqual(mockState.settings.get('domainCatalog').assignedDomains, ['http://proservers.club', 'https://other.example']);
+    assert.deepEqual(mockState.users.get('reseller1').assignedDomains, ['http://proservers.club']);
+    assert.deepEqual(mockState.users.get('sub1').assignedDomains, ['http://proservers.club/path']);
+    assert.equal(mockState.licenses.get('device-http').selectedDomain, 'http://proservers.club');
+    assert.equal(mockState.licenses.get('device-http').xtreamConfig.url, 'http://proservers.club');
+    assert.deepEqual(await migrateProserversDomainToHttp(), { settings: 0, users: 0, licenses: 0 });
   });
 
   await t.test('line detail contains history and cannot expose another reseller line', async () => {

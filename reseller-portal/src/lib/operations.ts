@@ -1,6 +1,83 @@
 import { adminDb } from '@/lib/firebaseAdmin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export const LICENSE_NOTICE_DAYS = [30, 7, 1, 0] as const;
+
+const PROSERVERS_HTTPS = 'https://proservers.club';
+const PROSERVERS_HTTP = 'http://proservers.club';
+
+export function migrateProserversUrl(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  return value === PROSERVERS_HTTPS || value.startsWith(`${PROSERVERS_HTTPS}/`)
+    ? `${PROSERVERS_HTTP}${value.slice(PROSERVERS_HTTPS.length)}`
+    : value;
+}
+
+function migrateDomainList(value: unknown): { value: unknown; changed: boolean } {
+  if (!Array.isArray(value)) return { value, changed: false };
+  const migrated = value.map(migrateProserversUrl);
+  const deduplicated = [...new Set(migrated)];
+  return { value: deduplicated, changed: JSON.stringify(value) !== JSON.stringify(deduplicated) };
+}
+
+/**
+ * Idempotent production data repair for the Proservers endpoint protocol.
+ * It updates the global catalog, every portal account and existing line
+ * configuration so devices receive the correct URL on their next license poll.
+ */
+export async function migrateProserversDomainToHttp() {
+  const result = { settings: 0, users: 0, licenses: 0 };
+  const catalogRef = adminDb.collection('settings').doc('domainCatalog');
+  const catalog = await catalogRef.get();
+  if (catalog.exists) {
+    const assigned = migrateDomainList(catalog.data()?.assignedDomains);
+    if (assigned.changed) {
+      await catalogRef.set({ assignedDomains: assigned.value, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+      result.settings++;
+    }
+  }
+
+  const users = await adminDb.collection('users').get();
+  for (const user of users.docs) {
+    const data = user.data() || {};
+    const assigned = migrateDomainList(data.assignedDomains);
+    const custom = migrateDomainList(data.customDomains);
+    if (!assigned.changed && !custom.changed) continue;
+    await adminDb.collection('users').doc(user.id).set({
+      assignedDomains: assigned.value,
+      customDomains: custom.value,
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    result.users++;
+  }
+
+  const licenses = await adminDb.collection('licenses').get();
+  for (const license of licenses.docs) {
+    const data = license.data() || {};
+    const selectedDomain = migrateProserversUrl(data.selectedDomain);
+    const currentConfig = data.xtreamConfig && typeof data.xtreamConfig === 'object'
+      ? data.xtreamConfig as Record<string, unknown>
+      : null;
+    const configUrl = currentConfig ? migrateProserversUrl(currentConfig.url) : undefined;
+    const selectedDomainChanged = selectedDomain !== data.selectedDomain;
+    const configChanged = Boolean(currentConfig && configUrl !== currentConfig.url);
+    if (!selectedDomainChanged && !configChanged) continue;
+    const update: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
+    if (selectedDomainChanged) update.selectedDomain = selectedDomain;
+    if (currentConfig && configChanged) update.xtreamConfig = { ...currentConfig, url: configUrl };
+    await adminDb.collection('licenses').doc(license.id).set(update, { merge: true });
+    result.licenses++;
+  }
+
+  if (result.settings || result.users || result.licenses) {
+    await adminDb.collection('activity_logs').doc().set({
+      userId: 'system', role: 'system', action: 'MIGRATE_PROSERVERS_HTTP',
+      details: `Katalog: ${result.settings}, korisnici: ${result.users}, linije: ${result.licenses}`,
+      timestamp: FieldValue.serverTimestamp()
+    });
+  }
+  return result;
+}
 
 export function asDate(value: any): Date | null {
   if (!value) return null;

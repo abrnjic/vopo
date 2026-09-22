@@ -19,6 +19,8 @@ test('Multiple reseller domains', async t => {
   await t.test('normalizes addresses while retaining protocol, port and base path', () => {
     assert.equal(normalizeDomain('HTTP://ONE.example:8080/'), 'http://one.example:8080');
     assert.equal(normalizeDomain('two.example/base/'), 'https://two.example/base');
+    assert.equal(normalizeDomain('https://proservers.club/'), 'http://proservers.club');
+    assert.equal(normalizeDomain('https://proservers.club/base/'), 'http://proservers.club/base');
     for (const value of ['ftp://one.example', 'https://u:p@one.example', 'https://one.example?key=x', 'https://one.example#frag']) assert.throws(() => normalizeDomain(value));
   });
   await t.test('admin creates complete reseller profile with multiple domains', async () => {

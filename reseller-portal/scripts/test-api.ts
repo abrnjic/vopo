@@ -636,7 +636,7 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(child.role, 'subseller');
     assert.strictEqual(child.parentResellerId, 'reseller1');
     assert.strictEqual(child.credits, 4);
-    assert.deepStrictEqual(child.assignedDomains, ['https://proservers.club']);
+    assert.deepStrictEqual(child.assignedDomains, ['http://proservers.club']);
     assert.strictEqual(mockState.transactions.size, 1);
     assert.strictEqual(mockState.activity_logs.size, 1);
 

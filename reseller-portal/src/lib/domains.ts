@@ -5,6 +5,10 @@ export function normalizeDomain(input: string): string {
   if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || url.username || url.password || url.search || url.hash) {
     throw new Error('Unesite HTTP/HTTPS adresu servera bez lozinke, upita ili fragmenta.');
   }
+  // The Proservers Xtream endpoint currently serves plain HTTP. Keeping this
+  // rule in the shared normalizer prevents admins, resellers and subsellers
+  // from accidentally saving the HTTPS variant again after the data migration.
+  if (url.hostname.toLowerCase() === 'proservers.club') url.protocol = 'http:';
   return url.toString().replace(/\/+$/, '');
 }
 

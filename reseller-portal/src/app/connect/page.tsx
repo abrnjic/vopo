@@ -22,6 +22,7 @@ function ConnectForm() {
   const [portalUrl, setPortalUrl] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [linePin, setLinePin] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +49,8 @@ function ConnectForm() {
           deviceId,
           portalUrl,
           username,
-          password
+          password,
+          linePin
         }),
       });
 
@@ -84,6 +86,7 @@ function ConnectForm() {
             setPortalUrl('');
             setUsername('');
             setPassword('');
+            setLinePin('');
           }}
           className="mt-8 bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-medium transition-colors"
         >
@@ -217,6 +220,14 @@ function ConnectForm() {
             <div className="flex items-center text-xs text-gray-400 bg-gray-900/50 p-3 rounded-lg border border-gray-700">
               <Shield className="w-4 h-4 mr-2 text-green-500 flex-shrink-0" />
               Slanjem forme povezujete listu s postojećim trodnevnim probnim razdobljem uređaja.
+            </div>
+
+            <div>
+              <label htmlFor="linePin" className="block text-sm font-medium text-gray-300">Dodatni PIN linije</label>
+              <div className="mt-1 flex gap-2">
+                <input id="linePin" type="text" required minLength={6} maxLength={32} value={linePin} onChange={e => setLinePin(e.target.value)} className="min-w-0 flex-1 rounded-md border border-gray-600 bg-gray-700/50 px-3 py-2 text-white" placeholder="6-32 znaka" />
+                <button type="button" onClick={() => { const values = new Uint32Array(2); crypto.getRandomValues(values); setLinePin(`${String(values[0] % 10000).padStart(4, '0')}${String(values[1] % 10000).padStart(4, '0')}`); }} className="rounded-md border border-blue-500 px-3 text-sm text-blue-300">Generiraj</button>
+              </div>
             </div>
 
             <div>

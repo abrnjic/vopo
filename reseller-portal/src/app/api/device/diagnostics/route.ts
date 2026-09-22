@@ -5,6 +5,7 @@ import { adminDb } from '@/lib/firebaseAdmin';
 import { authenticateDevice, clientIp } from '@/lib/deviceDiagnostics';
 import { publicLicenseState } from '@/lib/deviceLicense';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { isOfficialVopoUserAgent, requestIp, writeSecurityLog } from '@/lib/securityLog';
 
 const DiagnosticsSchema = z.object({
   deviceId: z.string().trim().min(1).max(50),
@@ -28,12 +29,24 @@ export async function POST(req: NextRequest) {
     const parsed = DiagnosticsSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: 'Invalid diagnostics payload.' }, { status: 400 });
 
+    const userAgent = req.headers.get('user-agent');
+    if (!isOfficialVopoUserAgent(userAgent)) {
+      const owner = await adminDb.collection('licenses').doc(parsed.data.deviceId).get();
+      await writeSecurityLog({ eventType: 'INVALID_USER_AGENT', deviceId: parsed.data.deviceId, resellerId: owner.data()?.resellerId, ip: requestIp(req.headers), userAgent, details: 'Odbijeno slanje dijagnostike iz neslužbenog klijenta.' });
+      return NextResponse.json({ error: 'Official VOPO app required.' }, { status: 403 });
+    }
+
     const authenticated = await authenticateDevice(req, parsed.data.deviceId);
-    if (!authenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!authenticated) {
+      const owner = await adminDb.collection('licenses').doc(parsed.data.deviceId).get();
+      await writeSecurityLog({ eventType: 'DEVICE_BINDING_MISMATCH', deviceId: parsed.data.deviceId, resellerId: owner.data()?.resellerId, ip: requestIp(req.headers), userAgent, details: 'Pogrešan token pri slanju dijagnostike.' });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const ip = clientIp(req);
     const limit = await checkRateLimit(`device_diagnostics_${parsed.data.deviceId}`, 12, 15 * 60_000);
     if (!limit.success) {
+      await writeSecurityLog({ eventType: 'RATE_LIMIT_EXCEEDED', deviceId: parsed.data.deviceId, resellerId: authenticated.license.resellerId, ip, userAgent, details: 'Previše dijagnostičkih zahtjeva.' });
       return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: limit.headers });
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { DEVICE_TOKEN_PATTERN, deviceTokenMatches, publicLicenseState } from '@/lib/deviceLicense';
+import { isOfficialVopoUserAgent, requestIp, writeSecurityLog } from '@/lib/securityLog';
 
 const QuerySchema = z.object({ deviceId: z.string().trim().min(1).max(50) });
 
@@ -9,6 +10,7 @@ export async function GET(req: NextRequest) {
   try {
     const parsed = QuerySchema.safeParse({ deviceId: req.nextUrl.searchParams.get('deviceId') || '' });
     const authorization = req.headers.get('authorization') || '';
+    const userAgent = req.headers.get('user-agent');
     const deviceToken = authorization.startsWith('Device ') ? authorization.slice(7) : '';
     if (!parsed.success || !DEVICE_TOKEN_PATTERN.test(deviceToken)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,7 +19,12 @@ export async function GET(req: NextRequest) {
     const snapshot = await adminDb.collection('licenses').doc(parsed.data.deviceId).get();
     if (!snapshot.exists) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const data = snapshot.data() || {};
+    if (!isOfficialVopoUserAgent(userAgent)) {
+      await writeSecurityLog({ eventType: 'INVALID_USER_AGENT', deviceId: parsed.data.deviceId, resellerId: data.resellerId, ip: requestIp(req.headers), userAgent, details: 'Odbijeno dohvaćanje linije iz neslužbenog klijenta.' });
+      return NextResponse.json({ error: 'Official VOPO app required.' }, { status: 403 });
+    }
     if (!deviceTokenMatches(deviceToken, data.accessTokenHash)) {
+      await writeSecurityLog({ eventType: 'DEVICE_BINDING_MISMATCH', deviceId: parsed.data.deviceId, resellerId: data.resellerId, ip: requestIp(req.headers), userAgent, details: 'Pogrešan token instalacije.' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -4,6 +4,7 @@ import { verifyAuthToken } from '@/lib/auth';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { DomainSchema, domainsForUser } from '@/lib/domains';
+import { hashLinePin, LINE_PIN_PATTERN } from '@/lib/lineSecurity';
 
 const ActivateSchema = z.object({
   deviceId: z.string().min(1).max(50),
@@ -12,6 +13,7 @@ const ActivateSchema = z.object({
   customerContact: z.string().max(100).optional(),
   username: z.string().max(100).optional(),
   password: z.string().max(100).optional(),
+  linePin: z.string().regex(LINE_PIN_PATTERN),
   selectedDomain: DomainSchema.optional()
 }).strict();
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
 
     const { 
       deviceId, licenseType, customerName, customerContact, 
-      username, password, selectedDomain 
+      username, password, linePin, selectedDomain
     } = parsed.data;
     
     let creditsToDeduct = 0;
@@ -111,6 +113,9 @@ export async function POST(req: NextRequest) {
           password: password ? password.trim() : ''
         },
         selectedDomain: selectedDomain || '',
+        linePinHash: hashLinePin(linePin),
+        maxConcurrentStreams: 1,
+        requireOfficialClient: true,
         updatedAt: FieldValue.serverTimestamp()
       };
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload, Network, ArrowRightLeft } from 'lucide-react';
+import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload, Network, ArrowRightLeft, ShieldAlert } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
@@ -18,6 +18,7 @@ import { apkPathname, type ApkChannel } from '../../lib/apkChannel';
 import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 import CreditPricing from '../../components/CreditPricing';
 import LicenseTransferPanel from '../../components/LicenseTransferPanel';
+import SecurityPanel from '../../components/SecurityPanel';
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -54,7 +55,7 @@ function formatActivityDetails(details: unknown): string {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'migration' | 'diagnostics' | 'logs' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'migration' | 'diagnostics' | 'security' | 'logs' | 'settings'>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -473,6 +474,9 @@ export default function AdminDashboard() {
               >
                 <Activity className="w-4 h-4 mr-2" /> Logovi
               </button>
+              <button onClick={() => setActiveTab('security')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'security' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
+                <ShieldAlert className="w-4 h-4 mr-2" /> Security Logs
+              </button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'settings' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
@@ -856,6 +860,8 @@ export default function AdminDashboard() {
           {activeTab === 'diagnostics' && <DiagnosticsPanel showReseller />}
 
           {activeTab === 'migration' && <LicenseTransferPanel />}
+
+          {activeTab === 'security' && <SecurityPanel />}
 
           {/* Logs Tab */}
           {activeTab === 'logs' && (

@@ -2,7 +2,7 @@
 
 import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users, ArrowRightLeft } from 'lucide-react';
+import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users, ArrowRightLeft, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -15,10 +15,11 @@ import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 import CreditPricing from '../../components/CreditPricing';
 import SubsellerManager from '../../components/SubsellerManager';
 import LicenseTransferPanel from '../../components/LicenseTransferPanel';
+import SecurityPanel from '../../components/SecurityPanel';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'migration' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'migration' | 'analytics' | 'diagnostics' | 'security' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -30,6 +31,7 @@ export default function ResellerDashboard() {
   const [selectedDomain, setSelectedDomain] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [linePin, setLinePin] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerContact, setCustomerContact] = useState('');
   const [licenseType, setLicenseType] = useState<'1_year' | 'lifetime' | 'trial'>('1_year');
@@ -157,6 +159,7 @@ export default function ResellerDashboard() {
           customerContact: customerContact.trim(),
           username: username.trim(),
           password: password.trim(),
+          linePin,
           selectedDomain
         })
       });
@@ -171,6 +174,7 @@ export default function ResellerDashboard() {
       setDeviceId('');
       setUsername('');
       setPassword('');
+      setLinePin('');
       setCustomerName('');
       setCustomerContact('');
       
@@ -342,6 +346,9 @@ export default function ResellerDashboard() {
           <Activity className="w-4 h-4 mr-2" />
           Aktivnosti
         </button>
+        <button onClick={() => setActiveTab('security')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'security' ? 'border-red-500 text-red-300' : 'border-transparent text-gray-400 hover:text-white'}`}>
+          <ShieldAlert className="w-4 h-4 mr-2" /> Sigurnost
+        </button>
         <button 
           onClick={() => setActiveTab('settings')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -404,6 +411,15 @@ export default function ResellerDashboard() {
                     value={customerContact} onChange={e => setCustomerContact(e.target.value)}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Dodatni PIN linije</label>
+                <div className="flex gap-2">
+                  <input type="text" required minLength={6} maxLength={32} pattern="[A-Za-z0-9!@#$%&amp;*_.-]{6,32}" value={linePin} onChange={e => setLinePin(e.target.value)} className="min-w-0 flex-1 bg-gray-900 border border-gray-600 rounded-lg p-2.5 text-white" placeholder="6-32 znaka" />
+                  <button type="button" onClick={() => { const values = new Uint32Array(2); crypto.getRandomValues(values); setLinePin(`${String(values[0] % 10000).padStart(4, '0')}${String(values[1] % 10000).padStart(4, '0')}`); }} className="rounded-lg border border-blue-500 px-3 text-sm text-blue-300">Generiraj</button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">PIN se sprema kao sigurni hash i potreban je za kasnije promjene linije.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -562,6 +578,8 @@ export default function ResellerDashboard() {
       )}
 
       {activeTab === 'diagnostics' && <DiagnosticsPanel />}
+
+      {activeTab === 'security' && <SecurityPanel />}
 
       {activeTab === 'migration' && <LicenseTransferPanel onTransferred={(oldId, license) => {
         const migrated = license as any;

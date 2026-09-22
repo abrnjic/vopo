@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { adminDb } from '@/lib/firebaseAdmin';
 import { DEVICE_TOKEN_PATTERN, hashDeviceToken } from '@/lib/deviceLicense';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { isOfficialVopoUserAgent, requestIp, writeSecurityLog } from '@/lib/securityLog';
 
 const RegisterSchema = z.object({
   deviceId: z.string().trim().min(1).max(50),
@@ -16,9 +17,17 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) return NextResponse.json({ error: 'Invalid device registration.' }, { status: 400 });
 
     const { deviceId, deviceToken } = parsed.data;
-    const ip = req.headers.get('x-real-ip') || req.headers.get('x-vercel-forwarded-for') || req.headers.get('x-forwarded-for') || 'unknown';
+    const ip = requestIp(req.headers);
+    const userAgent = req.headers.get('user-agent');
+    if (!isOfficialVopoUserAgent(userAgent)) {
+      await writeSecurityLog({ eventType: 'INVALID_USER_AGENT', deviceId, ip, userAgent, details: 'Odbijena registracija iz neslužbenog klijenta.' });
+      return NextResponse.json({ error: 'Official VOPO app required.' }, { status: 403 });
+    }
     const limit = await checkRateLimit(`device_register_${ip}`, 20, 60_000);
-    if (!limit.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: limit.headers });
+    if (!limit.success) {
+      await writeSecurityLog({ eventType: 'RATE_LIMIT_EXCEEDED', deviceId, ip, userAgent, details: 'Previše registracijskih zahtjeva.' });
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429, headers: limit.headers });
+    }
 
     const ref = adminDb.collection('licenses').doc(deviceId);
     const accessTokenHash = hashDeviceToken(deviceToken);
@@ -46,7 +55,11 @@ export async function POST(req: NextRequest) {
       return { conflict: false, status: shouldStartTrial ? 'trial' : String(existing.status).toLowerCase() };
     });
 
-    if (result.conflict) return NextResponse.json({ error: 'Device is already registered.' }, { status: 409 });
+    if (result.conflict) {
+      const owner = await ref.get();
+      await writeSecurityLog({ eventType: 'DEVICE_BINDING_MISMATCH', deviceId, resellerId: owner.data()?.resellerId, ip, userAgent, details: 'Druga instalacija pokušala je preuzeti postojeći Device ID.' });
+      return NextResponse.json({ error: 'Device is already registered.' }, { status: 409 });
+    }
     return NextResponse.json({ success: true, status: result.status });
   } catch (error: any) {
     if (error?.message === '503') return NextResponse.json({ error: 'Service Unavailable' }, { status: 503, headers: { 'Retry-After': '30' } });

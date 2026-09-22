@@ -5,6 +5,7 @@ export const mockState = {
   licenses: new Map(),
   transactions: new Map(),
   activity_logs: new Map(),
+  security_logs: new Map(),
   device_diagnostics: new Map(),
   rate_limits: new Map(),
   throwAuthError: false,

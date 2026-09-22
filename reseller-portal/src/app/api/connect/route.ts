@@ -6,12 +6,14 @@ import { checkRateLimit } from '@/lib/rateLimit';
 import { verifyAuthToken } from '@/lib/auth';
 import { DomainSchema, domainsForUser } from '@/lib/domains';
 import crypto from 'crypto';
+import { hashLinePin, LINE_PIN_PATTERN } from '@/lib/lineSecurity';
 
 const ConnectSchema = z.object({
   deviceId: z.string().min(1).max(50),
   portalUrl: DomainSchema.optional(),
   username: z.string().optional(),
-  password: z.string().optional()
+  password: z.string().optional(),
+  linePin: z.string().regex(LINE_PIN_PATTERN)
 }).strict();
 
 export async function POST(req: NextRequest) {
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payload format or extra fields present.' }, { status: 400 });
     }
 
-    const { deviceId, portalUrl, username, password } = parsed.data;
+    const { deviceId, portalUrl, username, password, linePin } = parsed.data;
     const safeDeviceId = deviceId.trim();
     const configValues = [portalUrl, username, password];
     const hasAnyConfig = configValues.some(value => Boolean(value?.trim()));
@@ -95,6 +97,9 @@ export async function POST(req: NextRequest) {
             : auth.context.uid;
           const trialUpdate: Record<string, unknown> = {
             resellerId: ownerId,
+            linePinHash: hashLinePin(linePin),
+            maxConcurrentStreams: 1,
+            requireOfficialClient: true,
             updatedAt: FieldValue.serverTimestamp()
           };
           if (hasCompleteConfig) {
@@ -140,6 +145,9 @@ export async function POST(req: NextRequest) {
           password: password ? password.trim() : '',
         },
         selectedDomain: portalUrl ? portalUrl.trim() : '',
+        linePinHash: hashLinePin(linePin),
+        maxConcurrentStreams: 1,
+        requireOfficialClient: true,
         updatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
 

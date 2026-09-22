@@ -68,7 +68,7 @@ test('Multiple reseller domains', async t => {
   });
   await t.test('activation delivers each selected domain to application config', async () => {
     for (const [index, domain] of ['http://one.example:8080', 'https://two.example/base'].entries()) {
-      const res = await activate(req({ deviceId: `device${index}`, licenseType: '1_year', selectedDomain: domain, username: 'demo', password: 'test' }));
+      const res = await activate(req({ deviceId: `device${index}`, licenseType: '1_year', selectedDomain: domain, username: 'demo', password: 'test', linePin: '926483' }));
       assert.equal(res.status, 200);
       assert.equal(mockState.licenses.get(`device${index}`).xtreamConfig.url, domain);
       assert.equal(mockState.licenses.get(`device${index}`).selectedDomain, domain);
@@ -76,8 +76,8 @@ test('Multiple reseller domains', async t => {
     assert.equal(mockState.users.get('reseller1').credits, 8);
   });
   await t.test('activation cannot use an unassigned or omitted domain', async () => {
-    assert.equal((await activate(req({ deviceId: 'device', licenseType: '1_year', selectedDomain: 'https://foreign.example' }))).status, 403);
-    assert.equal((await activate(req({ deviceId: 'device', licenseType: '1_year' }))).status, 400);
+    assert.equal((await activate(req({ deviceId: 'device', licenseType: '1_year', selectedDomain: 'https://foreign.example', linePin: '926483' }))).status, 403);
+    assert.equal((await activate(req({ deviceId: 'device', licenseType: '1_year', linePin: '926483' }))).status, 400);
     assert.equal(mockState.licenses.size, 0);
     assert.equal(mockState.users.get('reseller1').credits, 10);
   });

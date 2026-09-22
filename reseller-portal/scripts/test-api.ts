@@ -6,9 +6,9 @@ import { NextRequest } from 'next/server';
 process.env.MOCK_FIREBASE = 'true';
 
 import { mockState } from '../src/lib/mockFirebaseAdmin';
-import { POST as connectRoute } from '../src/app/api/connect/route';
+import { POST as rawConnectRoute } from '../src/app/api/connect/route';
 import { POST as authUsersRoute } from '../src/app/api/admin/users/route';
-import { POST as resellerActivateRoute } from '../src/app/api/reseller/activate/route';
+import { POST as rawResellerActivateRoute } from '../src/app/api/reseller/activate/route';
 import { POST as resellerBulkExtendRoute } from '../src/app/api/reseller/bulk-extend/route';
 import { POST as resellerBulkDeleteRoute } from '../src/app/api/reseller/bulk-delete/route';
 import { POST as logRoute } from '../src/app/api/log/route';
@@ -19,9 +19,12 @@ import { POST as deviceDiagnosticsRoute } from '../src/app/api/device/diagnostic
 import { GET as portalDiagnosticsRoute } from '../src/app/api/diagnostics/route';
 import { GET as listSubsellersRoute, POST as createSubsellerRoute, PATCH as updateSubsellerRoute } from '../src/app/api/reseller/subsellers/route';
 import { POST as transferLicenseRoute } from '../src/app/api/licenses/transfer/route';
+import { PATCH as licenseSecurityRoute } from '../src/app/api/licenses/security/route';
+import { GET as securityLogsRoute } from '../src/app/api/security/logs/route';
 
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
 import { hashDeviceToken } from '../src/lib/deviceLicense';
+import { linePinMatches } from '../src/lib/lineSecurity';
 
 const createMockReq = (body: any, token?: string, ip?: string) => {
   return {
@@ -29,6 +32,7 @@ const createMockReq = (body: any, token?: string, ip?: string) => {
       get: (key: string) => {
         if (key.toLowerCase() === 'authorization') return token ? `Bearer ${token}` : null;
         if (key.toLowerCase() === 'x-forwarded-for') return ip || '127.0.0.1';
+        if (key.toLowerCase() === 'user-agent') return 'Vopo/1.0.0 (Android; Media3; OkHttp)';
         return null;
       }
     },
@@ -36,17 +40,25 @@ const createMockReq = (body: any, token?: string, ip?: string) => {
   } as any;
 };
 
+const withRequiredLinePin = (req: any) => ({
+  ...req,
+  json: async () => ({ ...(await req.json()), linePin: (await req.json()).linePin || '926483' })
+});
+const connectRoute = (req: any) => rawConnectRoute(withRequiredLinePin(req));
+const resellerActivateRoute = (req: any) => rawResellerActivateRoute(withRequiredLinePin(req));
+
 const DEVICE_TOKEN = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const OTHER_DEVICE_TOKEN = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 const createDeviceGet = (deviceId: string, token = DEVICE_TOKEN) => new NextRequest(
   `http://localhost/api/device/license?deviceId=${encodeURIComponent(deviceId)}`,
-  { headers: { Authorization: `Device ${token}` } }
+  { headers: { Authorization: `Device ${token}`, 'User-Agent': 'Vopo/1.0.0 (Android; Media3; OkHttp)' } }
 ) as any;
 const createDevicePost = (body: any, token = DEVICE_TOKEN, ip = '203.0.113.42') => ({
   headers: {
     get: (key: string) => {
       if (key.toLowerCase() === 'authorization') return `Device ${token}`;
       if (key.toLowerCase() === 'x-real-ip') return ip;
+      if (key.toLowerCase() === 'user-agent') return 'Vopo/1.0.0 (Android; Media3; OkHttp)';
       return null;
     }
   },
@@ -62,6 +74,7 @@ test('API P0 Tests', async (t) => {
     mockState.licenses.clear();
     mockState.transactions.clear();
     mockState.activity_logs.clear();
+    mockState.security_logs.clear();
     mockState.device_diagnostics.clear();
     mockState.rate_limits.clear();
     mockState.throwAuthError = false;
@@ -116,6 +129,44 @@ test('API P0 Tests', async (t) => {
     await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: DEVICE_TOKEN }) as any);
     const takeover = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-002', deviceToken: OTHER_DEVICE_TOKEN }) as any);
     assert.strictEqual(takeover.status, 409);
+    assert.ok([...mockState.security_logs.values()].some((log: any) => log.eventType === 'DEVICE_BINDING_MISMATCH'));
+  });
+
+  await t.test('neslužbeni klijent dobiva 403 i sigurnosni incident se zapisuje', async () => {
+    const request = createMockReq({ deviceId: 'BAD-UA', deviceToken: DEVICE_TOKEN }) as any;
+    const originalGet = request.headers.get;
+    request.headers.get = (key: string) => key.toLowerCase() === 'user-agent' ? 'VLC/3.0' : originalGet(key);
+    const response = await deviceRegisterRoute(request);
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.has('BAD-UA'), false);
+    assert.ok([...mockState.security_logs.values()].some((log: any) => log.eventType === 'INVALID_USER_AGENT'));
+  });
+
+  await t.test('PIN linije je obvezan, hashiran i reseller ga mora potvrditi za promjenu', async () => {
+    let response = await rawResellerActivateRoute(createMockReq({
+      deviceId: 'PIN-001', licenseType: 'trial', selectedDomain: 'https://tv.example', username: 'u', password: 'p'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 400);
+
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), assignedDomains: ['https://tv.example'] });
+    response = await rawResellerActivateRoute(createMockReq({
+      deviceId: 'PIN-001', licenseType: 'trial', selectedDomain: 'https://tv.example', username: 'u', password: 'p', linePin: '926483'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.notStrictEqual(mockState.licenses.get('PIN-001').linePinHash, '926483');
+    assert.ok(linePinMatches('926483', mockState.licenses.get('PIN-001').linePinHash));
+
+    response = await licenseSecurityRoute(createMockReq({ deviceId: 'PIN-001', currentPin: 'wrong99', newPin: '135790' }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    response = await licenseSecurityRoute(createMockReq({ deviceId: 'PIN-001', currentPin: '926483', newPin: '135790' }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.ok(linePinMatches('135790', mockState.licenses.get('PIN-001').linePinHash));
+
+    const logsResponse = await securityLogsRoute(createMockReq({}, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(logsResponse.status, 200);
+    const payload = await logsResponse.json();
+    assert.ok(payload.logs.some((log: any) => log.eventType === 'INVALID_LINE_PIN'));
+    assert.ok(payload.logs.some((log: any) => log.eventType === 'LINE_PIN_CHANGED'));
   });
 
   await t.test('uređaj sigurno šalje dijagnostiku, a IP određuje server', async () => {

@@ -18,8 +18,10 @@ import { GET as deviceLicenseRoute } from '../src/app/api/device/license/route';
 import { POST as deviceDiagnosticsRoute } from '../src/app/api/device/diagnostics/route';
 import { GET as portalDiagnosticsRoute } from '../src/app/api/diagnostics/route';
 import { GET as listSubsellersRoute, POST as createSubsellerRoute, PATCH as updateSubsellerRoute } from '../src/app/api/reseller/subsellers/route';
+import { POST as transferLicenseRoute } from '../src/app/api/licenses/transfer/route';
 
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
+import { hashDeviceToken } from '../src/lib/deviceLicense';
 
 const createMockReq = (body: any, token?: string, ip?: string) => {
   return {
@@ -609,6 +611,145 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(mockState.users.get('sub1').credits, 2);
     assert.strictEqual(mockState.users.get('reseller1').credits, 10);
     assert.strictEqual(mockState.licenses.get('sub-device-1').resellerId, 'sub1');
+  });
+
+  await t.test('prijenos lifetime licence i linije deaktivira stari uređaj i čuva token novog uređaja', async () => {
+    mockState.licenses.set('old-lifetime', {
+      deviceId: 'old-lifetime', resellerId: 'reseller1', status: 'Active', isLifetime: true,
+      expiresAt: null, accessTokenHash: hashDeviceToken(DEVICE_TOKEN), selectedDomain: 'https://proservers.club',
+      xtreamConfig: { url: 'https://proservers.club', username: 'line-user', password: 'line-pass' },
+      customerName: 'Pretplatnik', customerContact: 'kontakt'
+    });
+    mockState.licenses.set('new-lifetime', {
+      deviceId: 'new-lifetime', resellerId: 'self_registered', status: 'Trial', isLifetime: false,
+      expiresAt: new Date(Date.now() + 60_000), accessTokenHash: hashDeviceToken(OTHER_DEVICE_TOKEN),
+      selectedDomain: 'https://temporary.example'
+    });
+
+    const response = await transferLicenseRoute(createMockReq({
+      requestId: '12121212-1212-4212-8212-121212121212', oldDeviceId: 'old-lifetime',
+      newDeviceId: 'new-lifetime', mode: 'license_and_line'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    const migrated = mockState.licenses.get('new-lifetime');
+    const source = mockState.licenses.get('old-lifetime');
+    assert.strictEqual(migrated.isLifetime, true);
+    assert.strictEqual(migrated.expiresAt, null);
+    assert.strictEqual(migrated.accessTokenHash, hashDeviceToken(OTHER_DEVICE_TOKEN));
+    assert.strictEqual(migrated.selectedDomain, 'https://proservers.club');
+    assert.deepStrictEqual(migrated.xtreamConfig, { url: 'https://proservers.club', username: 'line-user', password: 'line-pass' });
+    assert.strictEqual(source.status, 'Transferred');
+    assert.strictEqual(source.transferredTo, 'new-lifetime');
+    assert.strictEqual(mockState.transactions.size, 1);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+    const oldDeviceResponse = await deviceLicenseRoute(createDeviceGet('old-lifetime', DEVICE_TOKEN));
+    assert.strictEqual((await oldDeviceResponse.json()).status, 'unregistered');
+    const newDeviceResponse = await deviceLicenseRoute(createDeviceGet('new-lifetime', OTHER_DEVICE_TOKEN));
+    const newDeviceLicense = await newDeviceResponse.json();
+    assert.strictEqual(newDeviceLicense.status, 'active');
+    assert.strictEqual(newDeviceLicense.isLifetime, true);
+    assert.deepStrictEqual(newDeviceLicense.config, { url: 'https://proservers.club', username: 'line-user', password: 'line-pass' });
+  });
+
+  await t.test('subseller prenosi samo vlastitu vremensku licencu uz isti datum isteka', async () => {
+    mockState.users.set('sub1', {
+      email: 'sub1@vopoapp.com', role: 'subseller', parentResellerId: 'reseller1',
+      status: 'active', disabled: false, credits: 1
+    });
+    const exactExpiry = new Date(Date.now() + 120 * 24 * 60 * 60 * 1000 + 12_345);
+    mockState.licenses.set('sub-old', {
+      deviceId: 'sub-old', resellerId: 'sub1', status: 'Active', isLifetime: false,
+      expiresAt: exactExpiry, selectedDomain: 'https://source.example',
+      xtreamConfig: { url: 'https://source.example', username: 'source', password: 'source-pass' }
+    });
+    mockState.licenses.set('sub-new', {
+      deviceId: 'sub-new', resellerId: 'sub1', status: 'Trial', isLifetime: false,
+      expiresAt: new Date(Date.now() + 60_000), accessTokenHash: 'destination-secret',
+      selectedDomain: 'https://destination.example', customerName: 'Novi uređaj',
+      xtreamConfig: { url: 'https://destination.example', username: 'destination', password: 'destination-pass' }
+    });
+
+    const response = await transferLicenseRoute(createMockReq({
+      requestId: '23232323-2323-4232-8232-232323232323', oldDeviceId: 'sub-old',
+      newDeviceId: 'sub-new', mode: 'license_only'
+    }, 'sub1:subseller:sub1@vopoapp.com'));
+    assert.strictEqual(response.status, 200);
+    const migrated = mockState.licenses.get('sub-new');
+    assert.strictEqual(migrated.expiresAt.getTime(), exactExpiry.getTime());
+    assert.strictEqual(migrated.selectedDomain, 'https://destination.example');
+    assert.strictEqual(migrated.customerName, 'Novi uređaj');
+    assert.strictEqual(migrated.xtreamConfig.username, 'destination');
+    assert.strictEqual(migrated.accessTokenHash, 'destination-secret');
+    assert.strictEqual(migrated.resellerId, 'sub1');
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+  });
+
+  await t.test('reseller ne može prenijeti tuđu licencu ili prepisati tuđi probni uređaj, admin može prenijeti bilo koju', async () => {
+    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    mockState.licenses.set('foreign-old', { resellerId: 'reseller2', status: 'Active', isLifetime: false, expiresAt: expiry });
+    let response = await transferLicenseRoute(createMockReq({
+      requestId: '34343434-3434-4434-8434-343434343434', oldDeviceId: 'foreign-old',
+      newDeviceId: 'foreign-new', mode: 'license_only'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.has('foreign-new'), false);
+
+    mockState.licenses.set('owned-old', { resellerId: 'reseller1', status: 'Active', isLifetime: false, expiresAt: expiry });
+    mockState.licenses.set('foreign-trial', { resellerId: 'reseller2', status: 'Trial', isLifetime: false, expiresAt: expiry });
+    response = await transferLicenseRoute(createMockReq({
+      requestId: '45454545-4545-4454-8454-454545454545', oldDeviceId: 'owned-old',
+      newDeviceId: 'foreign-trial', mode: 'license_only'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.get('owned-old').status, 'Active');
+
+    response = await transferLicenseRoute(createMockReq({
+      requestId: '56565656-5656-4565-8565-565656565656', oldDeviceId: 'foreign-old',
+      newDeviceId: 'admin-new', mode: 'license_only'
+    }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(mockState.licenses.get('foreign-old').status, 'Transferred');
+    assert.strictEqual(mockState.licenses.get('admin-new').resellerId, 'reseller2');
+  });
+
+  await t.test('prijenos je idempotentan te odbija istekle licence i zauzeti novi uređaj', async () => {
+    const request = {
+      requestId: '67676767-6767-4676-8676-676767676767', oldDeviceId: 'idempotent-old',
+      newDeviceId: 'idempotent-new', mode: 'license_only'
+    };
+    mockState.licenses.set('idempotent-old', {
+      resellerId: 'reseller1', status: 'Active', isLifetime: false,
+      expiresAt: new Date(Date.now() + 86_400_000)
+    });
+    let response = await transferLicenseRoute(createMockReq(request, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    response = await transferLicenseRoute(createMockReq(request, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual((await response.json()).idempotent, true);
+    assert.strictEqual(mockState.transactions.size, 1);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+
+    mockState.licenses.set('expired-old', {
+      resellerId: 'reseller1', status: 'Active', isLifetime: false,
+      expiresAt: new Date(Date.now() - 1)
+    });
+    response = await transferLicenseRoute(createMockReq({
+      requestId: '78787878-7878-4787-8787-787878787878', oldDeviceId: 'expired-old',
+      newDeviceId: 'expired-new', mode: 'license_only'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 409);
+
+    mockState.licenses.set('another-old', {
+      resellerId: 'reseller1', status: 'Active', isLifetime: false,
+      expiresAt: new Date(Date.now() + 86_400_000)
+    });
+    mockState.licenses.set('occupied-new', { resellerId: 'reseller1', status: 'Active', isLifetime: true });
+    response = await transferLicenseRoute(createMockReq({
+      requestId: '89898989-8989-4898-8898-898989898989', oldDeviceId: 'another-old',
+      newDeviceId: 'occupied-new', mode: 'license_and_line'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 409);
+    assert.strictEqual(mockState.licenses.get('another-old').status, 'Active');
   });
 
   // Rollback tests

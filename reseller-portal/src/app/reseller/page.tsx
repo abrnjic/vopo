@@ -2,7 +2,7 @@
 
 import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users } from 'lucide-react';
+import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -14,10 +14,11 @@ import ProtectedRoute from '../../components/ProtectedRoute';
 import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 import CreditPricing from '../../components/CreditPricing';
 import SubsellerManager from '../../components/SubsellerManager';
+import LicenseTransferPanel from '../../components/LicenseTransferPanel';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'migration' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -315,6 +316,12 @@ export default function ResellerDashboard() {
         >
           <Users className="w-4 h-4 mr-2" />Subselleri
         </button>}
+        <button
+          onClick={() => setActiveTab('migration')}
+          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'migration' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+        >
+          <ArrowRightLeft className="w-4 h-4 mr-2" />Migracija
+        </button>
         <button 
           onClick={() => setActiveTab('analytics')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'analytics' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -555,6 +562,16 @@ export default function ResellerDashboard() {
       )}
 
       {activeTab === 'diagnostics' && <DiagnosticsPanel />}
+
+      {activeTab === 'migration' && <LicenseTransferPanel onTransferred={(oldId, license) => {
+        const migrated = license as any;
+        const expiresAt = migrated.expiresAt ? new Date(migrated.expiresAt) : null;
+        setRecentLines(previous => [
+          { ...migrated, expiresAt: expiresAt ? { toDate: () => expiresAt } : null },
+          ...previous.filter(line => line.id !== oldId && line.id !== migrated.id),
+        ]);
+        setSelectedLines(previous => previous.filter(id => id !== oldId));
+      }} />}
 
       {activeTab === 'subsellers' && userData?.role === 'reseller' && (
         <SubsellerManager availableDomains={allDomains} parentCredits={credits} onParentCreditsChange={setCredits} />

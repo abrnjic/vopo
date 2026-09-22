@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
       const status = auth.status === 'unauthenticated' || auth.status === 'invalid' ? 401 : auth.status === 'error' ? 500 : 403;
       return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status });
     }
-    if (!['admin', 'reseller'].includes(auth.context.role)) {
+    if (!['admin', 'reseller', 'subseller'].includes(auth.context.role)) {
       return NextResponse.json({ error: 'Pristup odbijen.' }, { status: 403 });
     }
 
     let query: any = adminDb.collection('device_diagnostics');
-    if (auth.context.role === 'reseller') query = query.where('resellerId', '==', auth.context.uid);
+    if (auth.context.role !== 'admin') query = query.where('resellerId', '==', auth.context.uid);
     const snapshot = await query.get();
     const diagnostics = snapshot.docs
       .map((doc: any) => diagnosticsForPortal(doc.id, doc.data() || {}))

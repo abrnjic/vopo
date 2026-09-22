@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
     
     const authContext = auth.context;
-    if (authContext.role !== 'reseller') {
+    if (!['reseller', 'subseller'].includes(authContext.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
       transaction.set(logRef, {
         userId: resellerUid,
         userEmail: authContext.email || '',
-        role: 'reseller',
+        role: authContext.role,
         action: 'CREATE_LICENSE',
         details: `Created ${licenseType} license for device ${safeDeviceId} (${customerName ? customerName.trim() : ''})`,
         timestamp: FieldValue.serverTimestamp()

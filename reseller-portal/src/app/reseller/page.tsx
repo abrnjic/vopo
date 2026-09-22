@@ -2,7 +2,7 @@
 
 import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network } from 'lucide-react';
+import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -13,10 +13,11 @@ import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 import CreditPricing from '../../components/CreditPricing';
+import SubsellerManager from '../../components/SubsellerManager';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'analytics' | 'diagnostics' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -284,7 +285,7 @@ export default function ResellerDashboard() {
   };
 
   return (
-    <ProtectedRoute allowedRoles={['reseller']}>
+    <ProtectedRoute allowedRoles={['reseller', 'subseller']}>
       <AdminLayout>
         <div className="space-y-6">
           <div className="flex justify-between items-center bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
@@ -308,6 +309,12 @@ export default function ResellerDashboard() {
           <CreditCard className="w-4 h-4 mr-2" />
           Upravljanje Linijama
         </button>
+        {userData?.role === 'reseller' && <button
+          onClick={() => setActiveTab('subsellers')}
+          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'subsellers' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
+        >
+          <Users className="w-4 h-4 mr-2" />Subselleri
+        </button>}
         <button 
           onClick={() => setActiveTab('analytics')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'analytics' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -549,14 +556,23 @@ export default function ResellerDashboard() {
 
       {activeTab === 'diagnostics' && <DiagnosticsPanel />}
 
+      {activeTab === 'subsellers' && userData?.role === 'reseller' && (
+        <SubsellerManager availableDomains={allDomains} parentCredits={credits} onParentCreditsChange={setCredits} />
+      )}
+
       {activeTab === 'settings' && (
         <div className="space-y-6">
           <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 max-w-3xl shadow-lg">
             <h2 className="text-xl font-bold mb-6 flex items-center text-white">
               <Settings className="w-5 h-5 mr-2 text-blue-500" />
-              Moje Domene (Portal URL-ovi)
+              {userData?.role === 'subseller' ? 'Dodijeljene domene' : 'Moje Domene (Portal URL-ovi)'}
             </h2>
-            <DomainManager onChange={data => { setAssignedDomains(data.assignedDomains); setCustomDomains(data.customDomains); }} />
+            {userData?.role === 'subseller' ? (
+              <div className="space-y-2">
+                {allDomains.map(domain => <div key={domain} className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-gray-200">{domain}</div>)}
+                {allDomains.length === 0 && <p className="text-gray-400">Glavni reseller još nije dodijelio domene.</p>}
+              </div>
+            ) : <DomainManager onChange={data => { setAssignedDomains(data.assignedDomains); setCustomDomains(data.customDomains); }} />}
           </div>
         </div>
       )}

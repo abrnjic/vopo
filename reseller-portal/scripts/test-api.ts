@@ -17,6 +17,7 @@ import { POST as deviceRegisterRoute } from '../src/app/api/device/register/rout
 import { GET as deviceLicenseRoute } from '../src/app/api/device/license/route';
 import { POST as deviceDiagnosticsRoute } from '../src/app/api/device/diagnostics/route';
 import { GET as portalDiagnosticsRoute } from '../src/app/api/diagnostics/route';
+import { GET as listSubsellersRoute, POST as createSubsellerRoute, PATCH as updateSubsellerRoute } from '../src/app/api/reseller/subsellers/route';
 
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
 
@@ -54,6 +55,8 @@ test('API P0 Tests', async (t) => {
   t.beforeEach(() => {
     resetFallbackCache();
     mockState.users.clear();
+    mockState.authUsers.clear();
+    mockState.settings.clear();
     mockState.licenses.clear();
     mockState.transactions.clear();
     mockState.activity_logs.clear();
@@ -500,6 +503,112 @@ test('API P0 Tests', async (t) => {
       resellerId: 'reseller2'
     }, 'reseller1:reseller:r@test.com'));
     assert.strictEqual(res.status, 400);
+  });
+
+  await t.test('reseller kreira subsellera i početni prijenos kredita je atomski evidentiran', async () => {
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), assignedDomains: ['https://proservers.club', 'https://tvgpm.net'], customDomains: [] });
+    const response = await createSubsellerRoute(createMockReq({
+      email: 'subseller1@vopoapp.com', password: 'Sigurna#921', credits: 4,
+      assignedDomains: ['https://proservers.club']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 201);
+    const payload = await response.json();
+    const child = mockState.users.get(payload.uid);
+    assert.strictEqual(payload.parentCredits, 6);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 6);
+    assert.strictEqual(child.role, 'subseller');
+    assert.strictEqual(child.parentResellerId, 'reseller1');
+    assert.strictEqual(child.credits, 4);
+    assert.deepStrictEqual(child.assignedDomains, ['https://proservers.club']);
+    assert.strictEqual(mockState.transactions.size, 1);
+    assert.strictEqual(mockState.activity_logs.size, 1);
+
+    const list = await listSubsellersRoute(createMockReq({}, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(list.status, 200);
+    const listed = await list.json();
+    assert.strictEqual(listed.subsellers.length, 1);
+    assert.strictEqual(listed.subsellers[0].email, 'subseller1@vopoapp.com');
+  });
+
+  await t.test('kreiranje subsellera odbija prekoračenje balansa i neodobrenu domenu bez ostataka', async () => {
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), assignedDomains: ['https://proservers.club'], customDomains: [] });
+    let response = await createSubsellerRoute(createMockReq({
+      email: 'too-many@vopoapp.com', password: 'Sigurna#921', credits: 11, assignedDomains: []
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 409);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+    assert.strictEqual(mockState.authUsers.size, 0);
+
+    response = await createSubsellerRoute(createMockReq({
+      email: 'foreign-domain@vopoapp.com', password: 'Sigurna#921', credits: 1,
+      assignedDomains: ['https://nije-odobrena.example']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+    assert.strictEqual(mockState.authUsers.size, 0);
+  });
+
+  await t.test('korekcija subseller kredita prenosi i vraća točnu razliku uz logove', async () => {
+    mockState.users.set('sub1', { email: 'sub1@vopoapp.com', role: 'subseller', parentResellerId: 'reseller1', status: 'active', credits: 4, assignedDomains: [] });
+    let response = await updateSubsellerRoute(createMockReq({
+      action: 'adjust_credits', targetUserId: 'sub1', newCredits: 7, reason: 'Dodatna narudžba'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 7);
+    assert.strictEqual(mockState.users.get('sub1').credits, 7);
+
+    response = await updateSubsellerRoute(createMockReq({
+      action: 'adjust_credits', targetUserId: 'sub1', newCredits: 2, reason: 'Ispravak pogrešne dodjele'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 12);
+    assert.strictEqual(mockState.users.get('sub1').credits, 2);
+    assert.strictEqual(mockState.transactions.size, 2);
+    assert.strictEqual(mockState.activity_logs.size, 2);
+  });
+
+  await t.test('reseller upravlja samo vlastitim subsellerom, odobrenim domenama i statusom', async () => {
+    mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), assignedDomains: ['https://proservers.club', 'https://tvgpm.net'], customDomains: [] });
+    mockState.users.set('sub1', { email: 'sub1@vopoapp.com', role: 'subseller', parentResellerId: 'reseller1', status: 'active', credits: 1, assignedDomains: [] });
+    mockState.users.set('foreign-sub', { role: 'subseller', parentResellerId: 'reseller2', status: 'active', credits: 1, assignedDomains: [] });
+    let response = await updateSubsellerRoute(createMockReq({
+      action: 'set_domains', targetUserId: 'sub1', assignedDomains: ['https://tvgpm.net']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.deepStrictEqual(mockState.users.get('sub1').assignedDomains, ['https://tvgpm.net']);
+
+    response = await updateSubsellerRoute(createMockReq({
+      action: 'set_domains', targetUserId: 'sub1', assignedDomains: ['https://foreign.example']
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+
+    response = await updateSubsellerRoute(createMockReq({
+      action: 'set_status', targetUserId: 'sub1', status: 'suspended'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(mockState.users.get('sub1').status, 'suspended');
+    assert.strictEqual(mockState.users.get('sub1').disabled, true);
+
+    response = await updateSubsellerRoute(createMockReq({
+      action: 'adjust_credits', targetUserId: 'foreign-sub', newCredits: 2, reason: 'Nedopušten pokušaj'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 404);
+    assert.strictEqual(mockState.users.get('foreign-sub').credits, 1);
+  });
+
+  await t.test('subseller aktivira vlastitu liniju iz vlastitog balansa', async () => {
+    mockState.users.set('sub1', {
+      email: 'sub1@vopoapp.com', role: 'subseller', parentResellerId: 'reseller1',
+      status: 'active', disabled: false, credits: 3, assignedDomains: ['https://proservers.club'], customDomains: []
+    });
+    const response = await resellerActivateRoute(createMockReq({
+      deviceId: 'sub-device-1', licenseType: '1_year', selectedDomain: 'https://proservers.club',
+      username: 'line-user', password: 'line-password'
+    }, 'sub1:subseller:sub1@vopoapp.com'));
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(mockState.users.get('sub1').credits, 2);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+    assert.strictEqual(mockState.licenses.get('sub-device-1').resellerId, 'sub1');
   });
 
   // Rollback tests

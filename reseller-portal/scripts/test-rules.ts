@@ -29,7 +29,12 @@ test('Firestore Security Rules', async (t) => {
       const db = context.firestore();
       await setDoc(doc(db, 'users', 'admin1'), { role: 'admin', status: 'active' });
       await setDoc(doc(db, 'users', 'reseller1'), { role: 'reseller', status: 'active', credits: 10 });
+      await setDoc(doc(db, 'users', 'subseller1'), { role: 'subseller', status: 'active', parentResellerId: 'reseller1', credits: 3 });
+      await setDoc(doc(db, 'users', 'subseller2'), { role: 'subseller', status: 'active', parentResellerId: 'reseller2', credits: 3 });
       await setDoc(doc(db, 'licenses', 'lic1'), { resellerId: 'reseller1', status: 'Active' });
+      await setDoc(doc(db, 'licenses', 'sub-lic1'), { resellerId: 'subseller1', status: 'Active' });
+      await setDoc(doc(db, 'transactions', 'sub-transfer'), { resellerId: 'reseller1', subsellerId: 'subseller1', type: 'subseller_credit_transfer' });
+      await setDoc(doc(db, 'activity_logs', 'sub-log'), { userId: 'subseller1', action: 'CREATE_LICENSE' });
       await setDoc(doc(db, 'device_diagnostics', 'lic1'), { resellerId: 'reseller1', publicIp: '203.0.113.1' });
     });
   });
@@ -50,6 +55,21 @@ test('Firestore Security Rules', async (t) => {
     const resellerDb = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
     await assertSucceeds(getDoc(doc(resellerDb, 'users', 'reseller1')));
     await assertSucceeds(getDoc(doc(resellerDb, 'licenses', 'lic1')));
+  });
+
+  await t.test('glavni reseller vidi samo vlastite subsellere', async () => {
+    const resellerDb = testEnv.authenticatedContext('reseller1', { role: 'reseller' }).firestore();
+    await assertSucceeds(getDoc(doc(resellerDb, 'users', 'subseller1')));
+    await assertFails(getDoc(doc(resellerDb, 'users', 'subseller2')));
+  });
+
+  await t.test('subseller čita vlastite licence, transakcije i aktivnosti', async () => {
+    const db = testEnv.authenticatedContext('subseller1', { role: 'subseller' }).firestore();
+    await assertSucceeds(getDoc(doc(db, 'users', 'subseller1')));
+    await assertSucceeds(getDoc(doc(db, 'licenses', 'sub-lic1')));
+    await assertSucceeds(getDoc(doc(db, 'transactions', 'sub-transfer')));
+    await assertSucceeds(getDoc(doc(db, 'activity_logs', 'sub-log')));
+    await assertFails(getDoc(doc(db, 'licenses', 'lic1')));
   });
 
   await t.test('vlastiti profil je čitljiv bez role claima', async () => {

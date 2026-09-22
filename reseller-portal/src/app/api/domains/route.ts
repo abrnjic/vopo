@@ -16,7 +16,7 @@ const ChangeSchema = TargetSchema.extend({
 async function authorize(req: NextRequest) {
   const auth = await verifyAuthToken(req);
   if (auth.status !== 'authenticated') return { response: NextResponse.json({ error: auth.error }, { status: auth.status === 'error' ? 500 : ['invalid', 'unauthenticated'].includes(auth.status) ? 401 : 403 }) };
-  if (!['admin', 'reseller'].includes(auth.context.role)) return { response: NextResponse.json({ error: 'Pristup odbijen.' }, { status: 403 }) };
+  if (!['admin', 'reseller', 'subseller'].includes(auth.context.role)) return { response: NextResponse.json({ error: 'Pristup odbijen.' }, { status: 403 }) };
   return { context: auth.context };
 }
 
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     if (auth.context!.role !== 'admin' && uid !== auth.context!.uid) return NextResponse.json({ error: 'Pristup odbijen.' }, { status: 403 });
     const snap = await (catalog ? adminDb.collection('settings').doc('domainCatalog') : adminDb.collection('users').doc(uid)).get();
     if (catalog) return NextResponse.json({ assignedDomains: snap.data()?.assignedDomains || [], customDomains: [] });
-    if (!snap.exists || snap.data().role !== 'reseller') return NextResponse.json({ error: 'Reseller ne postoji.' }, { status: 404 });
+    if (!snap.exists || !['reseller', 'subseller'].includes(snap.data().role)) return NextResponse.json({ error: 'Prodajni račun ne postoji.' }, { status: 404 });
     return NextResponse.json({ assignedDomains: snap.data().assignedDomains || [], customDomains: snap.data().customDomains || [] });
   } catch { return NextResponse.json({ error: 'Dohvat domena nije uspio.' }, { status: 500 }); }
 }
@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
   try {
     const auth = await authorize(req);
     if (auth.response) return auth.response;
+    if (auth.context!.role === 'subseller') return NextResponse.json({ error: 'Domene subselleru dodjeljuje glavni reseller.' }, { status: 403 });
     const parsed = ChangeSchema.safeParse(await req.json());
     if (!parsed.success) return NextResponse.json({ error: 'Provjerite HTTP/HTTPS adresu domene i novu adresu pri uređivanju.' }, { status: 400 });
     const { action, source, domain, replacement } = parsed.data;
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     const result = await adminDb.runTransaction(async (tx: any) => {
       const ref = catalog ? adminDb.collection('settings').doc('domainCatalog') : adminDb.collection('users').doc(uid);
       const snap = await tx.get(ref);
-      if (!catalog && (!snap.exists || snap.data().role !== 'reseller')) return { error: 'Reseller ne postoji.', status: 404 };
+      if (!catalog && (!snap.exists || !['reseller', 'subseller'].includes(snap.data().role))) return { error: 'Prodajni račun ne postoji.', status: 404 };
       const data = snap.data() || {};
       const assignedDomains = DomainsSchema.parse(data.assignedDomains || []);
       const customDomains = DomainsSchema.parse(data.customDomains || []);

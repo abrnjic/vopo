@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       const status = auth.status === 'error' ? 500 : ['invalid', 'unauthenticated'].includes(auth.status) ? 401 : 403;
       return NextResponse.json({ error: auth.error || 'Unauthorized' }, { status });
     }
-    if (auth.context.role !== 'reseller') {
+    if (!['reseller', 'subseller'].includes(auth.context.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       tx.set(adminDb.collection('activity_logs').doc(), {
         userId: resellerUid,
         userEmail: auth.context.email || '',
-        role: 'reseller',
+        role: auth.context.role,
         action: 'BULK_DELETE',
         details: `Deleted ${licenseIds.length} lines permanently`,
         timestamp: FieldValue.serverTimestamp()

@@ -9,7 +9,8 @@ import { auth, db } from '../firebase';
 interface UserData {
   uid: string;
   email: string;
-  role: 'admin' | 'reseller';
+  role: 'admin' | 'reseller' | 'subseller';
+  parentResellerId?: string;
   credits: number;
   assignedDomains: string[];
   customDomains: string[];

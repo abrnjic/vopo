@@ -17,13 +17,19 @@ service cloud.firestore {
     function isReseller() {
       return hasActiveRole('reseller');
     }
+    function isSubseller() {
+      return hasActiveRole('subseller');
+    }
+    function isPortalSeller() {
+      return isReseller() || isSubseller();
+    }
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
     // USERS kolekcija
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin() || (isReseller() && resource.data.parentId == request.auth.uid);
+      allow read: if isOwner(userId) || isAdmin() || (isReseller() && resource.data.parentResellerId == request.auth.uid);
       allow create: if false; // Only API
       allow delete: if false; // Only API
       // Dopušteno ažuriranje samo određenih sigurnih polja klijentu:
@@ -41,7 +47,7 @@ service cloud.firestore {
     // LICENSES kolekcija
     match /licenses/{licenseId} {
       // Samo admini i vlasnici (reselleri) mogu čitati
-      allow read: if isAdmin() || (isReseller() && resource.data.resellerId == request.auth.uid);
+      allow read: if isAdmin() || (isPortalSeller() && resource.data.resellerId == request.auth.uid);
       allow create: if false;
       allow update: if false;
       allow delete: if false;
@@ -59,7 +65,7 @@ service cloud.firestore {
 
     // TRANSACTIONS kolekcija
     match /transactions/{transactionId} {
-      allow read: if isAdmin() || (isReseller() && resource.data.resellerId == request.auth.uid);
+      allow read: if isAdmin() || (isPortalSeller() && (resource.data.resellerId == request.auth.uid || resource.data.subsellerId == request.auth.uid));
       allow create: if false;
       allow update: if false;
       allow delete: if false;
@@ -75,7 +81,7 @@ service cloud.firestore {
 
     // ACTIVITY LOGS kolekcija
     match /activity_logs/{logId} {
-      allow read: if isAdmin() || (isReseller() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (isPortalSeller() && resource.data.userId == request.auth.uid);
       allow create: if false;
       allow update: if false;
       allow delete: if false;

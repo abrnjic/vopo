@@ -25,6 +25,7 @@ import { GET as securityLogsRoute } from '../src/app/api/security/logs/route';
 import { checkRateLimit, resetFallbackCache } from '../src/lib/rateLimit';
 import { hashDeviceToken } from '../src/lib/deviceLicense';
 import { linePinMatches } from '../src/lib/lineSecurity';
+import { loginErrorMessage, normalizeLoginIdentifier } from '../src/lib/loginIdentifier';
 
 const createMockReq = (body: any, token?: string, ip?: string) => {
   return {
@@ -91,6 +92,13 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(res.status, 201);
     const lic = mockState.licenses.get('dev1');
     assert.strictEqual(lic.status, 'Trial');
+  });
+
+  await t.test('reseller se prijavljuje korisničkim imenom, a admin punim emailom', () => {
+    assert.strictEqual(normalizeLoginIdentifier('vopo_test1'), 'vopo_test1@vopoapp.com');
+    assert.strictEqual(normalizeLoginIdentifier(' Admin@VopoApp.com '), 'admin@vopoapp.com');
+    assert.throws(() => normalizeLoginIdentifier('loše ime'));
+    assert.strictEqual(loginErrorMessage({ code: 'auth/invalid-credential' }), 'Korisničko ime ili lozinka nisu ispravni.');
   });
 
   await t.test('uređaj registrira tajni token prije aktivacije i jedini čita licencu', async () => {

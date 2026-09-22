@@ -7,9 +7,10 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../firebase';
 import { motion } from 'framer-motion';
+import { loginErrorMessage, normalizeLoginIdentifier } from '../../lib/loginIdentifier';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +22,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const loginEmail = normalizeLoginIdentifier(identifier);
+      const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
       const user = userCredential.user;
 
       // Fetch user role to determine routing
@@ -37,9 +39,9 @@ export default function Login() {
         setError('Korisnički račun ne postoji u bazi.');
         await auth.signOut();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(`Greška: ${err.message || 'Nepoznata greška'}`);
+      setError(loginErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -110,18 +112,21 @@ export default function Login() {
               )}
 
               <div className="space-y-1">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-400 ml-1">
-                  Email adresa
+                <label htmlFor="identifier" className="block text-sm font-medium text-gray-400 ml-1">
+                  Korisničko ime ili email
                 </label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="identifier"
+                  name="identifier"
+                  type="text"
                   required
-                  placeholder="admin@vopoapp.com"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoComplete="username"
+                  placeholder="vopo_test1 ili admin@vopoapp.com"
                   className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl shadow-inner placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white transition-all"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   disabled={loading}
                 />
               </div>

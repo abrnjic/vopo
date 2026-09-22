@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import AdminLayout from '../../components/AdminLayout';
 import ProtectedRoute from '../../components/ProtectedRoute';
 import DiagnosticsPanel from '../../components/DiagnosticsPanel';
+import CreditPricing from '../../components/CreditPricing';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
@@ -296,6 +297,8 @@ export default function ResellerDashboard() {
           <div className="text-xs uppercase tracking-wider text-gray-400 font-bold mt-1">Dostupnih Kredita</div>
         </div>
       </div>
+
+      <CreditPricing />
 
       <div className="flex space-x-2 border-b border-gray-700 pb-px overflow-x-auto">
         <button 

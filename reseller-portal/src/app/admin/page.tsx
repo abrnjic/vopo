@@ -16,6 +16,7 @@ import DomainManager from '../../components/DomainManager';
 import { hr } from 'date-fns/locale';
 import { apkPathname, type ApkChannel } from '../../lib/apkChannel';
 import DiagnosticsPanel from '../../components/DiagnosticsPanel';
+import CreditPricing from '../../components/CreditPricing';
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -476,6 +477,8 @@ export default function AdminDashboard() {
               </button>
             </div>
           </div>
+
+          <CreditPricing />
 
           {/* Home Tab */}
           {activeTab === 'home' && (

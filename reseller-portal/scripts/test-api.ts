@@ -65,8 +65,14 @@ test('API P0 Tests', async (t) => {
   await t.test('uređaj registrira tajni token prije aktivacije i jedini čita licencu', async () => {
     const registration = await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-001', deviceToken: DEVICE_TOKEN }) as any);
     assert.strictEqual(registration.status, 200);
+    const registeredLicense = mockState.licenses.get('SEC-URE-001');
+    assert.strictEqual(registeredLicense.status, 'Trial');
+    assert.ok(registeredLicense.trialStartedAt);
+    assert.ok(registeredLicense.expiresAt instanceof Date);
+    const originalExpiry = registeredLicense.expiresAt.getTime();
 
     await connectRoute(createMockReq({ deviceId: 'SEC-URE-001', portalUrl: 'https://tv.example', username: 'u', password: 'p' }));
+    assert.strictEqual(mockState.licenses.get('SEC-URE-001').expiresAt.getTime(), originalExpiry);
     const response = await deviceLicenseRoute(createDeviceGet('SEC-URE-001'));
     assert.strictEqual(response.status, 200);
     const body = await response.json();
@@ -75,6 +81,17 @@ test('API P0 Tests', async (t) => {
 
     const denied = await deviceLicenseRoute(createDeviceGet('SEC-URE-001', OTHER_DEVICE_TOKEN));
     assert.strictEqual(denied.status, 401);
+  });
+
+  await t.test('ponovna registracija iste instalacije ne obnavlja trial', async () => {
+    const request = createMockReq({ deviceId: 'SEC-URE-RETRY', deviceToken: DEVICE_TOKEN }) as any;
+    await deviceRegisterRoute(request);
+    const firstExpiry = mockState.licenses.get('SEC-URE-RETRY').expiresAt.getTime();
+    const firstStart = mockState.licenses.get('SEC-URE-RETRY').trialStartedAt;
+    await deviceRegisterRoute(createMockReq({ deviceId: 'SEC-URE-RETRY', deviceToken: DEVICE_TOKEN }) as any);
+    const license = mockState.licenses.get('SEC-URE-RETRY');
+    assert.strictEqual(license.expiresAt.getTime(), firstExpiry);
+    assert.strictEqual(license.trialStartedAt, firstStart);
   });
 
   await t.test('drugi token ne može preuzeti već registrirani uređaj', async () => {
@@ -191,6 +208,7 @@ test('API P0 Tests', async (t) => {
     const req = createMockReq({ deviceId: 'devx', licenseType: '1_year' }, 'reseller1:reseller:r@test.com');
     await resellerActivateRoute(req);
     const lic = mockState.licenses.get('devx');
+    assert.strictEqual(mockState.users.get('reseller1').credits, 9);
     assert.ok(lic.expiresAt);
     const msInYear = 365 * 24 * 60 * 60 * 1000;
     const diff = lic.expiresAt.getTime() - Date.now();
@@ -220,6 +238,19 @@ test('API P0 Tests', async (t) => {
     const lic = mockState.licenses.get('dev_life');
     assert.strictEqual(lic.isLifetime, true);
     assert.strictEqual(lic.expiresAt, null);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 8);
+  });
+
+  await t.test('aktivna trajna licenca ne može se skratiti na godinu dana', async () => {
+    mockState.licenses.set('dev_lifetime_no_downgrade', {
+      resellerId: 'reseller1', status: 'Active', isLifetime: true, expiresAt: null
+    });
+    const res = await resellerActivateRoute(createMockReq({
+      deviceId: 'dev_lifetime_no_downgrade', licenseType: '1_year'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 409);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+    assert.strictEqual(mockState.licenses.get('dev_lifetime_no_downgrade').isLifetime, true);
   });
 
   await t.test('reseller trial dobiva serverski početak i istek za tri dana', async () => {
@@ -239,7 +270,27 @@ test('API P0 Tests', async (t) => {
     const res = await connectRoute(req);
     assert.strictEqual(res.status, 201);
     const body = await res.json();
-    assert.strictEqual(body.message, 'Trial already exists'); // Success but no overwrite
+    assert.strictEqual(body.message, 'Trial already exists');
+  });
+
+  await t.test('reseller ne može obnoviti postojeći ili istekli trial', async () => {
+    const expiredAt = new Date(Date.now() - 1000);
+    mockState.licenses.set('dev_trial_no_reset', {
+      resellerId: 'self_registered', status: 'Trial', isLifetime: false,
+      trialStartedAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), expiresAt: expiredAt
+    });
+    const res = await resellerActivateRoute(createMockReq({
+      deviceId: 'dev_trial_no_reset', licenseType: 'trial'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.licenses.get('dev_trial_no_reset').expiresAt, expiredAt);
+    assert.strictEqual(mockState.users.get('reseller1').credits, 10);
+  });
+
+  await t.test('/api/connect odbija nepotpune pristupne podatke', async () => {
+    const res = await connectRoute(createMockReq({ deviceId: 'partial-config', portalUrl: 'https://tv.example' }));
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(mockState.licenses.has('partial-config'), false);
   });
 
   await t.test('/api/log nepoznata akciju', async () => {

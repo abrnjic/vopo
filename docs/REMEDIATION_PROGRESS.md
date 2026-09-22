@@ -124,3 +124,28 @@ Provjere nakon petog paketa:
 - Portal lint: **0 grešaka, 2 postojeća upozorenja**.
 - Next.js produkcijski build i TypeScript: prolaze; build uključuje novu
   `/api/reseller/bulk-delete` rutu.
+
+## Šesti paket — aktivacija aplikacije i trodnevni trial
+
+Nova instalacija pri prvom pokretanju registrira uređaj sigurnim uređajskim
+tokenom i server odmah pokreće jedinstveni trodnevni trial. Ponovna registracija,
+povezivanje Xtream podataka i resellerov ponovni odabir triala ne mijenjaju
+izvorni rok. Trial zato nije moguće beskonačno obnavljati bez kredita.
+
+Plaćena aktivacija ostaje serverska i transakcijska: godišnja licenca naplaćuje
+1 kredit, trajna 2 kredita. Postojeća trajna licenca ne može se slučajno
+zamijeniti godišnjom. Android provjerava licencu svakih pet sekundi i sada se
+nakon potvrđenog isteka vraća na aktivacijski ekran čak i kada je aplikacija
+ostala otvorena.
+
+Provjere:
+
+- Portal API testovi: **47 prolaze**.
+- APK distribucijski testovi: **32 prolaze**.
+- Domenski testovi: **13 prolaze**.
+- Portal ukupno: **92 testa**, bez neuspjeha.
+- Android app testovi: **207 prolaze**, bez neuspjeha.
+- Android data testovi: **553 prolaze**, bez neuspjeha.
+- Android debug kompilacija, portal lint i Next.js produkcijski build prolaze.
+- Stvarna nova instalacija, trodnevni protok vremena i plaćena aktivacija na
+  fizičkom uređaju ostaju završni produkcijski dokaz.

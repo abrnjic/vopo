@@ -71,22 +71,32 @@ export async function POST(req: NextRequest) {
       const licenseSnap = await transaction.get(licenseRef);
       const existingLicenseData = licenseSnap.exists ? licenseSnap.data() : null;
 
-      // Ownership check: If license exists and is not Trial, make sure it's owned by this reseller
       if (licenseSnap.exists) {
         const licenseData = existingLicenseData;
         if (licenseData?.status === 'Active' || licenseData?.status === 'Expired') {
           if (licenseData.resellerId !== resellerUid) {
             return { error: 'This device is already licensed by another reseller.', status: 403 };
           }
-          
-          // Idempotency check: if it was activated very recently (e.g. within last 5 minutes)
-          // we treat this as a duplicate request and don't charge again or extend.
-          if (licenseData.status === 'Active' && licenseData.updatedAt) {
+
+          if (licenseData.status === 'Active' && licenseData.isLifetime === true) {
+            if (licenseType === 'lifetime') {
+              return { success: true, message: 'Lifetime license is already active.' };
+            }
+            return { error: 'Trajna licenca ne može se zamijeniti kraćom licencom.', status: 409 };
+          }
+
+          const samePaidType = licenseData.isLifetime === true
+            ? licenseType === 'lifetime'
+            : licenseType === '1_year';
+          if (licenseData.status === 'Active' && samePaidType && licenseData.updatedAt) {
             const updatedMs = licenseData.updatedAt.toMillis ? licenseData.updatedAt.toMillis() : Date.now();
             if (Date.now() - updatedMs < 5 * 60 * 1000) {
               return { success: true, message: 'Already activated recently.' };
             }
           }
+        }
+        if (licenseData?.status === 'Trial' && licenseType === 'trial') {
+          return { success: true, message: 'Trial already exists.' };
         }
       }
       

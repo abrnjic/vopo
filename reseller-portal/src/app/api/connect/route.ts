@@ -22,6 +22,12 @@ export async function POST(req: NextRequest) {
 
     const { deviceId, portalUrl, username, password } = parsed.data;
     const safeDeviceId = deviceId.trim();
+    const configValues = [portalUrl, username, password];
+    const hasAnyConfig = configValues.some(value => Boolean(value?.trim()));
+    const hasCompleteConfig = configValues.every(value => Boolean(value?.trim()));
+    if (hasAnyConfig && !hasCompleteConfig) {
+      return NextResponse.json({ error: 'Portal URL, username and password must be provided together.' }, { status: 400 });
+    }
 
     // 1. IP Rate Limiting
     const ip = req.headers.get('x-real-ip') || req.headers.get('x-vercel-forwarded-for') || req.headers.get('x-forwarded-for') || 'unknown';
@@ -58,7 +64,21 @@ export async function POST(req: NextRequest) {
           return { error: 'Ovaj uređaj već ima aktivnu ili isteklu licencu.', status: 409 };
         }
         if (data?.status === 'Trial') {
-          return { success: true, message: 'Trial already exists' };
+          if (hasCompleteConfig) {
+            transaction.set(licenseRef, {
+              xtreamConfig: {
+                url: portalUrl!.trim(),
+                username: username!.trim(),
+                password: password!.trim(),
+              },
+              selectedDomain: portalUrl!.trim(),
+              updatedAt: FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+          return {
+            success: true,
+            message: hasCompleteConfig ? 'Trial already exists; configuration updated' : 'Trial already exists'
+          };
         }
       }
 

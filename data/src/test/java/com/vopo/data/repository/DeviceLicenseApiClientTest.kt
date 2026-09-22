@@ -51,6 +51,21 @@ class DeviceLicenseApiClientTest {
         assertThat(api.getLicense("ABC-123-XYZ", token)).isEqualTo(LicenseStatus.Expired)
     }
 
+    @Test
+    fun trialResponse_preservesServerDaysRemainingAndConfiguration() {
+        val api = client(
+            mutableListOf(),
+            ArrayDeque(listOf(StubResponse(
+                200,
+                """{"status":"trial","daysRemaining":3,"config":{"url":"https://tv.example","username":"u","password":"p"}}"""
+            )))
+        )
+
+        assertThat(api.getLicense("ABC-123-XYZ", token)).isEqualTo(
+            LicenseStatus.Trial(3, com.vopo.domain.model.RemoteProviderConfig("https://tv.example", "u", "p"))
+        )
+    }
+
     private fun client(requests: MutableList<Request>, responses: ArrayDeque<StubResponse>): DeviceLicenseApiClient {
         val interceptor = Interceptor { chain ->
             requests += chain.request()

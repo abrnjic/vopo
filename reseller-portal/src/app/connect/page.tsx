@@ -54,7 +54,7 @@ export default function ConnectPage() {
         <CheckCircle className="w-16 h-16 text-green-500 mb-4" />
         <h1 className="text-3xl font-bold mb-2">Linija uspješno poslana!</h1>
         <p className="text-gray-400 text-center max-w-md">
-          Vaša linija je poslana na uređaj <span className="font-bold text-white">{deviceId}</span>. Dobili ste 3 dana Trial perioda. Molimo ponovno pokrenite VOPO aplikaciju na vašem televizoru.
+          Vaša linija je poslana na uređaj <span className="font-bold text-white">{deviceId}</span>. Probno razdoblje traje 3 dana od prve registracije aplikacije. Molimo ponovno pokrenite VOPO aplikaciju na vašem televizoru.
         </p>
         <button
           onClick={() => {
@@ -84,7 +84,7 @@ export default function ConnectPage() {
           Aktivacija Uređaja
         </h2>
         <p className="mt-2 text-center text-sm text-gray-400">
-          Unesite Device ID s vašeg televizora za besplatni 3-dnevni Trial
+          Unesite Device ID s televizora kako biste povezali listu s probnim razdobljem
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export default function ConnectPage() {
 
             <div className="flex items-center text-xs text-gray-400 bg-gray-900/50 p-3 rounded-lg border border-gray-700">
               <Shield className="w-4 h-4 mr-2 text-green-500 flex-shrink-0" />
-              Slanjem forme aktivirate 3 dana probnog (Trial) perioda.
+              Slanjem forme povezujete listu s postojećim trodnevnim probnim razdobljem uređaja.
             </div>
 
             <div>
@@ -191,7 +191,7 @@ export default function ConnectPage() {
                 ) : (
                   <>
                     <Upload className="w-5 h-5 mr-2" />
-                    Započni Trial i Dodaj Liniju
+                    Poveži Liniju s Uređajem
                   </>
                 )}
               </button>

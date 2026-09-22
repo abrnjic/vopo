@@ -16,7 +16,7 @@ export default function TermsOfService() {
             <h2 className="text-xl font-semibold text-white mt-6">1. Korištenje Aplikacije</h2>
             <p>VOPO aplikacija služi isključivo kao media player i ne sadrži, ne pruža, niti prodaje ikakav video sadržaj ili IPTV liste (m3u, Xtream, i sl.). Korisnik je isključivo odgovoran za sav sadržaj koji reproducira putem naše aplikacije.</p>
             <h2 className="text-xl font-semibold text-white mt-6">2. Probni Period i Licence</h2>
-            <p>Pri unosu Device ID-a automatski se odobrava 3 dana besplatnog probnog (trial) perioda. Nakon isteka, daljnje korištenje zahtijeva aktivaciju pune licence.</p>
+            <p>Pri prvoj registraciji nove instalacije automatski se odobrava 3 dana besplatnog probnog (trial) perioda. Povezivanje liste ili ponovni unos Device ID-a ne produžuje taj rok. Nakon isteka, daljnje korištenje zahtijeva aktivaciju pune licence.</p>
             <h2 className="text-xl font-semibold text-white mt-6">3. Odricanje od Odgovornosti</h2>
             <p>VOPO se odriče svake odgovornosti vezane uz autorska prava i kvalitetu streaminga jer ne upravlja niti pruža ikakav sadržaj na poslužiteljima.</p>
             <p className="mt-8 text-sm text-gray-500">Zadnja izmjena: Srpanj 2026.</p>

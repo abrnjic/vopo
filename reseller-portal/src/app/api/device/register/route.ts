@@ -22,24 +22,32 @@ export async function POST(req: NextRequest) {
 
     const ref = adminDb.collection('licenses').doc(deviceId);
     const accessTokenHash = hashDeviceToken(deviceToken);
+    const trialExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
     const result = await adminDb.runTransaction(async (transaction: any) => {
       const snapshot = await transaction.get(ref);
       const existing = snapshot.exists ? snapshot.data() : null;
       if (existing?.accessTokenHash && existing.accessTokenHash !== accessTokenHash) {
         return { conflict: true };
       }
-      transaction.set(ref, {
+      const shouldStartTrial = !existing?.status || String(existing.status).toLowerCase() === 'unregistered';
+      const registration: Record<string, unknown> = {
         deviceId,
         accessTokenHash,
-        status: existing?.status || 'Unregistered',
         createdAt: existing?.createdAt || FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
-      }, { merge: true });
-      return { conflict: false };
+      };
+      if (shouldStartTrial) {
+        registration.status = 'Trial';
+        registration.trialStartedAt = FieldValue.serverTimestamp();
+        registration.expiresAt = trialExpiresAt;
+        registration.isLifetime = false;
+      }
+      transaction.set(ref, registration, { merge: true });
+      return { conflict: false, status: shouldStartTrial ? 'trial' : String(existing.status).toLowerCase() };
     });
 
     if (result.conflict) return NextResponse.json({ error: 'Device is already registered.' }, { status: 409 });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, status: result.status });
   } catch (error: any) {
     if (error?.message === '503') return NextResponse.json({ error: 'Service Unavailable' }, { status: 503, headers: { 'Retry-After': '30' } });
     console.error('API /device/register error:', error);

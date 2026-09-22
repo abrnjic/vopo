@@ -28,6 +28,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 import javax.inject.Inject
 import com.vopo.data.preferences.PreferencesRepository
+import com.vopo.domain.repository.LicenseRepository
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -72,6 +73,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var preferencesRepository: PreferencesRepository
+
+    @Inject
+    lateinit var licenseRepository: LicenseRepository
 
     @Inject
     lateinit var watchNextManager: WatchNextManager

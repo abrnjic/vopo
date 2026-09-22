@@ -4,6 +4,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.produceState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +37,7 @@ import com.vopo.app.MainActivity
 import com.vopo.domain.model.AppLandingDestination
 import com.vopo.domain.model.AppTopLevelDestination
 import com.vopo.domain.model.MovieDetailPresentationHint
+import com.vopo.domain.model.LicenseStatus
 import com.vopo.domain.model.Series
 import com.vopo.domain.model.SeriesDetailPresentationHint
 import java.io.Serializable
@@ -214,6 +216,9 @@ object Routes {
     fun parentalControlGroups(providerId: Long) = "parental_control_groups/$providerId"
 }
 
+internal fun shouldReturnToLicenseScreen(status: LicenseStatus, currentRoute: String?): Boolean =
+    status is LicenseStatus.Expired && currentRoute != Routes.WELCOME
+
 /** Accepts app-supported media schemes while still rejecting obviously unsafe ones. */
 private fun isStreamUrlSafe(url: String?): Boolean {
     if (url.isNullOrBlank()) return false
@@ -327,6 +332,10 @@ internal fun AppTopLevelDestination.toAppRoute(): String = when (this) {
 fun AppNavigation(mainActivity: MainActivity) {
     val navController = rememberNavController()
     val currentBackStackEntry = navController.currentBackStackEntryAsState().value
+    val appLicenseStatus = produceState<LicenseStatus>(LicenseStatus.Loading, mainActivity.licenseRepository) {
+        mainActivity.licenseRepository.generateAndRegisterDeviceIdIfNeeded()
+        mainActivity.licenseRepository.getLicenseStatus().collect { value = it }
+    }.value
     val externalNavigationRequest = mainActivity.externalNavigationRequestFlow.collectAsStateWithLifecycle().value
     val topLevelDestinations = mainActivity.preferencesRepository.appTopLevelDestinations
         .collectAsStateWithLifecycle(initialValue = AppTopLevelDestination.defaultOrder)
@@ -338,6 +347,16 @@ fun AppNavigation(mainActivity: MainActivity) {
         preferred = appLandingDestination,
         destinations = topLevelDestinations
     ).toAppRoute()
+
+    LaunchedEffect(appLicenseStatus, currentBackStackEntry) {
+        val currentRoute = currentBackStackEntry?.destination?.route ?: return@LaunchedEffect
+        if (shouldReturnToLicenseScreen(appLicenseStatus, currentRoute)) {
+            navController.navigate(Routes.WELCOME) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+    }
 
     LaunchedEffect(externalNavigationRequest, currentBackStackEntry) {
         val entry = currentBackStackEntry ?: return@LaunchedEffect

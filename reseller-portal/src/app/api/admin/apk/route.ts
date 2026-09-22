@@ -26,6 +26,8 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   // Validiraj ekstenziju, versionName, versionCode
   const payload = JSON.parse(clientPayload || '{}');
   const { versionName, versionCode, checksum } = payload;
+  const minimumVersionCode = String(payload.minimumVersionCode || versionCode);
+  const forceUpdate = payload.forceUpdate === true;
   const channel = parseApkChannel(payload.channel);
 
   if (!versionName || !versionCode || !checksum) {
@@ -45,6 +47,9 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
   const vCodeNum = parseInt(versionCode, 10);
   if (vCodeNum > Number.MAX_SAFE_INTEGER) {
     throw new Error('versionCode exceeds maximum safe integer.');
+  }
+  if (!/^[1-9]\d*$/.test(minimumVersionCode) || parseInt(minimumVersionCode, 10) > vCodeNum) {
+    throw new Error('minimumVersionCode mora biti pozitivan broj koji nije veći od objavljene verzije.');
   }
 
   if (!/^[a-fA-F0-9]{64}$/.test(checksum)) {
@@ -77,6 +82,8 @@ export const onBeforeGenerateToken = async (pathname: string, clientPayload: str
       versionName: safeVersionName,
       versionCode: vCodeNum.toString(),
       checksum: safeChecksum,
+      minimumVersionCode,
+      forceUpdate,
       channel,
       uid: authResult.context.uid,
       email: authResult.context.email
@@ -88,7 +95,7 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
   try {
     if (!tokenPayload) throw new Error('Missing tokenPayload');
     const parsedTokenPayload = JSON.parse(tokenPayload);
-    const { versionName, versionCode, checksum, uid, email } = parsedTokenPayload;
+    const { versionName, versionCode, checksum, minimumVersionCode, forceUpdate, uid, email } = parsedTokenPayload;
     const channel = parseApkChannel(parsedTokenPayload.channel);
 
     if (!validateBlobUrl(blob.url, versionName, versionCode, channel)) {
@@ -173,6 +180,8 @@ export const onUploadCompleted = async ({ blob, tokenPayload }: any) => {
          size: byteCount,
          latestUrl: blob.url,
          updatedAt: new Date().toISOString(),
+         minimumVersionCode: Number(minimumVersionCode || versionCode),
+         forceUpdate: forceUpdate === true,
        };
 
        transaction.set(metadataRef, metadata);

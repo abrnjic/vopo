@@ -23,6 +23,11 @@ import com.vopo.app.tv.LauncherRecommendationsManager
 import com.vopo.app.tv.WatchNextManager
 import com.vopo.app.tvinput.TvInputChannelSyncManager
 import com.vopo.app.ui.theme.VopoTheme
+import com.vopo.app.update.ForcedUpdateScreen
+import com.vopo.app.update.GitHubReleaseChecker
+import com.vopo.app.update.GitHubReleaseInfo
+import com.vopo.app.update.requiresForcedUpdate
+import com.vopo.domain.model.Result
 import com.vopo.app.ui.time.LocalAppTimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -89,6 +94,11 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var castManager: CastManager
 
+    @Inject
+    lateinit var gitHubReleaseChecker: GitHubReleaseChecker
+
+    private val requiredAppUpdate = MutableStateFlow<GitHubReleaseInfo?>(null)
+
     private val _pictureInPictureModeFlow = MutableStateFlow(false)
     val pictureInPictureModeFlow: StateFlow<Boolean> = _pictureInPictureModeFlow.asStateFlow()
 
@@ -122,10 +132,20 @@ class MainActivity : ComponentActivity() {
                 tvInputChannelSyncManager.refreshTvInputCatalog()
             }
         }
+        lifecycleScope.launch {
+            when (val result = gitHubReleaseChecker.fetchLatestRelease()) {
+                is Result.Success -> {
+                    val release = result.data
+                    if (requiresForcedUpdate(BuildConfig.VERSION_CODE, release)) requiredAppUpdate.value = release
+                }
+                else -> Unit
+            }
+        }
         setContent {
             val appLanguage by preferencesRepository.appLanguage.collectAsState(initial = "system")
             val appTimeFormat by preferencesRepository.appTimeFormat.collectAsState(initial = com.vopo.domain.model.AppTimeFormat.SYSTEM)
             val currentContext = LocalContext.current
+            val forcedUpdate by requiredAppUpdate.collectAsState()
             
             val configuration = remember(appLanguage) {
                 val locale = resolveAppLocale(
@@ -167,7 +187,7 @@ class MainActivity : ComponentActivity() {
                 LocalAppTimeFormat provides appTimeFormat
             ) {
                 VopoTheme {
-                    AppNavigation(mainActivity = this@MainActivity)
+                    if (forcedUpdate != null) ForcedUpdateScreen(forcedUpdate!!) else AppNavigation(mainActivity = this@MainActivity)
                 }
             }
         }

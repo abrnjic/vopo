@@ -33,6 +33,8 @@ class GitHubReleaseCheckerTest {
                                 "versionCode":"17",
                                 "checksum":"${"a".repeat(64)}",
                                 "latestUrl":"https://blob.example/apk.apk",
+                                "minimumVersionCode":15,
+                                "forceUpdate":true,
                                 "updatedAt":"2026-09-21T10:00:00Z"
                             }""".trimIndent().toResponseBody("application/json".toMediaType())
                         )
@@ -51,6 +53,17 @@ class GitHubReleaseCheckerTest {
         assertThat(release.downloadUrl).isEqualTo("https://www.vopoapp.com/download")
         assertThat(release.sha256).isEqualTo("a".repeat(64))
         assertThat(release.publishedAt).isEqualTo("2026-09-21T10:00:00Z")
+        assertThat(release.minimumVersionCode).isEqualTo(15)
+        assertThat(release.forceUpdate).isTrue()
+    }
+
+    @Test
+    fun minimumVersionAndForcedLatestBlockOnlyOlderBuilds() {
+        val base = GitHubReleaseInfo("2.0", 20, "https://www.vopoapp.com/download", "https://www.vopoapp.com/download", "a".repeat(64), "", null, minimumVersionCode = 15)
+        assertThat(requiresForcedUpdate(14, base)).isTrue()
+        assertThat(requiresForcedUpdate(15, base)).isFalse()
+        assertThat(requiresForcedUpdate(19, base.copy(forceUpdate = true))).isTrue()
+        assertThat(requiresForcedUpdate(20, base.copy(forceUpdate = true))).isFalse()
     }
 
     @Test

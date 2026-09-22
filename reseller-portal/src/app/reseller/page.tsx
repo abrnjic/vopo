@@ -2,7 +2,7 @@
 
 import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users, ArrowRightLeft, ShieldAlert } from 'lucide-react';
+import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network, Users, ArrowRightLeft, ShieldAlert, Headphones } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
@@ -16,10 +16,13 @@ import CreditPricing from '../../components/CreditPricing';
 import SubsellerManager from '../../components/SubsellerManager';
 import LicenseTransferPanel from '../../components/LicenseTransferPanel';
 import SecurityPanel from '../../components/SecurityPanel';
+import LineDirectoryPanel from '../../components/LineDirectoryPanel';
+import ReportsPanel from '../../components/ReportsPanel';
+import SupportPanel from '../../components/SupportPanel';
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'subsellers' | 'migration' | 'analytics' | 'diagnostics' | 'security' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<'activate' | 'lines' | 'subsellers' | 'migration' | 'analytics' | 'reports' | 'support' | 'diagnostics' | 'security' | 'logs' | 'settings'>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -320,6 +323,7 @@ export default function ResellerDashboard() {
         >
           <Users className="w-4 h-4 mr-2" />Subselleri
         </button>}
+        <button onClick={() => setActiveTab('lines')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'lines' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><List className="w-4 h-4 mr-2" />Linije</button>
         <button
           onClick={() => setActiveTab('migration')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'migration' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -349,6 +353,8 @@ export default function ResellerDashboard() {
         <button onClick={() => setActiveTab('security')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'security' ? 'border-red-500 text-red-300' : 'border-transparent text-gray-400 hover:text-white'}`}>
           <ShieldAlert className="w-4 h-4 mr-2" /> Sigurnost
         </button>
+        <button onClick={() => setActiveTab('reports')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'reports' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><BarChart2 className="w-4 h-4 mr-2" />Izvještaji</button>
+        <button onClick={() => setActiveTab('support')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'support' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><Headphones className="w-4 h-4 mr-2" />Podrška</button>
         <button 
           onClick={() => setActiveTab('settings')}
           className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
@@ -580,6 +586,12 @@ export default function ResellerDashboard() {
       {activeTab === 'diagnostics' && <DiagnosticsPanel />}
 
       {activeTab === 'security' && <SecurityPanel />}
+
+      {activeTab === 'lines' && <LineDirectoryPanel />}
+
+      {activeTab === 'reports' && <ReportsPanel />}
+
+      {activeTab === 'support' && <SupportPanel />}
 
       {activeTab === 'migration' && <LicenseTransferPanel onTransferred={(oldId, license) => {
         const migrated = license as any;

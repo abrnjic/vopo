@@ -1,0 +1,15 @@
+"use client";
+import { useEffect, useState } from 'react';
+import { BarChart3, Download, RefreshCw } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+
+export default function ReportsPanel() {
+  const { user } = useAuth(); const [data,setData]=useState<any>(null); const [loading,setLoading]=useState(true);
+  const load=async()=>{setLoading(true);const r=await fetch('/api/reports',{headers:{Authorization:`Bearer ${await user?.getIdToken()}`},cache:'no-store'});if(r.ok)setData(await r.json());setLoading(false)};
+  useEffect(()=>{if(user)void load()},[user]);
+  const csv=()=>{if(!data)return;const rows=[['Device ID','Kupac','Status','Datum isteka','Preostalo dana'],...data.expirations.map((x:any)=>[x.deviceId,x.customerName,x.status,x.expiresAt,x.daysRemaining])];const blob=new Blob([rows.map((r:any[])=>r.map(v=>`"${String(v??'').replaceAll('"','""')}"`).join(',')).join('\n')],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`vopo-izvjestaj-${new Date().toISOString().slice(0,10)}.csv`;a.click();URL.revokeObjectURL(a.href)};
+  const cards=data?[['Aktivacije',data.summary.totalActivations],['Aktivne',data.summary.active],['Ističu ≤ 30 dana',data.summary.expiringIn30Days],['Istekle',data.summary.expired],['Potrošeni krediti',data.summary.creditsUsed],['Preneseni krediti',data.summary.creditsTransferred]]:[];
+  return <div className="rounded-3xl border border-gray-700/60 bg-gray-900/60 p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-2xl font-bold text-white"><BarChart3 className="text-emerald-400"/> Izvještaji</h2><p className="text-sm text-gray-400">Aktivacije, krediti i datumi isteka licenci.</p></div><div className="flex gap-2"><button onClick={load} className="rounded-xl bg-gray-800 p-3 text-gray-300"><RefreshCw className={loading?'h-4 w-4 animate-spin':'h-4 w-4'}/></button><button onClick={csv} disabled={!data} className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white disabled:opacity-40"><Download className="h-4 w-4"/> CSV</button></div></div>
+  <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{cards.map(([label,value])=><div key={label} className="rounded-2xl border border-gray-800 bg-gray-950/60 p-5"><p className="text-sm text-gray-500">{label}</p><p className="mt-1 text-3xl font-black text-white">{value}</p></div>)}</div>
+  <div className="mt-6 overflow-x-auto"><table className="w-full text-left text-sm"><thead className="text-gray-500"><tr><th className="p-3">Device ID</th><th className="p-3">Kupac</th><th className="p-3">Ističe</th><th className="p-3">Dana</th></tr></thead><tbody>{data?.expirations.map((x:any)=><tr key={x.deviceId} className="border-t border-gray-800"><td className="p-3 font-mono text-blue-300">{x.deviceId}</td><td className="p-3 text-gray-300">{x.customerName||'—'}</td><td className="p-3 text-gray-300">{new Date(x.expiresAt).toLocaleDateString('hr-HR')}</td><td className={`p-3 font-bold ${x.daysRemaining<=7?'text-red-400':'text-gray-300'}`}>{x.daysRemaining}</td></tr>)}</tbody></table></div></div>;
+}

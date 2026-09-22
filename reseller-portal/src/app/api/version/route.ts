@@ -19,7 +19,8 @@ export async function GET() {
       checksum: data.checksum,
       releaseNotes: data.releaseNotes || '',
       updatedAt: data.updatedAt || null,
-      forceUpdate: false
+      minimumVersionCode: Number(data.minimumVersionCode || data.versionCode),
+      forceUpdate: data.forceUpdate === true
     }, {
       headers: { 'Cache-Control': 'no-store, max-age=0' }
     });

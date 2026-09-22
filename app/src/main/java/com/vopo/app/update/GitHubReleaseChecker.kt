@@ -25,8 +25,16 @@ data class GitHubReleaseInfo(
     val downloadUrl: String?,
     val sha256: String,
     val releaseNotes: String,
-    val publishedAt: String?
+    val publishedAt: String?,
+    val minimumVersionCode: Int? = null,
+    val forceUpdate: Boolean = false
 )
+
+fun requiresForcedUpdate(currentVersionCode: Int, release: GitHubReleaseInfo): Boolean {
+    val belowMinimum = release.minimumVersionCode?.let { currentVersionCode < it } == true
+    val forcedLatest = release.forceUpdate && (release.versionCode ?: 0) > currentVersionCode
+    return belowMinimum || forcedLatest
+}
 
 @Singleton
 class GitHubReleaseChecker @Inject constructor(
@@ -80,7 +88,9 @@ class GitHubReleaseChecker @Inject constructor(
                         downloadUrl = updateChannel.downloadUrl,
                         sha256 = checksum.lowercase(),
                         releaseNotes = json.optString("releaseNotes").trim(),
-                        publishedAt = json.optString("updatedAt").takeIf { it.isNotBlank() }
+                        publishedAt = json.optString("updatedAt").takeIf { it.isNotBlank() },
+                        minimumVersionCode = json.opt("minimumVersionCode")?.toString()?.toIntOrNull(),
+                        forceUpdate = json.optBoolean("forceUpdate", false)
                     )
                 )
             }

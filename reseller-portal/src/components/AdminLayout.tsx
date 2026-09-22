@@ -2,14 +2,28 @@
 
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout, userData, user } = useAuth();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const loadNotifications = async () => {
+    if (!user) return;
+    const response = await fetch('/api/notifications', { headers: { Authorization: `Bearer ${await user.getIdToken()}` }, cache: 'no-store' });
+    if (response.ok) setNotifications((await response.json()).notifications || []);
+  };
+  useEffect(() => { void loadNotifications(); }, [user]);
+  const markRead = async (id: string) => {
+    await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await user?.getIdToken()}` }, body: JSON.stringify({ id }) });
+    setNotifications(items => items.map(item => item.id === id ? { ...item, read: true } : item));
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -52,6 +66,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* User & Actions */}
           <div className="flex items-center space-x-4">
+            <div className="relative">
+              <button onClick={() => setShowNotifications(v => !v)} className="relative flex h-9 w-9 items-center justify-center rounded-full border border-gray-700 bg-gray-800 text-gray-400 hover:text-white" title="Obavijesti"><Bell className="h-4 w-4"/>{notifications.some(n=>!n.read)&&<span className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-gray-900"/>}</button>
+              {showNotifications&&<div className="absolute right-0 top-12 z-[80] w-80 overflow-hidden rounded-2xl border border-gray-700 bg-gray-900 shadow-2xl"><div className="border-b border-gray-800 p-4 font-bold text-white">Obavijesti o licencama</div><div className="max-h-80 overflow-y-auto">{notifications.map(n=><button key={n.id} onClick={()=>markRead(n.id)} className={`block w-full border-b border-gray-800 p-4 text-left hover:bg-gray-800 ${n.read?'opacity-60':''}`}><p className="text-sm font-bold text-white">{n.title}</p><p className="mt-1 text-xs text-gray-400">{n.message}</p></button>)}{!notifications.length&&<p className="p-6 text-center text-sm text-gray-500">Nema obavijesti.</p>}</div></div>}
+            </div>
             <div className="hidden sm:flex items-center space-x-3 bg-gray-800/50 px-3 py-1.5 rounded-full border border-gray-700/50">
               <div className="w-6 h-6 bg-blue-900 rounded-full flex items-center justify-center">
                 <User className="w-3 h-3 text-blue-400" />

@@ -8,6 +8,9 @@ export const mockState = {
   security_logs: new Map(),
   device_diagnostics: new Map(),
   rate_limits: new Map(),
+  notifications: new Map(),
+  support_tickets: new Map(),
+  backup_runs: new Map(),
   throwAuthError: false,
   throwDbError: false
 };
@@ -30,6 +33,7 @@ export const mockAdminDb = {
       const id = docId || `auto-id-${Math.random()}`;
       const dataMap = (mockState as any)[colName];
       return {
+        id,
         get: async () => {
           if (mockState.throwDbError) throw new Error('Mock DB Error');
           return createMockDoc(id, dataMap);

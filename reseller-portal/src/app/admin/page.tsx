@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload, Network, ArrowRightLeft, ShieldAlert } from 'lucide-react';
+import { Users, Plus, ShieldCheck, Coins, RefreshCw, Activity, Settings, Edit, Trash2, Key, Ban, CheckCircle, Home, Server, TrendingUp, User, Globe, Upload, Network, ArrowRightLeft, ShieldAlert, BarChart3, Headphones, List } from 'lucide-react';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { initializeApp } from 'firebase/app';
@@ -19,6 +19,10 @@ import DiagnosticsPanel from '../../components/DiagnosticsPanel';
 import CreditPricing from '../../components/CreditPricing';
 import LicenseTransferPanel from '../../components/LicenseTransferPanel';
 import SecurityPanel from '../../components/SecurityPanel';
+import LineDirectoryPanel from '../../components/LineDirectoryPanel';
+import ReportsPanel from '../../components/ReportsPanel';
+import SupportPanel from '../../components/SupportPanel';
+import BackupPanel from '../../components/BackupPanel';
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -55,7 +59,7 @@ function formatActivityDetails(details: unknown): string {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'migration' | 'diagnostics' | 'security' | 'logs' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'lines' | 'migration' | 'diagnostics' | 'security' | 'reports' | 'support' | 'logs' | 'settings'>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -77,6 +81,8 @@ export default function AdminDashboard() {
   const [apkFile, setApkFile] = useState<File | null>(null);
   const [apkVersionName, setApkVersionName] = useState('');
   const [apkVersionCode, setApkVersionCode] = useState('');
+  const [apkMinimumVersionCode, setApkMinimumVersionCode] = useState('');
+  const [apkForceUpdate, setApkForceUpdate] = useState(false);
   const [apkChannel, setApkChannel] = useState<ApkChannel>('test');
   const [isUploadingApk, setIsUploadingApk] = useState(false);
   const [apkUploadMessage, setApkUploadMessage] = useState<{type: 'success'|'error', text: string} | null>(null);
@@ -135,7 +141,7 @@ export default function AdminDashboard() {
              type: "blob.generate-client-token",
              payload: {
                 pathname: uploadPath,
-                clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, channel: apkChannel })
+                clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, minimumVersionCode: apkMinimumVersionCode || apkVersionCode, forceUpdate: apkForceUpdate, checksum, channel: apkChannel })
              }
            })
          });
@@ -168,7 +174,7 @@ export default function AdminDashboard() {
       await upload(uploadPath, apkFile, {
         access: 'public',
         handleUploadUrl: '/api/admin/apk',
-        clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, checksum, channel: apkChannel }),
+        clientPayload: JSON.stringify({ versionName: safeVersionName, versionCode: apkVersionCode, minimumVersionCode: apkMinimumVersionCode || apkVersionCode, forceUpdate: apkForceUpdate, checksum, channel: apkChannel }),
         headers: {
            Authorization: `Bearer ${idToken}`
         }
@@ -465,6 +471,7 @@ export default function AdminDashboard() {
               <button onClick={() => setActiveTab('diagnostics')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'diagnostics' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
                 <Network className="w-4 h-4 mr-2" /> Dijagnostika
               </button>
+              <button onClick={() => setActiveTab('lines')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'lines' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><List className="w-4 h-4 mr-2" /> Linije</button>
               <button onClick={() => setActiveTab('migration')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'migration' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
                 <ArrowRightLeft className="w-4 h-4 mr-2" /> Migracija
               </button>
@@ -477,6 +484,8 @@ export default function AdminDashboard() {
               <button onClick={() => setActiveTab('security')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'security' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
                 <ShieldAlert className="w-4 h-4 mr-2" /> Security Logs
               </button>
+              <button onClick={() => setActiveTab('reports')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'reports' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><BarChart3 className="w-4 h-4 mr-2" /> Izvještaji</button>
+              <button onClick={() => setActiveTab('support')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'support' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><Headphones className="w-4 h-4 mr-2" /> Podrška</button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'settings' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
@@ -863,6 +872,12 @@ export default function AdminDashboard() {
 
           {activeTab === 'security' && <SecurityPanel />}
 
+          {activeTab === 'lines' && <LineDirectoryPanel />}
+
+          {activeTab === 'reports' && <ReportsPanel />}
+
+          {activeTab === 'support' && <SupportPanel />}
+
           {/* Logs Tab */}
           {activeTab === 'logs' && (
             <div className="bg-gray-900/40 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-gray-700/50 shadow-2xl flex flex-col h-[750px] animate-in fade-in duration-500">
@@ -961,6 +976,8 @@ export default function AdminDashboard() {
 
           {/* Settings Tab */}
           {activeTab === 'settings' && (
+            <div className="space-y-6">
+            <BackupPanel />
             <div className="bg-gray-900/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="p-8 border-b border-gray-800/80 bg-gray-900/60 flex items-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gray-500/5 rounded-full blur-[80px] pointer-events-none" />
@@ -1058,7 +1075,19 @@ export default function AdminDashboard() {
                               className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
                               required
                             />
+                         </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-sm font-bold text-gray-300 mb-2">Minimalni dopušteni Version Code</label>
+                            <input type="number" min="1" max={apkVersionCode || undefined} placeholder={apkVersionCode || 'npr. 104'} value={apkMinimumVersionCode} onChange={e=>setApkMinimumVersionCode(e.target.value)} className="w-full bg-gray-950/50 border border-gray-700 text-white rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <p className="mt-1 text-xs text-gray-500">Starije instalacije neće moći nastaviti bez nadogradnje.</p>
                           </div>
+                          <label className="flex items-center justify-between rounded-xl border border-amber-700/40 bg-amber-950/20 p-4 text-sm font-bold text-amber-200">
+                            Obvezna nadogradnja
+                            <input type="checkbox" checked={apkForceUpdate} onChange={e=>setApkForceUpdate(e.target.checked)} className="h-5 w-5 accent-amber-500" />
+                          </label>
                         </div>
 
                         <div>
@@ -1146,6 +1175,7 @@ export default function AdminDashboard() {
                   </button>
                 </div>
               </div>
+            </div>
           )}
         </div>
       </AdminLayout>

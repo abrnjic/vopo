@@ -46,7 +46,13 @@ const withRequiredLinePin = (req: any) => ({
   json: async () => ({ ...(await req.json()), linePin: (await req.json()).linePin || '926483' })
 });
 const connectRoute = (req: any) => rawConnectRoute(withRequiredLinePin(req));
-const resellerActivateRoute = (req: any) => rawResellerActivateRoute(withRequiredLinePin(req));
+const resellerActivateRoute = (req: any) => rawResellerActivateRoute({
+  ...req,
+  json: async () => ({
+    selectedDomain: 'https://tv.example', username: 'u', password: 'p',
+    ...(await withRequiredLinePin(req).json())
+  })
+});
 
 const DEVICE_TOKEN = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const OTHER_DEVICE_TOKEN = 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
@@ -82,8 +88,8 @@ test('API P0 Tests', async (t) => {
     mockState.throwDbError = false;
 
     mockState.users.set('admin1', { role: 'admin', status: 'active', disabled: false });
-    mockState.users.set('reseller1', { role: 'reseller', status: 'active', disabled: false, credits: 10 });
-    mockState.users.set('reseller2', { role: 'reseller', status: 'active', disabled: false, credits: 0 });
+    mockState.users.set('reseller1', { role: 'reseller', status: 'active', disabled: false, credits: 10, assignedDomains: ['https://tv.example'] });
+    mockState.users.set('reseller2', { role: 'reseller', status: 'active', disabled: false, credits: 0, assignedDomains: ['https://tv.example'] });
   });
 
   await t.test('valjan prvi /api/connect', async () => {
@@ -394,6 +400,47 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(mockState.users.get('reseller1').credits, 9); // No extra charge
   });
 
+  await t.test('probna linija poslije registracije uređaja stiže u APK bez resetiranja probnog roka', async () => {
+    const registration = await deviceRegisterRoute(createMockReq({ deviceId: 'TRI-AL0-001', deviceToken: DEVICE_TOKEN }));
+    assert.strictEqual(registration.status, 200);
+    const before = mockState.licenses.get('TRI-AL0-001');
+    const originalExpiry = before.expiresAt.getTime();
+    const originalTokenHash = before.accessTokenHash;
+
+    const response = await resellerActivateRoute(createMockReq({
+      deviceId: 'TRI-AL0-001', licenseType: 'trial',
+      selectedDomain: 'https://tv.example', username: 'iptv-user', password: 'iptv-pass'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 200);
+    const result = await response.json();
+    assert.strictEqual(result.status, 'Trial');
+    assert.strictEqual(result.creditsRemaining, 10);
+
+    const saved = mockState.licenses.get('TRI-AL0-001');
+    assert.strictEqual(saved.expiresAt.getTime(), originalExpiry);
+    assert.strictEqual(saved.accessTokenHash, originalTokenHash);
+    assert.strictEqual(saved.resellerId, 'reseller1');
+    assert.deepStrictEqual(saved.xtreamConfig, {
+      url: 'https://tv.example', username: 'iptv-user', password: 'iptv-pass'
+    });
+    const deviceResponse = await deviceLicenseRoute(createDeviceGet('TRI-AL0-001'));
+    assert.strictEqual(deviceResponse.status, 200);
+    assert.deepStrictEqual((await deviceResponse.json()).config, saved.xtreamConfig);
+    assert.ok([...mockState.activity_logs.values()].some((log: any) => log.action === 'UPDATE_LINE'));
+  });
+
+  await t.test('reseller ne može preuzeti probni uređaj drugog resellera', async () => {
+    mockState.licenses.set('FOREIGN-TRIAL', {
+      deviceId: 'FOREIGN-TRIAL', resellerId: 'reseller2', status: 'Trial',
+      expiresAt: new Date(Date.now() + 86_400_000)
+    });
+    const response = await resellerActivateRoute(createMockReq({
+      deviceId: 'FOREIGN-TRIAL', licenseType: 'trial'
+    }, 'reseller1:reseller:r@test.com'));
+    assert.strictEqual(response.status, 403);
+    assert.strictEqual(mockState.licenses.get('FOREIGN-TRIAL').resellerId, 'reseller2');
+  });
+
   await t.test('izračun jednogodišnjeg isteka na serveru', async () => {
     const req = createMockReq({ deviceId: 'devx', licenseType: '1_year' }, 'reseller1:reseller:r@test.com');
     await resellerActivateRoute(req);
@@ -472,7 +519,7 @@ test('API P0 Tests', async (t) => {
     const res = await resellerActivateRoute(createMockReq({
       deviceId: 'dev_trial_no_reset', licenseType: 'trial'
     }, 'reseller1:reseller:r@test.com'));
-    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.status, 409);
     assert.strictEqual(mockState.licenses.get('dev_trial_no_reset').expiresAt, expiredAt);
     assert.strictEqual(mockState.users.get('reseller1').credits, 10);
   });

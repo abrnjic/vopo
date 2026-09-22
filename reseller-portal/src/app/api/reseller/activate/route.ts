@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
       deviceId, licenseType, customerName, customerContact, 
       username, password, linePin, selectedDomain
     } = parsed.data;
+    if (!selectedDomain || !username?.trim() || !password?.trim()) {
+      return NextResponse.json({ error: 'Domena, korisničko ime i lozinka linije su obvezni.' }, { status: 400 });
+    }
     
     let creditsToDeduct = 0;
     if (licenseType === '1_year') creditsToDeduct = 1;
@@ -64,42 +67,47 @@ export async function POST(req: NextRequest) {
         return { error: 'Odaberite domenu servera.', status: 400 };
       }
 
-      if (currentCredits < creditsToDeduct) {
-        return { error: 'Not enough credits', status: 400 };
-      }
-
       const safeDeviceId = deviceId.trim();
       const licenseRef = adminDb.collection('licenses').doc(safeDeviceId);
       const licenseSnap = await transaction.get(licenseRef);
       const existingLicenseData = licenseSnap.exists ? licenseSnap.data() : null;
 
-      if (licenseSnap.exists) {
-        const licenseData = existingLicenseData;
-        if (licenseData?.status === 'Active' || licenseData?.status === 'Expired') {
-          if (licenseData.resellerId !== resellerUid) {
-            return { error: 'This device is already licensed by another reseller.', status: 403 };
-          }
+      if (existingLicenseData?.status === 'Transferred') {
+        return { error: 'Licenca je prenesena na drugi uređaj.', status: 409 };
+      }
+      if (existingLicenseData?.resellerId && existingLicenseData.resellerId !== 'self_registered'
+        && existingLicenseData.resellerId !== resellerUid) {
+        return { error: 'Ovaj uređaj pripada drugom reselleru.', status: 403 };
+      }
+      if (existingLicenseData?.status === 'Active' && existingLicenseData.isLifetime === true
+        && licenseType !== 'lifetime') {
+        return { error: 'Trajna licenca ne može se zamijeniti kraćom licencom.', status: 409 };
+      }
 
-          if (licenseData.status === 'Active' && licenseData.isLifetime === true) {
-            if (licenseType === 'lifetime') {
-              return { success: true, message: 'Lifetime license is already active.' };
-            }
-            return { error: 'Trajna licenca ne može se zamijeniti kraćom licencom.', status: 409 };
-          }
+      // The app starts its own three-day trial at registration. Sending a line
+      // for that trial must save its provider credentials without restarting it.
+      const existingTrial = existingLicenseData?.status === 'Trial' && licenseType === 'trial';
+      if (existingTrial) {
+        const expiresAtMs = existingLicenseData.expiresAt?.toMillis?.()
+          ?? (existingLicenseData.expiresAt instanceof Date ? existingLicenseData.expiresAt.getTime() : 0);
+        if (expiresAtMs <= Date.now()) {
+          return { error: 'Probni period je istekao. Odaberite godišnju ili trajnu aktivaciju.', status: 409 };
+        }
+      }
+      const existingLifetime = existingLicenseData?.status === 'Active'
+        && existingLicenseData.isLifetime === true && licenseType === 'lifetime';
+      const samePaidType = existingLicenseData?.status === 'Active'
+        && existingLicenseData.isLifetime !== true && licenseType === '1_year';
+      const updatedMs = existingLicenseData?.updatedAt?.toMillis?.()
+        ?? (existingLicenseData?.updatedAt instanceof Date
+          ? existingLicenseData.updatedAt.getTime()
+          : existingLicenseData?.updatedAt ? Date.now() : 0);
+      const recentlyActivated = samePaidType && updatedMs > 0
+        && Date.now() - updatedMs < 5 * 60 * 1000;
+      const updateLineOnly = existingTrial || existingLifetime || recentlyActivated;
 
-          const samePaidType = licenseData.isLifetime === true
-            ? licenseType === 'lifetime'
-            : licenseType === '1_year';
-          if (licenseData.status === 'Active' && samePaidType && licenseData.updatedAt) {
-            const updatedMs = licenseData.updatedAt.toMillis ? licenseData.updatedAt.toMillis() : Date.now();
-            if (Date.now() - updatedMs < 5 * 60 * 1000) {
-              return { success: true, message: 'Already activated recently.' };
-            }
-          }
-        }
-        if (licenseData?.status === 'Trial' && licenseType === 'trial') {
-          return { success: true, message: 'Trial already exists.' };
-        }
+      if (!updateLineOnly && currentCredits < creditsToDeduct) {
+        return { error: 'Not enough credits', status: 400 };
       }
       
       const licenseData: any = {
@@ -118,6 +126,27 @@ export async function POST(req: NextRequest) {
         requireOfficialClient: true,
         updatedAt: FieldValue.serverTimestamp()
       };
+
+      if (updateLineOnly) {
+        transaction.set(licenseRef, licenseData, { merge: true });
+        const logRef = adminDb.collection('activity_logs').doc();
+        transaction.set(logRef, {
+          userId: resellerUid,
+          userEmail: authContext.email || '',
+          role: authContext.role,
+          action: 'UPDATE_LINE',
+          details: `Updated line for device ${safeDeviceId} without changing license duration`,
+          deviceId: safeDeviceId,
+          timestamp: FieldValue.serverTimestamp()
+        });
+        return {
+          success: true,
+          status: existingLicenseData.status,
+          isLifetime: existingLicenseData.isLifetime === true,
+          creditsRemaining: currentCredits,
+          message: 'Linija je spremljena; trajanje licence nije promijenjeno.'
+        };
+      }
 
       if (licenseType === '1_year' || licenseType === 'lifetime') {
         licenseData.status = 'Active';
@@ -173,14 +202,20 @@ export async function POST(req: NextRequest) {
         timestamp: FieldValue.serverTimestamp()
       });
 
-      return { success: true };
+      return {
+        success: true,
+        status: licenseData.status,
+        isLifetime: licenseData.isLifetime,
+        creditsRemaining: currentCredits - creditsToDeduct,
+        message: 'Linija i licenca su spremljene.'
+      };
     });
 
     if (result.error) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json(result, { status: 200 });
   } catch (error: any) {
     console.error('API /reseller/activate error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

@@ -137,15 +137,6 @@ export default function ResellerDashboard() {
     e.preventDefault();
     if (!user) return;
     
-    let creditsToDeduct = 0;
-    if (licenseType === '1_year') creditsToDeduct = 1;
-    if (licenseType === 'lifetime') creditsToDeduct = 2;
-    
-    if (credits < creditsToDeduct) {
-      alert('Nemate dovoljno kredita!');
-      return;
-    }
-
     setIsActivating(true);
     try {
       const idToken = await user?.getIdToken();
@@ -167,12 +158,11 @@ export default function ResellerDashboard() {
         })
       });
 
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Neuspješna aktivacija');
-      }
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Neuspješna aktivacija');
 
-      alert(creditsToDeduct > 0 ? 'Linija uspješno aktivirana!' : 'Probna linija uspješno postavljena!');
+      setCredits(result.creditsRemaining);
+      alert(result.message || 'Linija je uspješno spremljena.');
 
       setDeviceId('');
       setUsername('');
@@ -186,14 +176,15 @@ export default function ResellerDashboard() {
         id: deviceId.trim(), 
         deviceId: deviceId.trim(),
         resellerId: user.uid,
-        status: licenseType === 'trial' ? 'Trial' : 'Active',
-        isTrial: licenseType === 'trial',
+        status: result.status,
+        isLifetime: result.isLifetime,
+        selectedDomain,
         customerName: customerName,
         customerContact: customerContact
       }, ...prev.filter(l => l.id !== deviceId.trim())]);
     } catch (error) {
       console.error(error);
-      alert('Došlo je do greške.');
+      alert(error instanceof Error ? error.message : 'Došlo je do greške.');
     } finally {
       setIsActivating(false);
     }
@@ -558,8 +549,8 @@ export default function ResellerDashboard() {
                     <div>
                       <div className="font-mono text-white text-lg">{line.id} {line.customerName && <span className="text-gray-400 text-sm ml-2">({line.customerName})</span>}</div>
                       <div className="text-sm text-gray-400 flex items-center mt-1">
-                        <span className={`px-2 py-0.5 rounded text-xs mr-2 font-medium ${line.isLifetime ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'}`}>
-                          {line.isLifetime ? 'Lifetime' : '1 Godina'}
+                        <span className={`px-2 py-0.5 rounded text-xs mr-2 font-medium ${line.status === 'Trial' ? 'bg-amber-900/50 text-amber-300' : line.isLifetime ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'}`}>
+                          {line.status === 'Trial' ? '3 dana probno' : line.isLifetime ? 'Lifetime' : '1 Godina'}
                         </span>
                         {line.selectedDomain}
                       </div>

@@ -92,8 +92,10 @@ class LicenseRepositoryImpl @Inject constructor(
     override suspend fun generateAndRegisterDeviceIdIfNeeded(): String {
         val currentId = getDeviceId().first()
         if (currentId.isNotEmpty()) {
-            val token = getOrCreateDeviceToken()
-            runCatching { ensureRegistered(currentId, token) }
+            // Device identity is local state and must be available to the UI even
+            // when the registration endpoint is slow or temporarily unreachable.
+            // getLicenseStatus/checkLicenseOnce perform registration on Dispatchers.IO.
+            getOrCreateDeviceToken()
             return currentId
         }
 
@@ -106,7 +108,6 @@ class LicenseRepositoryImpl @Inject constructor(
             prefs[DEVICE_ID_KEY] = newDeviceId
             prefs[DEVICE_TOKEN_KEY] = token
         }
-        runCatching { ensureRegistered(newDeviceId, token) }
 
         return newDeviceId
     }

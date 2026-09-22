@@ -3,6 +3,7 @@ package com.vopo.app.ui.screens.welcome
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
@@ -235,7 +238,7 @@ fun WelcomeScreen(
                 onNavigateToSetup = onNavigateToSetup,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .padding(32.dp)
+                    .padding(horizontal = 24.dp, vertical = 12.dp)
             )
         } else {
             when (hasProviders) {
@@ -273,48 +276,55 @@ private fun LicenseErrorCard(
         shape = RoundedCornerShape(28.dp),
         colors = SurfaceDefaults.colors(containerColor = AppColors.Surface.copy(alpha = 0.9f))
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 40.dp, vertical = 34.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp)
-        ) {
-            VopoLogo(
-                textStyle = MaterialTheme.typography.displaySmall,
-                iconSize = 48.dp
-            )
-            Text(
-                text = if (isExpired) stringResource(R.string.license_error_expired) else stringResource(R.string.license_error_unregistered),
-                style = MaterialTheme.typography.headlineMedium,
-                color = AppColors.TextPrimary,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = stringResource(R.string.license_error_instruction, BuildConfig.CONNECT_URL),
-                style = MaterialTheme.typography.bodyLarge,
-                color = AppColors.TextSecondary,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = stringResource(R.string.device_id_label),
-                style = MaterialTheme.typography.labelLarge,
-                color = AppColors.TextSecondary
-            )
-            
-            Text(
-                text = deviceId.ifBlank { stringResource(R.string.loading_ellipsis) },
-                style = MaterialTheme.typography.displayMedium,
-                color = AppColors.Brand,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+        BoxWithConstraints {
+            val compactHeight = maxHeight < 520.dp
+            val itemSpacing = if (compactHeight) 8.dp else 18.dp
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(
+                        horizontal = if (compactHeight) 24.dp else 40.dp,
+                        vertical = if (compactHeight) 14.dp else 34.dp
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(itemSpacing)
+            ) {
+                VopoLogo(
+                    textStyle = if (compactHeight) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displaySmall,
+                    iconSize = if (compactHeight) 36.dp else 48.dp
+                )
+                Text(
+                    text = if (isExpired) stringResource(R.string.license_error_expired) else stringResource(R.string.license_error_unregistered),
+                    style = if (compactHeight) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium,
+                    color = AppColors.TextPrimary,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = stringResource(R.string.license_error_instruction, BuildConfig.CONNECT_URL),
+                    style = if (compactHeight) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
+                    color = AppColors.TextSecondary,
+                    textAlign = TextAlign.Center
+                )
 
-            TvButton(onClick = onNavigateToSetup) {
-                Text(text = stringResource(R.string.welcome_setup_provider))
+                Text(
+                    text = stringResource(R.string.device_id_label),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AppColors.TextSecondary
+                )
+
+                Text(
+                    text = deviceId.ifBlank { stringResource(R.string.loading_ellipsis) },
+                    style = if (compactHeight) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displayMedium,
+                    color = AppColors.Brand,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(vertical = if (compactHeight) 2.dp else 8.dp)
+                )
+
+                TvButton(onClick = onNavigateToSetup) {
+                    Text(text = stringResource(R.string.welcome_setup_provider))
+                }
             }
         }
     }

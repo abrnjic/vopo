@@ -4,7 +4,7 @@ import DomainManager from '../../components/DomainManager';
 import { useState, useEffect, useMemo } from 'react';
 import { Plus, List, CreditCard, Check, Settings, Send, Trash2, Activity, BarChart2, Network } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { format } from 'date-fns';
 import { hr } from 'date-fns/locale';
@@ -89,12 +89,25 @@ export default function ResellerDashboard() {
 
       const fetchLogs = async () => {
         setIsLoadingLogs(true);
-        const logsRef = collection(db, 'activity_logs');
-        const q = query(logsRef, where('userId', '==', user.uid), orderBy('timestamp', 'desc'), limit(50));
-        const snap = await getDocs(q);
-        const logsData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setLogs(logsData);
-        setIsLoadingLogs(false);
+        try {
+          const logsRef = collection(db, 'activity_logs');
+          const q = query(logsRef, where('userId', '==', user.uid), limit(100));
+          const snap = await getDocs(q);
+          const logsData = snap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a: any, b: any) => {
+              const aTime = a.timestamp?.toMillis?.() ?? 0;
+              const bTime = b.timestamp?.toMillis?.() ?? 0;
+              return bTime - aTime;
+            })
+            .slice(0, 50);
+          setLogs(logsData);
+        } catch (error) {
+          console.error('Failed to load reseller activity logs:', error);
+          setLogs([]);
+        } finally {
+          setIsLoadingLogs(false);
+        }
       };
 
       fetchUserData();

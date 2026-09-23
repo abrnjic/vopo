@@ -97,6 +97,9 @@ export async function POST(req: NextRequest) {
             : auth.context.uid;
           const trialUpdate: Record<string, unknown> = {
             resellerId: ownerId,
+            ...(!data.createdByUid && (!data.resellerId || data.resellerId === 'self_registered')
+              ? { createdByUid: auth.context.uid, createdByRole: auth.context.role }
+              : {}),
             linePinHash: hashLinePin(linePin),
             maxConcurrentStreams: 1,
             requireOfficialClient: true,
@@ -135,6 +138,8 @@ export async function POST(req: NextRequest) {
       transaction.set(licenseRef, {
         deviceId: safeDeviceId,
         resellerId: auth.context.uid,
+        createdByUid: auth.context.uid,
+        createdByRole: auth.context.role,
         status: 'Trial',
         trialStartedAt: FieldValue.serverTimestamp(),
         expiresAt: expirationDate,

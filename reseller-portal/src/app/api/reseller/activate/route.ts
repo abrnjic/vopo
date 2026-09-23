@@ -121,6 +121,9 @@ export async function POST(req: NextRequest) {
           password: password ? password.trim() : ''
         },
         selectedDomain: selectedDomain || '',
+        ...(!existingLicenseData?.xtreamConfig?.username && !existingLicenseData?.createdByUid
+          ? { createdByUid: resellerUid, createdByRole: authContext.role }
+          : {}),
         linePinHash: hashLinePin(linePin),
         maxConcurrentStreams: 1,
         requireOfficialClient: true,

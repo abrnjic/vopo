@@ -57,6 +57,33 @@ test('Operational portal features', async t => {
     assert.equal((await lines(request('http://localhost/api/lines?id=private-2', 'reseller1:reseller'))).status, 404);
   });
 
+  await t.test('admin sees line owner and creator as accounts, including legacy audit fallback', async () => {
+    mockState.users.set('reseller1', { role: 'reseller', email: 'prvi@example.com', status: 'active' });
+    mockState.users.set('reseller2', { role: 'reseller', email: 'drugi@example.com', status: 'active' });
+    mockState.licenses.set('new-line', { deviceId: 'new-line', resellerId: 'reseller2', createdByUid: 'reseller1', status: 'Active' });
+    mockState.licenses.set('old-line', { deviceId: 'old-line', resellerId: 'reseller1', status: 'Trial' });
+    mockState.licenses.set('unclaimed', { deviceId: 'unclaimed', resellerId: 'self_registered', status: 'Trial' });
+    mockState.activity_logs.set('old-creator', { action: 'UPDATE_LINE', deviceId: 'old-line', userId: 'reseller1', timestamp: '2026-09-20T10:00:00Z' });
+    mockState.activity_logs.set('old-editor', { action: 'EDIT_LINE', deviceId: 'old-line', userId: 'reseller2', timestamp: '2026-09-21T10:00:00Z' });
+    const response = await lines(request('http://localhost/api/lines', 'admin1:admin'));
+    assert.equal(response.status, 200);
+    const { lines: listed } = await response.json();
+    const newer = listed.find((line: any) => line.id === 'new-line');
+    assert.equal(newer.ownerAccount.label, 'drugi@example.com');
+    assert.equal(newer.creatorAccount.label, 'prvi@example.com');
+    const older = listed.find((line: any) => line.id === 'old-line');
+    assert.equal(older.ownerAccount.label, 'prvi@example.com');
+    assert.equal(older.creatorAccount.label, 'prvi@example.com');
+    assert.equal(listed.find((line: any) => line.id === 'unclaimed').ownerAccount, null);
+    const detail = await (await lines(request('http://localhost/api/lines?id=new-line', 'admin1:admin'))).json();
+    assert.equal(detail.line.ownerAccount.label, 'drugi@example.com');
+    assert.equal(detail.line.creatorAccount.label, 'prvi@example.com');
+    assert.equal((await lines(request('http://localhost/api/lines?id=new-line', 'reseller1:reseller'))).status, 404);
+    const ownerView = await (await lines(request('http://localhost/api/lines?id=new-line', 'reseller2:reseller'))).json();
+    assert.equal(ownerView.line.creatorAccount, undefined);
+    assert.equal(ownerView.line.createdByUid, undefined);
+  });
+
   await t.test('line editing preserves licence and credits, enforces PIN and owner domains, and hides secrets', async () => {
     mockState.users.set('reseller1', { ...mockState.users.get('reseller1'), credits: 10, assignedDomains: ['http://proservers.club'], customDomains: [] });
     const expiry = new Date('2027-05-01T10:00:00Z');

@@ -421,6 +421,7 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(saved.expiresAt.getTime(), originalExpiry);
     assert.strictEqual(saved.accessTokenHash, originalTokenHash);
     assert.strictEqual(saved.resellerId, 'reseller1');
+    assert.strictEqual(saved.createdByUid, 'reseller1');
     assert.deepStrictEqual(saved.xtreamConfig, {
       url: 'https://tv.example', username: 'iptv-user', password: 'iptv-pass'
     });

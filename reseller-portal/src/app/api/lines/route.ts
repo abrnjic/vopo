@@ -22,7 +22,7 @@ const EditLineSchema = z.object({
 }).strict();
 
 function safeLine(id: string, data: Record<string, any>) {
-  const visible = Object.fromEntries(Object.entries(data).filter(([key]) => !['linePinHash', 'accessTokenHash', 'xtreamConfig'].includes(key)));
+  const visible = Object.fromEntries(Object.entries(data).filter(([key]) => !['linePinHash', 'accessTokenHash', 'xtreamConfig', 'createdByUid', 'createdByRole'].includes(key)));
   const xtreamConfig = data.xtreamConfig;
   return {
     id, ...serializeValue(visible),
@@ -32,6 +32,38 @@ function safeLine(id: string, data: Record<string, any>) {
   };
 }
 
+type Account = { uid: string; label: string; role: string; parentLabel?: string };
+
+function accountFor(uid: unknown, users: Map<string, Record<string, any>>): Account | null {
+  if (typeof uid !== 'string' || !uid || uid === 'self_registered') return null;
+  const data = users.get(uid) || {};
+  const parent = data.parentResellerId ? users.get(data.parentResellerId) : null;
+  return {
+    uid,
+    label: data.username || data.email || uid,
+    role: data.role || 'unknown',
+    ...(parent ? { parentLabel: parent.username || parent.email || data.parentResellerId } : {})
+  };
+}
+
+function creatorIds(activities: Array<{ data: () => Record<string, any> }>) {
+  const candidates = new Map<string, { uid: string; timestamp: string }>();
+  for (const entry of activities) {
+    const log = entry.data();
+    if (!['CREATE_LICENSE', 'UPDATE_LINE', 'CONNECT_DEVICE'].includes(log.action) || !log.userId) continue;
+    const deviceId = log.deviceId || (typeof log.details === 'string'
+      ? log.details.match(/(?:device |uređaj )([A-Za-z0-9-]+)/i)?.[1]
+      : null);
+    if (!deviceId) continue;
+    const timestamp = String(serializeValue(log.timestamp) || '');
+    const previous = candidates.get(deviceId);
+    if (!previous || (timestamp && (!previous.timestamp || timestamp < previous.timestamp))) {
+      candidates.set(deviceId, { uid: log.userId, timestamp });
+    }
+  }
+  return candidates;
+}
+
 export async function GET(request: NextRequest) {
   const auth = await verifyAuthToken(request);
   if (auth.status !== 'authenticated' || !['admin', 'reseller', 'subseller'].includes(auth.context.role)) {
@@ -39,12 +71,26 @@ export async function GET(request: NextRequest) {
   }
   const ownerIds = await permittedOwnerIds(auth.context);
   const requestedId = request.nextUrl.searchParams.get('id')?.trim();
-  const [licenses, activities, transactions] = await Promise.all([
-    adminDb.collection('licenses').get(), adminDb.collection('activity_logs').get(), adminDb.collection('transactions').get()
+  const [licenses, activities, transactions, users] = await Promise.all([
+    adminDb.collection('licenses').get(), adminDb.collection('activity_logs').get(), adminDb.collection('transactions').get(),
+    auth.context.role === 'admin' ? adminDb.collection('users').get() : Promise.resolve({ docs: [] })
   ]);
+  const userMap = new Map<string, Record<string, any>>(users.docs.map((entry: any) => [entry.id, entry.data()]));
+  const creatorMap = creatorIds(activities.docs);
+  const displayLine = (entry: any) => {
+    const data = entry.data();
+    const deviceId = data.deviceId || entry.id;
+    return {
+      ...safeLine(entry.id, data),
+      ...(auth.context.role === 'admin' ? {
+        ownerAccount: accountFor(data.resellerId, userMap),
+        creatorAccount: accountFor(data.createdByUid || creatorMap.get(deviceId)?.uid, userMap)
+      } : {})
+    };
+  };
   const visible = licenses.docs.filter((d: any) => ownsRecord(d.data(), ownerIds));
   if (!requestedId) {
-    return NextResponse.json({ lines: visible.map((d: any) => safeLine(d.id, d.data())) }, { headers: { 'Cache-Control': 'no-store, private' } });
+    return NextResponse.json({ lines: visible.map(displayLine) }, { headers: { 'Cache-Control': 'no-store, private' } });
   }
   const license = visible.find((d: any) => d.id === requestedId || d.data()?.deviceId === requestedId);
   if (!license) return NextResponse.json({ error: 'Linija nije pronađena.' }, { status: 404 });
@@ -57,7 +103,7 @@ export async function GET(request: NextRequest) {
     ...activities.docs.filter((d: any) => relates(d.data())).map((d: any) => ({ id: d.id, source: 'activity', ...serializeValue(d.data()) })),
     ...transactions.docs.filter((d: any) => relates(d.data())).map((d: any) => ({ id: d.id, source: 'transaction', ...serializeValue(d.data()) }))
   ].sort((a: any, b: any) => String(b.timestamp || b.updatedAt || '').localeCompare(String(a.timestamp || a.updatedAt || '')));
-  return NextResponse.json({ line: safeLine(license.id, license.data()), history }, { headers: { 'Cache-Control': 'no-store, private' } });
+  return NextResponse.json({ line: displayLine(license), history }, { headers: { 'Cache-Control': 'no-store, private' } });
 }
 
 export async function PATCH(request: NextRequest) {

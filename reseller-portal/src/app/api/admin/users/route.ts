@@ -75,6 +75,7 @@ export async function POST(req: NextRequest) {
     // 1. Update Firestore
     await userRef.update(updates);
 
+    let authRecordMissing = false;
     try {
       // 2. Update Firebase Auth
       if (role) {
@@ -84,31 +85,35 @@ export async function POST(req: NextRequest) {
         const disabled = (status === 'suspended' || status === 'deactivated' || status === 'deleted');
         await adminAuth.updateUser(uid, { disabled });
       }
-
-      // Log success
-      const logRef = adminDb.collection('activity_logs').doc();
-      await logRef.set({
-        userId: authContext.uid,
-        userEmail: authContext.email || '',
-        role: 'admin',
-        action: status === 'deleted' ? 'DELETE_USER' : previousData?.status === 'deleted' && status === 'active' ? 'RESTORE_USER' : 'UPDATE_USER',
-        details: `Updated user ${uid}. Role: ${role || 'unchanged'}, Status: ${status || 'unchanged'}`,
-        timestamp: FieldValue.serverTimestamp()
-      });
-
     } catch (authError: any) {
-      console.error('Firebase Auth update failed. Rolling back Firestore...', authError);
-      // 3. Rollback Firestore if Auth fails
-      const rollbackData: any = {};
-      if (role) rollbackData.role = previousData?.role || 'user';
-      if (status) rollbackData.status = previousData?.status || 'active';
-      
-      await userRef.update(rollbackData).catch((e: any) => {
-        console.error('CRITICAL: Rollback failed! State might be inconsistent.', e);
-      });
+      // Legacy Firestore-only resellers have no corresponding Auth user to disable.
+      // Keeping their Firestore status deleted still blocks portal access.
+      if (status === 'deleted' && authError?.code === 'auth/user-not-found') {
+        authRecordMissing = true;
+      } else {
+        console.error('Firebase Auth update failed. Rolling back Firestore...', authError);
+        // 3. Rollback Firestore if Auth fails
+        const rollbackData: any = {};
+        if (role) rollbackData.role = previousData?.role || 'user';
+        if (status) rollbackData.status = previousData?.status || 'active';
 
-      return NextResponse.json({ error: 'Auth update failed. Changes rolled back.' }, { status: 500 });
+        await userRef.update(rollbackData).catch((e: any) => {
+          console.error('CRITICAL: Rollback failed! State might be inconsistent.', e);
+        });
+
+        return NextResponse.json({ error: 'Auth update failed. Changes rolled back.' }, { status: 500 });
+      }
     }
+
+    const logRef = adminDb.collection('activity_logs').doc();
+    await logRef.set({
+      userId: authContext.uid,
+      userEmail: authContext.email || '',
+      role: 'admin',
+      action: status === 'deleted' ? 'DELETE_USER' : previousData?.status === 'deleted' && status === 'active' ? 'RESTORE_USER' : 'UPDATE_USER',
+      details: `Updated user ${uid}. Role: ${role || 'unchanged'}, Status: ${status || 'unchanged'}${authRecordMissing ? '. Firebase Auth record already missing.' : ''}`,
+      timestamp: FieldValue.serverTimestamp()
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {

@@ -1,6 +1,7 @@
 export const mockState = {
   users: new Map(),
   authUsers: new Map(),
+  missingAuthUsers: new Set<string>(),
   settings: new Map(),
   licenses: new Map(),
   transactions: new Map(),
@@ -138,6 +139,7 @@ export const mockAdminAuth = {
   },
   updateUser: async (uid: string, properties: any) => {
     if (mockState.throwAuthError) throw new Error('Mock Auth Error');
+    if (mockState.missingAuthUsers.has(uid)) throw Object.assign(new Error('User not found'), { code: 'auth/user-not-found' });
     const user = mockState.users.get(uid);
     if (user) {
       mockState.users.set(uid, { ...user, ...properties });

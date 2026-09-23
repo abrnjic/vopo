@@ -77,6 +77,7 @@ test('API P0 Tests', async (t) => {
     resetFallbackCache();
     mockState.users.clear();
     mockState.authUsers.clear();
+    mockState.missingAuthUsers.clear();
     mockState.settings.clear();
     mockState.licenses.clear();
     mockState.transactions.clear();
@@ -582,6 +583,14 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(res.status, 200);
     assert.strictEqual(mockState.users.get('reseller1').status, 'active');
     assert.strictEqual(mockState.users.get('reseller1').disabled, false);
+  });
+
+  await t.test('Firestore-only reseller bez Auth zapisa može se obrisati i evidentira se', async () => {
+    mockState.missingAuthUsers.add('reseller1');
+    const res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'deleted' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'deleted');
+    assert.ok([...mockState.activity_logs.values()].some(log => log.action === 'DELETE_USER' && log.details.includes('Auth record already missing')));
   });
 
   await t.test('brisanje resellera s aktivnim subsellerom je odbijeno', async () => {

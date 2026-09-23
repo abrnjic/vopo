@@ -459,7 +459,7 @@ export default function AdminDashboard() {
           <PortalSidebar title="Admin Centar" items={adminNavigation} activeTab={activeTab} onSelect={setActiveTab} />
           <div className="min-w-0 flex-1 space-y-6 pb-20">
 
-          {(activeTab === 'pricing' || activeTab === 'lines' || activeTab === 'resellers') && <CreditPricing />}
+          {(activeTab === 'pricing' || activeTab === 'resellers') && <CreditPricing />}
 
           {/* Home Tab */}
           {activeTab === 'home' && (

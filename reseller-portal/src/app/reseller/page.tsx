@@ -321,7 +321,7 @@ export default function ResellerDashboard() {
             </div>
           </div>
 
-          {(activeTab === 'pricing' || activeTab === 'activate' || activeTab === 'lines') && <CreditPricing />}
+          {(activeTab === 'pricing' || activeTab === 'activate') && <CreditPricing />}
 
       {activeTab === 'activate' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

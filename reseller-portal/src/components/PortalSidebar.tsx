@@ -55,11 +55,11 @@ export default function PortalSidebar<T extends string>({
       >
         <Menu className="h-5 w-5" />
       </button>
-      {mobileOpen && <button type="button" aria-label="Zatvori izbornik" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-black/70 md:hidden" />}
+      {mobileOpen && <button type="button" aria-label="Zatvori izbornik" onClick={() => setMobileOpen(false)} className="fixed inset-x-0 bottom-0 top-16 z-40 bg-black/70 md:hidden" />}
       <aside
         id="portal-sidebar"
         aria-label={title}
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-700/70 bg-[#121a2a] shadow-2xl transition-transform duration-200 md:sticky md:top-24 md:z-20 md:h-[calc(100vh-8rem)] md:shrink-0 md:translate-x-0 md:rounded-2xl md:border ${collapsed ? 'md:w-[76px]' : 'md:w-60'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed bottom-0 left-0 top-16 z-50 flex w-72 flex-col border-r border-gray-700/70 bg-[#121a2a] shadow-2xl transition-transform duration-200 md:sticky md:top-24 md:z-20 md:h-[calc(100vh-8rem)] md:shrink-0 md:translate-x-0 md:rounded-2xl md:border ${collapsed ? 'md:w-[76px]' : 'md:w-60'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="flex min-h-20 items-center justify-between gap-2 border-b border-gray-700/60 px-4">
           <div className={`min-w-0 ${collapsed ? 'md:hidden' : ''}`}>

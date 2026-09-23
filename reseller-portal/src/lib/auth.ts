@@ -36,7 +36,7 @@ export async function verifyAuthToken(req: NextRequest): Promise<AuthResult> {
     }
     
     const userData = userDoc.data();
-    if (userData?.status === 'suspended' || userData?.status === 'deactivated' || userData?.status === 'SUSPENDED' || userData?.status === 'DEACTIVATED') {
+    if (userData?.status === 'suspended' || userData?.status === 'deactivated' || userData?.status === 'deleted' || userData?.status === 'SUSPENDED' || userData?.status === 'DEACTIVATED' || userData?.status === 'DELETED') {
        console.warn(`User ${decodedToken.uid} is suspended/deactivated in Firestore`);
        return { status: 'inactive', error: 'User is suspended or deactivated' };
     }

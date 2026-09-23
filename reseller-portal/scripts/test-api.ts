@@ -569,6 +569,28 @@ test('API P0 Tests', async (t) => {
     assert.strictEqual(mockState.users.get('reseller1').status, 'deactivated');
   });
 
+  await t.test('brisanje resellera blokira pristup i čuva linije, a račun se može vratiti', async () => {
+    mockState.licenses.set('owned-line', { resellerId: 'reseller1', status: 'Trial' });
+    let res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'deleted' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'deleted');
+    assert.strictEqual(mockState.users.get('reseller1').disabled, true);
+    assert.ok(mockState.licenses.has('owned-line'));
+    assert.ok([...mockState.activity_logs.values()].some(log => log.action === 'DELETE_USER'));
+
+    res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'active' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'active');
+    assert.strictEqual(mockState.users.get('reseller1').disabled, false);
+  });
+
+  await t.test('brisanje resellera s aktivnim subsellerom je odbijeno', async () => {
+    mockState.users.set('child1', { role: 'subseller', status: 'active', parentResellerId: 'reseller1' });
+    const res = await authUsersRoute(createMockReq({ uid: 'reseller1', status: 'deleted' }, 'admin1:admin:a@test.com'));
+    assert.strictEqual(res.status, 409);
+    assert.strictEqual(mockState.users.get('reseller1').status, 'active');
+  });
+
   await t.test('bulk produženje je transakcijsko i produžuje budući rok', async () => {
     const future = new Date();
     future.setMonth(future.getMonth() + 4);

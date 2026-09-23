@@ -7,7 +7,7 @@ import { z } from 'zod';
 const UpdateUserSchema = z.object({
   uid: z.string().min(1).max(100),
   role: z.enum(['admin', 'reseller', 'user']).optional(),
-  status: z.enum(['active', 'suspended', 'deactivated']).optional()
+  status: z.enum(['active', 'suspended', 'deactivated', 'deleted']).optional()
 }).strict();
 
 export async function POST(req: NextRequest) {
@@ -41,6 +41,17 @@ export async function POST(req: NextRequest) {
     }
     
     const previousData = userSnap.data();
+
+    if (status === 'deleted') {
+      if (previousData?.role !== 'reseller') return NextResponse.json({ error: 'Brisanje je dostupno samo za reseller račune.' }, { status: 400 });
+      const children = await adminDb.collection('users').where('parentResellerId', '==', uid).get();
+      if (children.docs.some((child: any) => child.data()?.status !== 'deleted')) {
+        return NextResponse.json({ error: 'Reseller ima subseller račune. Najprije riješite njihove račune.' }, { status: 409 });
+      }
+    }
+    if (previousData?.status === 'deleted' && status && status !== 'active') {
+      return NextResponse.json({ error: 'Obrisani račun može se samo vratiti u aktivno stanje.' }, { status: 400 });
+    }
     
     // Protect the last active administrator
     if (previousData?.role === 'admin' && previousData?.status === 'active') {
@@ -70,7 +81,7 @@ export async function POST(req: NextRequest) {
         await adminAuth.setCustomUserClaims(uid, { role });
       }
       if (status) {
-        const disabled = (status === 'suspended' || status === 'deactivated');
+        const disabled = (status === 'suspended' || status === 'deactivated' || status === 'deleted');
         await adminAuth.updateUser(uid, { disabled });
       }
 
@@ -80,7 +91,7 @@ export async function POST(req: NextRequest) {
         userId: authContext.uid,
         userEmail: authContext.email || '',
         role: 'admin',
-        action: 'UPDATE_USER',
+        action: status === 'deleted' ? 'DELETE_USER' : previousData?.status === 'deleted' && status === 'active' ? 'RESTORE_USER' : 'UPDATE_USER',
         details: `Updated user ${uid}. Role: ${role || 'unchanged'}, Status: ${status || 'unchanged'}`,
         timestamp: FieldValue.serverTimestamp()
       });

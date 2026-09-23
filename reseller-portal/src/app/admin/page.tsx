@@ -79,6 +79,11 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
+  const [deletedResellers, setDeletedResellers] = useState<ResellerData[]>([]);
+  const [showDeletedResellers, setShowDeletedResellers] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<ResellerData | null>(null);
+  const [isChangingAccount, setIsChangingAccount] = useState(false);
+  const [accountError, setAccountError] = useState('');
   const [loading, setLoading] = useState(true);
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -237,20 +242,21 @@ export default function AdminDashboard() {
       const q = query(collection(db, 'users'), where('role', '==', 'reseller'));
       const querySnapshot = await getDocs(q);
       const data: ResellerData[] = [];
+      const deleted: ResellerData[] = [];
       querySnapshot.forEach((doc) => {
         const d = doc.data();
-        if (d.status !== 'deleted') {
-          data.push({
-            uid: doc.id,
-            email: d.email,
-            credits: d.credits || 0,
-            assignedDomains: d.assignedDomains || [],
-            customDomains: d.customDomains || [],
-            status: d.status || 'active'
-          });
-        }
+        const account: ResellerData = {
+          uid: doc.id,
+          email: d.email,
+          credits: d.credits || 0,
+          assignedDomains: d.assignedDomains || [],
+          customDomains: d.customDomains || [],
+          status: d.status || 'active'
+        };
+        (d.status === 'deleted' ? deleted : data).push(account);
       });
       setResellers(data);
+      setDeletedResellers(deleted);
     } catch (error) {
       console.error("Error fetching resellers", error);
     } finally {
@@ -265,10 +271,10 @@ export default function AdminDashboard() {
       const snap = await getDocs(q);
       let totalCredits = 0;
       snap.forEach(doc => {
-          totalCredits += (doc.data().credits || 0);
+          if (doc.data().status !== 'deleted') totalCredits += (doc.data().credits || 0);
       });
       setAnalyticsData({
-          totalResellers: snap.size,
+          totalResellers: snap.docs.filter(doc => doc.data().status !== 'deleted').length,
           totalCreditsAllocated: totalCredits,
           activeNodes: 3, // Mock data for premium feel
           uptime: "99.9%"
@@ -385,6 +391,28 @@ export default function AdminDashboard() {
       }
     }
     setActionMenuOpen(null);
+  };
+
+  const changeDeletedStatus = async (uid: string, status: 'deleted' | 'active') => {
+    if (isChangingAccount) return;
+    setIsChangingAccount(true);
+    setAccountError('');
+    try {
+      const idToken = await user?.getIdToken();
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ uid, status }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Promjena računa nije uspjela.');
+      setPendingDelete(null);
+      await Promise.all([fetchResellers(), fetchAnalytics()]);
+    } catch (cause) {
+      setAccountError(cause instanceof Error ? cause.message : 'Promjena računa nije uspjela.');
+    } finally {
+      setIsChangingAccount(false);
+    }
   };
 
   const handlePasswordReset = async (email: string) => {
@@ -542,7 +570,10 @@ export default function AdminDashboard() {
           {/* Resellers Tab */}
           {activeTab === 'resellers' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="flex justify-end mb-6">
+              <div className="flex flex-wrap justify-end gap-3 mb-6">
+                <button type="button" onClick={() => setShowDeletedResellers(value => !value)} className="rounded-xl border border-gray-700 bg-gray-800/80 px-4 py-2.5 text-sm font-medium text-gray-300 hover:bg-gray-700">
+                  {showDeletedResellers ? 'Sakrij obrisane' : `Obrisani računi (${deletedResellers.length})`}
+                </button>
                 <button
                   onClick={fetchResellers}
                   className="bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700 text-gray-300 px-4 py-2.5 rounded-xl font-medium flex items-center transition-all mr-3 backdrop-blur-sm"
@@ -557,6 +588,7 @@ export default function AdminDashboard() {
                   Novi Reseller
                 </button>
               </div>
+              {accountError && <p role="alert" className="rounded-xl border border-red-500/40 bg-red-950/30 p-4 text-sm text-red-200">{accountError}</p>}
 
               <div className="bg-gray-900/40 backdrop-blur-xl rounded-3xl border border-gray-700/50 overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto">
@@ -627,6 +659,11 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               </div>
+
+              {showDeletedResellers && <div className="rounded-3xl border border-gray-700/50 bg-gray-900/50 p-6">
+                <h2 className="mb-4 text-lg font-bold text-white">Obrisani reseller računi</h2>
+                {deletedResellers.length === 0 ? <p className="text-sm text-gray-400">Nema obrisanih računa.</p> : <div className="space-y-3">{deletedResellers.map(account => <div key={account.uid} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-950/50 p-4"><div><p className="font-semibold text-white">{account.email}</p><p className="text-xs text-gray-400">{account.credits} kredita · {new Set([...account.assignedDomains, ...account.customDomains]).size} domena</p></div><button type="button" disabled={isChangingAccount} onClick={() => void changeDeletedStatus(account.uid, 'active')} className="rounded-lg border border-green-500/40 px-3 py-2 text-sm font-semibold text-green-300 hover:bg-green-900/20 disabled:opacity-50">Vrati račun</button></div>)}</div>}
+              </div>}
 
               {/* Add Reseller Modal */}
               {showAddModal && (
@@ -761,12 +798,17 @@ export default function AdminDashboard() {
                             </div>
                             Deaktiviraj račun
                           </button>}
+                          <button type="button" onClick={() => { setActionMenuOpen(null); setPendingDelete(r); setAccountError(''); }} className="w-full rounded-2xl px-5 py-4 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10">
+                            Obriši račun
+                          </button>
                         </div>
                       </div>
                     </div>
                   );
                 })()
               )}
+
+              {pendingDelete && <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"><div role="dialog" aria-modal="true" aria-labelledby="delete-reseller-title" className="w-full max-w-md rounded-3xl border border-red-500/30 bg-gray-900 p-6 shadow-2xl"><h2 id="delete-reseller-title" className="text-xl font-bold text-white">Obriši reseller račun?</h2><p className="mt-3 text-sm text-gray-300">Račun <strong>{pendingDelete.email}</strong> bit će uklonjen iz aktivnog popisa i prijava će biti blokirana. Njegovih {pendingDelete.credits} kredita, linije i revizijski zapisi ostat će sačuvani za pregled i eventualni povrat računa.</p>{accountError && <p role="alert" className="mt-4 text-sm text-red-300">{accountError}</p>}<div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => { setPendingDelete(null); setAccountError(''); }} className="rounded-xl border border-gray-600 px-4 py-2 text-gray-200">Odustani</button><button type="button" disabled={isChangingAccount} onClick={() => void changeDeletedStatus(pendingDelete.uid, 'deleted')} className="rounded-xl bg-red-600 px-4 py-2 font-semibold text-white disabled:opacity-50">{isChangingAccount ? 'Brisanje…' : 'Obriši račun'}</button></div></div></div>}
 
               {/* Advanced Edit Reseller Modal */}
               {editingUser && (

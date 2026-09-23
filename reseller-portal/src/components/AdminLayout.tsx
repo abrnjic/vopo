@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout, userData, user } = useAuth();
@@ -39,7 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Modern Header */}
       <header className="sticky top-0 z-50 bg-gray-900/60 backdrop-blur-xl border-b border-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className={`${wide ? 'max-w-none' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between`}>
           
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
@@ -89,7 +89,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </header>
 
       {/* Main Content Area */}
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full z-10">
+      <main className={`relative ${wide ? 'max-w-none' : 'max-w-7xl'} mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full z-10`}>
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

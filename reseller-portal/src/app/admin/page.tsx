@@ -23,6 +23,24 @@ import LineDirectoryPanel from '../../components/LineDirectoryPanel';
 import ReportsPanel from '../../components/ReportsPanel';
 import SupportPanel from '../../components/SupportPanel';
 import BackupPanel from '../../components/BackupPanel';
+import PortalSidebar, { type PortalNavigationItem } from '../../components/PortalSidebar';
+
+type AdminTab = 'home' | 'resellers' | 'domains' | 'lines' | 'migration' | 'diagnostics' | 'security' | 'reports' | 'support' | 'logs' | 'settings' | 'pricing';
+
+const adminNavigation: PortalNavigationItem<AdminTab>[] = [
+  { id: 'home', label: 'Početna', icon: Home },
+  { id: 'resellers', label: 'Reselleri', icon: Users },
+  { id: 'domains', label: 'Domene', icon: Globe },
+  { id: 'diagnostics', label: 'Dijagnostika', icon: Network },
+  { id: 'lines', label: 'Linije', icon: List },
+  { id: 'migration', label: 'Migracija', icon: ArrowRightLeft },
+  { id: 'logs', label: 'Logovi', icon: Activity },
+  { id: 'security', label: 'Security Logs', icon: ShieldAlert },
+  { id: 'reports', label: 'Izvještaji', icon: BarChart3 },
+  { id: 'support', label: 'Podrška', icon: Headphones },
+  { id: 'pricing', label: 'Cjenik kredita', icon: Coins },
+  { id: 'settings', label: 'Postavke', icon: Settings },
+];
 
 const secondaryApp = initializeApp({
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -59,7 +77,7 @@ function formatActivityDetails(details: unknown): string {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'home' | 'resellers' | 'domains' | 'lines' | 'migration' | 'diagnostics' | 'security' | 'reports' | 'support' | 'logs' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<AdminTab>('home');
   const [resellers, setResellers] = useState<ResellerData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -436,66 +454,12 @@ export default function AdminDashboard() {
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
-      <AdminLayout>
-        <div className="space-y-6 pb-20">
+      <AdminLayout wide>
+        <div className="flex items-start gap-6">
+          <PortalSidebar title="Admin Centar" items={adminNavigation} activeTab={activeTab} onSelect={setActiveTab} />
+          <div className="min-w-0 flex-1 space-y-6 pb-20">
 
-          {/* Header & Tabs */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between bg-gray-900/40 backdrop-blur-xl p-6 rounded-3xl border border-gray-700/50 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] -mr-20 -mt-20 pointer-events-none" />
-            <div className="relative z-10">
-              <h1 className="text-3xl font-extrabold flex items-center text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-600/20 flex items-center justify-center mr-4 border border-purple-500/30 shadow-[0_0_25px_rgba(168,85,247,0.2)]">
-                  <ShieldCheck className="w-7 h-7 text-purple-400" />
-                </div>
-                Admin Centar
-              </h1>
-              <p className="text-gray-400 mt-2 text-sm ml-16 font-medium tracking-wide">Premium nadzorna ploča sustava</p>
-            </div>
-
-            <div className="relative z-10 flex space-x-2 mt-6 md:mt-0 overflow-x-auto pb-2 md:pb-0 bg-gray-950/60 p-1.5 rounded-2xl border border-gray-800/80 shadow-inner">
-              <button
-                onClick={() => setActiveTab('home')}
-                className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'home' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
-              >
-                <Home className="w-4 h-4 mr-2" /> Početna
-              </button>
-              <button
-                onClick={() => setActiveTab('resellers')}
-                className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'resellers' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
-              >
-                <Users className="w-4 h-4 mr-2" /> Reselleri
-              </button>
-              <button onClick={() => setActiveTab('domains')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'domains' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-                <Globe className="w-4 h-4 mr-2" /> Domene
-              </button>
-              <button onClick={() => setActiveTab('diagnostics')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'diagnostics' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-                <Network className="w-4 h-4 mr-2" /> Dijagnostika
-              </button>
-              <button onClick={() => setActiveTab('lines')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'lines' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><List className="w-4 h-4 mr-2" /> Linije</button>
-              <button onClick={() => setActiveTab('migration')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'migration' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-                <ArrowRightLeft className="w-4 h-4 mr-2" /> Migracija
-              </button>
-              <button
-                onClick={() => setActiveTab('logs')}
-                className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'logs' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
-              >
-                <Activity className="w-4 h-4 mr-2" /> Logovi
-              </button>
-              <button onClick={() => setActiveTab('security')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'security' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}>
-                <ShieldAlert className="w-4 h-4 mr-2" /> Security Logs
-              </button>
-              <button onClick={() => setActiveTab('reports')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'reports' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><BarChart3 className="w-4 h-4 mr-2" /> Izvještaji</button>
-              <button onClick={() => setActiveTab('support')} className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap text-sm ${activeTab === 'support' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`}><Headphones className="w-4 h-4 mr-2" /> Podrška</button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`px-5 py-2.5 rounded-xl font-semibold flex items-center whitespace-nowrap transition-all duration-300 text-sm ${activeTab === 'settings' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30 scale-105' : 'text-gray-400 hover:text-white hover:bg-gray-800/80'}`}
-              >
-                <Settings className="w-4 h-4 mr-2" /> Postavke
-              </button>
-            </div>
-          </div>
-
-          <CreditPricing />
+          {(activeTab === 'pricing' || activeTab === 'lines' || activeTab === 'resellers') && <CreditPricing />}
 
           {/* Home Tab */}
           {activeTab === 'home' && (
@@ -1177,6 +1141,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </AdminLayout>
     </ProtectedRoute>

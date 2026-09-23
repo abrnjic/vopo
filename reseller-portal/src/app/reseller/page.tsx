@@ -19,10 +19,28 @@ import SecurityPanel from '../../components/SecurityPanel';
 import LineDirectoryPanel from '../../components/LineDirectoryPanel';
 import ReportsPanel from '../../components/ReportsPanel';
 import SupportPanel from '../../components/SupportPanel';
+import PortalSidebar, { type PortalNavigationItem } from '../../components/PortalSidebar';
+
+type ResellerTab = 'activate' | 'lines' | 'subsellers' | 'migration' | 'analytics' | 'reports' | 'support' | 'diagnostics' | 'security' | 'logs' | 'settings' | 'pricing';
+
+const resellerNavigation: PortalNavigationItem<ResellerTab>[] = [
+  { id: 'activate', label: 'Upravljanje linijama', icon: CreditCard },
+  { id: 'subsellers', label: 'Subselleri', icon: Users },
+  { id: 'lines', label: 'Moje linije', icon: List },
+  { id: 'migration', label: 'Migracija', icon: ArrowRightLeft },
+  { id: 'analytics', label: 'Moja analitika', icon: BarChart2 },
+  { id: 'diagnostics', label: 'Dijagnostika', icon: Network },
+  { id: 'logs', label: 'Aktivnosti', icon: Activity },
+  { id: 'security', label: 'Sigurnost', icon: ShieldAlert },
+  { id: 'reports', label: 'Izvještaji', icon: BarChart2 },
+  { id: 'support', label: 'Podrška', icon: Headphones },
+  { id: 'pricing', label: 'Cjenik kredita', icon: CreditCard },
+  { id: 'settings', label: 'Postavke profila', icon: Settings },
+];
 
 export default function ResellerDashboard() {
   const { user, userData } = useAuth();
-  const [activeTab, setActiveTab] = useState<'activate' | 'lines' | 'subsellers' | 'migration' | 'analytics' | 'reports' | 'support' | 'diagnostics' | 'security' | 'logs' | 'settings'>('activate');
+  const [activeTab, setActiveTab] = useState<ResellerTab>('activate');
   const [credits, setCredits] = useState<number>(userData?.credits || 0);
   const [assignedDomains, setAssignedDomains] = useState<string[]>(userData?.assignedDomains || []);
   const [customDomains, setCustomDomains] = useState<string[]>(userData?.customDomains || []);
@@ -288,75 +306,22 @@ export default function ResellerDashboard() {
 
   return (
     <ProtectedRoute allowedRoles={['reseller', 'subseller']}>
-      <AdminLayout>
-        <div className="space-y-6">
-          <div className="flex justify-between items-center bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Reseller Dashboard</h1>
-          <p className="text-gray-400 mt-1">Dobrodošli, {userData?.email}</p>
-        </div>
-        <div className="text-right bg-gray-900/50 px-6 py-3 rounded-lg border border-gray-700">
-          <div className="text-3xl font-black text-orange-500">{credits}</div>
-          <div className="text-xs uppercase tracking-wider text-gray-400 font-bold mt-1">Dostupnih Kredita</div>
-        </div>
-      </div>
+      <AdminLayout wide>
+        <div className="flex items-start gap-6">
+          <PortalSidebar title={userData?.role === 'subseller' ? 'Subseller portal' : 'Reseller portal'} items={resellerNavigation.filter(item => item.id !== 'subsellers' || userData?.role === 'reseller')} activeTab={activeTab} onSelect={tab => { if (tab === 'lines') setLineToEdit(null); setActiveTab(tab); }} />
+          <div className="min-w-0 flex-1 space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-700/70 bg-gray-900/50 p-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">VOPO PORTAL</p>
+              <h1 className="mt-1 text-2xl font-bold text-white">{resellerNavigation.find(item => item.id === activeTab)?.label}</h1>
+            </div>
+            <div className="rounded-xl border border-gray-700 bg-gray-950/60 px-5 py-2 text-right">
+              <div className="text-2xl font-black text-orange-400">{credits}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-gray-400">Dostupnih kredita</div>
+            </div>
+          </div>
 
-      <CreditPricing />
-
-      <div className="flex space-x-2 border-b border-gray-700 pb-px overflow-x-auto">
-        <button 
-          onClick={() => setActiveTab('activate')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'activate' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <CreditCard className="w-4 h-4 mr-2" />
-          Upravljanje Linijama
-        </button>
-        {userData?.role === 'reseller' && <button
-          onClick={() => setActiveTab('subsellers')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'subsellers' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <Users className="w-4 h-4 mr-2" />Subselleri
-        </button>}
-        <button onClick={() => { setLineToEdit(null); setActiveTab('lines'); }} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'lines' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><List className="w-4 h-4 mr-2" />Linije</button>
-        <button
-          onClick={() => setActiveTab('migration')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'migration' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <ArrowRightLeft className="w-4 h-4 mr-2" />Migracija
-        </button>
-        <button 
-          onClick={() => setActiveTab('analytics')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'analytics' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <BarChart2 className="w-4 h-4 mr-2" />
-          Moja Analitika
-        </button>
-          <button
-            onClick={() => setActiveTab('diagnostics')}
-            className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'diagnostics' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-          >
-            <Network className="w-4 h-4 mr-2" /> Dijagnostika
-          </button>
-          <button
-            onClick={() => setActiveTab('logs')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'logs' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <Activity className="w-4 h-4 mr-2" />
-          Aktivnosti
-        </button>
-        <button onClick={() => setActiveTab('security')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'security' ? 'border-red-500 text-red-300' : 'border-transparent text-gray-400 hover:text-white'}`}>
-          <ShieldAlert className="w-4 h-4 mr-2" /> Sigurnost
-        </button>
-        <button onClick={() => setActiveTab('reports')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'reports' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><BarChart2 className="w-4 h-4 mr-2" />Izvještaji</button>
-        <button onClick={() => setActiveTab('support')} className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'support' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}><Headphones className="w-4 h-4 mr-2" />Podrška</button>
-        <button 
-          onClick={() => setActiveTab('settings')}
-          className={`px-6 py-3 font-medium transition-all flex items-center border-b-2 whitespace-nowrap ${activeTab === 'settings' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          Postavke Profila
-        </button>
-      </div>
+          {(activeTab === 'pricing' || activeTab === 'activate' || activeTab === 'lines') && <CreditPricing />}
 
       {activeTab === 'activate' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -732,7 +697,8 @@ export default function ResellerDashboard() {
           )}
         </div>
         )}
-      </div>
+          </div>
+        </div>
     </AdminLayout>
   </ProtectedRoute>
   );

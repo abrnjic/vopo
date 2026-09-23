@@ -144,7 +144,11 @@ export async function POST(req: NextRequest) {
           status: existingLicenseData.status,
           isLifetime: existingLicenseData.isLifetime === true,
           creditsRemaining: currentCredits,
-          message: 'Linija je spremljena; trajanje licence nije promijenjeno.'
+          message: existingTrial
+            ? 'Probna linija je spremljena. Uređaj ostaje u postojećem probnom razdoblju; za godišnju ili trajnu aktivaciju odaberite odgovarajuću opciju.'
+            : existingLifetime
+              ? 'Podaci trajne linije su ažurirani. Licenca ostaje trajna; krediti nisu potrošeni.'
+              : 'Podaci godišnje linije su ažurirani. Postojeći datum isteka ostaje isti; krediti nisu ponovno potrošeni.'
         };
       }
 
@@ -207,7 +211,11 @@ export async function POST(req: NextRequest) {
         status: licenseData.status,
         isLifetime: licenseData.isLifetime,
         creditsRemaining: currentCredits - creditsToDeduct,
-        message: 'Linija i licenca su spremljene.'
+        message: licenseType === 'trial'
+          ? 'Probna linija je spremljena. Probno razdoblje traje 3 dana od registracije uređaja; krediti nisu potrošeni.'
+          : licenseType === 'lifetime'
+            ? 'Linija je trajno aktivirana. Potrošena su 2 kredita.'
+            : 'Linija je aktivirana na 1 godinu. Potrošen je 1 kredit.'
       };
     });
 

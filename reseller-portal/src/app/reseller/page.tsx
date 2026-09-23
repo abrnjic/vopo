@@ -40,6 +40,7 @@ export default function ResellerDashboard() {
   const [customerContact, setCustomerContact] = useState('');
   const [licenseType, setLicenseType] = useState<'1_year' | 'lifetime' | 'trial'>('1_year');
   const [isActivating, setIsActivating] = useState(false);
+  const [activationNotice, setActivationNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Analytics & Logs State
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -138,6 +139,7 @@ export default function ResellerDashboard() {
     e.preventDefault();
     if (!user) return;
     
+    setActivationNotice(null);
     setIsActivating(true);
     try {
       const idToken = await user?.getIdToken();
@@ -163,7 +165,7 @@ export default function ResellerDashboard() {
       if (!res.ok) throw new Error(result.error || 'Neuspješna aktivacija');
 
       setCredits(result.creditsRemaining);
-      alert(result.message || 'Linija je uspješno spremljena.');
+      setActivationNotice({ type: 'success', text: result.message || 'Linija je uspješno spremljena.' });
 
       setDeviceId('');
       setUsername('');
@@ -185,7 +187,7 @@ export default function ResellerDashboard() {
       }, ...prev.filter(l => l.id !== deviceId.trim())]);
     } catch (error) {
       console.error(error);
-      alert(error instanceof Error ? error.message : 'Došlo je do greške.');
+      setActivationNotice({ type: 'error', text: error instanceof Error ? error.message : 'Došlo je do greške.' });
     } finally {
       setIsActivating(false);
     }
@@ -364,6 +366,7 @@ export default function ResellerDashboard() {
               <Plus className="w-5 h-5 mr-2 text-blue-500" />
               Nova Aktivacija / Linija
             </h2>
+            {activationNotice && <div role={activationNotice.type === 'error' ? 'alert' : 'status'} className={`mb-5 rounded-lg border p-3 text-sm ${activationNotice.type === 'error' ? 'border-red-500/50 bg-red-900/20 text-red-200' : 'border-green-500/50 bg-green-900/20 text-green-200'}`}>{activationNotice.text}</div>}
             <form className="space-y-4" onSubmit={handleActivate}>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">Device ID</label>
@@ -449,7 +452,7 @@ export default function ResellerDashboard() {
                     </div>
                     <div className="flex-1">
                       <div className="font-medium text-white">Probna Linija (Samo postavi)</div>
-                      <div className="text-sm text-gray-400">Korisniku teče probni period od 3 dana. Troši <span className="font-bold text-green-400">0 kredita</span></div>
+                      <div className="text-sm text-gray-400">Postavlja liniju u postojeće probno razdoblje od 3 dana; ne aktivira godišnju licencu. Troši <span className="font-bold text-green-400">0 kredita</span>.</div>
                     </div>
                   </label>
 
@@ -483,7 +486,7 @@ export default function ResellerDashboard() {
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-lg mt-6 flex items-center justify-center shadow-lg shadow-blue-500/25 transition-all disabled:opacity-50"
               >
                 <Send className="w-5 h-5 mr-2" />
-                {isActivating ? 'Aktivacija u tijeku...' : 'Pošalji liniju i Aktiviraj'}
+                {isActivating ? 'Spremanje u tijeku...' : licenseType === 'trial' ? 'Pošalji probnu liniju (0 kredita)' : licenseType === 'lifetime' ? 'Aktiviraj trajno (2 kredita)' : 'Aktiviraj na 1 godinu (1 kredit)'}
               </button>
             </form>
           </div>
@@ -535,29 +538,29 @@ export default function ResellerDashboard() {
                 <div 
                   key={line.id} 
                   onClick={() => toggleLineSelection(line.id)}
-                  className={`flex justify-between items-center p-4 rounded-lg border transition-all cursor-pointer ${
+                  className={`flex flex-col gap-3 p-4 rounded-lg border transition-all cursor-pointer sm:flex-row sm:items-center sm:justify-between ${
                     selectedLines.includes(line.id) 
                       ? 'bg-blue-900/20 border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.2)]' 
                       : 'bg-gray-900/50 border-gray-700/50 hover:border-gray-600'
                   }`}
                 >
-                  <div className="flex items-center">
+                  <div className="flex w-full min-w-0 items-center sm:w-auto">
                     <div className={`w-5 h-5 rounded border mr-4 flex items-center justify-center transition-colors ${
                       selectedLines.includes(line.id) ? 'bg-blue-500 border-blue-500' : 'border-gray-500'
                     }`}>
                       {selectedLines.includes(line.id) && <Check className="w-3.5 h-3.5 text-white" />}
                     </div>
-                    <div>
-                      <div className="font-mono text-white text-lg">{line.id} {line.customerName && <span className="text-gray-400 text-sm ml-2">({line.customerName})</span>}</div>
-                      <div className="text-sm text-gray-400 flex items-center mt-1">
+                    <div className="min-w-0">
+                      <div className="break-all font-mono text-lg text-white">{line.id} {line.customerName && <span className="ml-2 text-sm text-gray-400">({line.customerName})</span>}</div>
+                      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-sm text-gray-400">
                         <span className={`px-2 py-0.5 rounded text-xs mr-2 font-medium ${line.status === 'Trial' ? 'bg-amber-900/50 text-amber-300' : line.isLifetime ? 'bg-purple-900/50 text-purple-400' : 'bg-blue-900/50 text-blue-400'}`}>
                           {line.status === 'Trial' ? '3 dana probno' : line.isLifetime ? 'Lifetime' : '1 Godina'}
                         </span>
-                        {line.selectedDomain}
+                        <span className="break-all">{line.selectedDomain}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2"><button type="button" onClick={event => { event.stopPropagation(); setLineToEdit(line.id); setActiveTab('lines'); }} className="rounded-lg border border-blue-500/50 px-3 py-1.5 text-sm font-semibold text-blue-300 hover:bg-blue-900/30">Uredi</button><div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
+                  <div className="flex w-full items-center justify-between gap-2 pl-9 sm:w-auto sm:justify-end sm:pl-0"><button type="button" onClick={event => { event.stopPropagation(); setLineToEdit(line.id); setActiveTab('lines'); }} className="shrink-0 rounded-lg border border-blue-500/50 px-3 py-1.5 text-sm font-semibold text-blue-300 hover:bg-blue-900/30">Uredi</button><div className={`flex shrink-0 items-center rounded-full border px-3 py-1 text-sm font-medium ${
                     line.status === 'Active' ? 'text-green-500 bg-green-900/20 border-green-900/50' : 
                     line.status === 'Trial' ? 'text-yellow-500 bg-yellow-900/20 border-yellow-900/50' : 
                     'text-red-500 bg-red-900/20 border-red-900/50'

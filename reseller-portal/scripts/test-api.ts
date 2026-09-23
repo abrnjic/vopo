@@ -415,6 +415,7 @@ test('API P0 Tests', async (t) => {
     const result = await response.json();
     assert.strictEqual(result.status, 'Trial');
     assert.strictEqual(result.creditsRemaining, 10);
+    assert.match(result.message, /postojećem probnom razdoblju/);
 
     const saved = mockState.licenses.get('TRI-AL0-001');
     assert.strictEqual(saved.expiresAt.getTime(), originalExpiry);
